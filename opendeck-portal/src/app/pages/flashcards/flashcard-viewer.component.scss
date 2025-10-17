@@ -1,0 +1,274 @@
+// Flashcard Viewer Component Styles
+// Using PrimeNG semantic tokens for proper theming
+
+.flashcard-viewer-container {
+    // Custom Progress Bar Styling
+    :host ::ng-deep {
+        .custom-progress-bar {
+            .p-progressbar {
+                height: 0.5rem;
+                border-radius: 9999px;
+                overflow: hidden;
+
+                .p-progressbar-value {
+                    border-radius: 9999px;
+                    transition: width 0.3s ease-out;
+                }
+            }
+        }
+    }
+
+    // Flashcard Wrapper
+    .flashcard-wrapper {
+        position: relative;
+        min-height: 500px;
+    }
+
+    // Main Flashcard Card
+    :host ::ng-deep {
+        .flashcard-main {
+            .p-card {
+                min-height: 500px;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                }
+
+                .p-card-body {
+                    padding: 3rem;
+                }
+
+                .p-card-content {
+                    padding: 0;
+                }
+            }
+        }
+    }
+
+    // Flashcard Content Layout
+    .flashcard-content {
+        display: flex;
+        flex-direction: column;
+        min-height: 420px;
+
+        // Question Section
+        .question-section {
+            flex: 0 0 auto;
+            margin-bottom: 2rem;
+
+            .question-text {
+                font-weight: 500;
+                line-height: 1.6;
+            }
+        }
+
+        // Answer Section
+        .answer-section {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+
+            .divider {
+                height: 2px;
+                background: var(--surface-200);
+                margin-bottom: 2rem;
+            }
+
+            .answer-text {
+                line-height: 1.7;
+                margin-bottom: 1.5rem;
+            }
+
+            // Source Attribution Box - Prominent per CLAUDE.md requirements
+            .source-attribution-box {
+                margin-top: auto;
+
+                .source-content {
+                    .source-label {
+                        letter-spacing: 0.05em;
+                        font-weight: 600;
+                    }
+
+                    .source-text {
+                        font-weight: 500;
+                        line-height: 1.6;
+                    }
+
+                    .source-link-btn {
+                        padding: 0.5rem;
+                        background: var(--primary-100);
+                        border: 1px solid var(--primary-200);
+                        border-radius: 0.5rem;
+                        color: var(--primary-600);
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+
+                        &:hover {
+                            background: var(--primary-200);
+                            border-color: var(--primary-300);
+                            transform: translateY(-2px);
+                        }
+
+                        &:active {
+                            transform: translateY(0);
+                        }
+
+                        i {
+                            font-size: 1rem;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Show Answer Section
+        .show-answer-section {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-top: 2rem;
+        }
+    }
+
+    // Button Customization
+    :host ::ng-deep {
+        .show-answer-btn {
+            .p-button {
+                padding: 0.875rem 2rem;
+                font-size: 1rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+
+                &:hover:not(:disabled) {
+                    transform: translateY(-2px);
+                }
+
+                &:active:not(:disabled) {
+                    transform: translateY(0);
+                }
+            }
+        }
+
+        .nav-btn {
+            .p-button {
+                padding: 0.75rem 1.5rem;
+                font-weight: 600;
+                transition: all 0.2s ease;
+            }
+        }
+    }
+
+    // Navigation Controls
+    .navigation-controls {
+        .card-counter {
+            min-width: 100px;
+            text-align: center;
+        }
+    }
+
+    // Keyboard Hints
+    .keyboard-hints {
+        .keyboard-key {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .flashcard-viewer-container {
+        :host ::ng-deep {
+            .flashcard-main {
+                .p-card {
+                    .p-card-body {
+                        padding: 1.5rem;
+                    }
+                }
+            }
+        }
+
+        .flashcard-content {
+            min-height: 400px;
+
+            .question-section {
+                .question-text {
+                    font-size: 1.25rem;
+                }
+            }
+
+            .answer-section {
+                .answer-text {
+                    font-size: 1rem;
+                }
+            }
+        }
+
+        .navigation-controls {
+            flex-wrap: wrap;
+            gap: 1rem;
+
+            .card-counter {
+                order: -1;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .keyboard-hints {
+            display: none;
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .flashcard-viewer-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+
+        .header-section {
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        :host ::ng-deep {
+            .flashcard-main {
+                .p-card {
+                    .p-card-body {
+                        padding: 1.25rem;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Animation Performance Optimization
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+// Focus Styles for Accessibility
+:focus-visible {
+    outline: 2px solid var(--primary-500);
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+}

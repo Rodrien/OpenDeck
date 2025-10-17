@@ -1,0 +1,168 @@
+<div class="flashcard-viewer-container min-h-screen bg-surface-50 dark:bg-surface-950 py-8 px-4">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header Section -->
+        <div class="header-section mb-6">
+            <p-button
+                label="Back to Decks"
+                icon="pi pi-chevron-left"
+                [text]="true"
+                severity="secondary"
+                class="mb-4"
+                (onClick)="backToDecks()"
+                [attr.aria-label]="'Navigate back to deck listing'"
+            />
+
+            <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 mb-2">{{ deckTitle() }}</h1>
+            <p class="text-surface-600 dark:text-surface-400 text-lg">{{ cardCountText() }}</p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <p-progressBar
+                [value]="progress()"
+                [showValue]="false"
+                class="custom-progress-bar"
+                [attr.aria-label]="'Progress through flashcard deck'"
+            />
+        </div>
+
+        <!-- Flashcard Container -->
+        <div class="flashcard-wrapper mb-8" [@cardSlide]="animationTrigger()">
+            @if (currentCard(); as card) {
+                <p-card class="flashcard-main">
+                    <div class="flashcard-content">
+                        <!-- Question Section -->
+                        <div class="question-section">
+                            <p-tag
+                                value="Question"
+                                severity="info"
+                                class="mb-4"
+                                [rounded]="true"
+                            />
+                            <p class="question-text text-2xl text-surface-900 dark:text-surface-0 leading-relaxed">
+                                {{ card.question }}
+                            </p>
+                        </div>
+
+                        <!-- Answer Section (conditionally shown) -->
+                        @if (showAnswer()) {
+                            <div class="answer-section" [@fadeIn]>
+                                <div class="divider"></div>
+
+                                <p-tag
+                                    value="Answer"
+                                    severity="success"
+                                    class="mb-4"
+                                    [rounded]="true"
+                                />
+
+                                <p class="answer-text text-lg text-surface-700 dark:text-surface-200 leading-relaxed mb-6">
+                                    {{ card.answer }}
+                                </p>
+
+                                <!-- Source Attribution Box - CRITICAL for OpenDeck -->
+                                <div class="source-attribution-box bg-surface-100 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 rounded-lg p-4">
+                                    <div class="source-content">
+                                        <div class="flex items-start gap-3">
+                                            <i class="pi pi-file-pdf text-xl text-primary"></i>
+                                            <div class="flex-1">
+                                                <p class="source-label text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase mb-1">
+                                                    Source Reference
+                                                </p>
+                                                <p class="source-text text-sm text-surface-700 dark:text-surface-200">
+                                                    {{ card.source }}
+                                                </p>
+                                            </div>
+                                            @if (card.sourceUrl && card.sourceUrl !== '#') {
+                                                <button
+                                                    class="source-link-btn"
+                                                    (click)="openSource(card.sourceUrl)"
+                                                    [attr.aria-label]="'Open source document'"
+                                                >
+                                                    <i class="pi pi-external-link"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Show Answer Button (shown when answer is hidden) -->
+                        @if (!showAnswer()) {
+                            <div class="show-answer-section">
+                                <p-button
+                                    label="Show Answer"
+                                    icon="pi pi-eye"
+                                    (onClick)="toggleAnswer()"
+                                    severity="info"
+                                    [raised]="true"
+                                    class="show-answer-btn"
+                                    [attr.aria-label]="'Reveal answer for current flashcard'"
+                                />
+                            </div>
+                        }
+                    </div>
+                </p-card>
+            }
+        </div>
+
+        <!-- Navigation Controls -->
+        <div class="navigation-controls flex items-center justify-between">
+            <!-- Previous Button -->
+            <p-button
+                label="Previous"
+                icon="pi pi-chevron-left"
+                (onClick)="previousCard()"
+                [disabled]="isFirstCard()"
+                severity="secondary"
+                [outlined]="true"
+                class="nav-btn"
+                [attr.aria-label]="'Navigate to previous flashcard'"
+            />
+
+            <!-- Card Counter -->
+            <div class="card-counter text-surface-600 dark:text-surface-300 text-base font-medium">
+                {{ currentIndex() + 1 }} / {{ cards().length }}
+            </div>
+
+            <!-- Next Button -->
+            <p-button
+                label="Next"
+                icon="pi pi-chevron-right"
+                iconPos="right"
+                (onClick)="nextCard()"
+                [disabled]="isLastCard()"
+                severity="secondary"
+                [outlined]="true"
+                class="nav-btn"
+                [attr.aria-label]="'Navigate to next flashcard'"
+            />
+        </div>
+
+        <!-- Keyboard Shortcuts Hint -->
+        <div class="keyboard-hints text-center mt-8 text-surface-500 dark:text-surface-400 text-sm">
+            <p>
+                <span class="inline-flex items-center gap-1">
+                    <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">←</kbd>
+                    <span>Previous</span>
+                </span>
+                <span class="mx-4">|</span>
+                <span class="inline-flex items-center gap-1">
+                    <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">→</kbd>
+                    <span>Next</span>
+                </span>
+                <span class="mx-4">|</span>
+                <span class="inline-flex items-center gap-1">
+                    <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">Space</kbd>
+                    <span>Show/Hide Answer</span>
+                </span>
+                <span class="mx-4">|</span>
+                <span class="inline-flex items-center gap-1">
+                    <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">Esc</kbd>
+                    <span>Back to Decks</span>
+                </span>
+            </p>
+        </div>
+    </div>
+</div>
