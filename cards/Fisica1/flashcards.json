@@ -1,0 +1,552 @@
+{
+  "course": "Fisica 1",
+  "totalCards": 85,
+  "sources": [
+    "Formulometro..pdf",
+    "formulometro_ Paula Soria .pdf",
+    "Resumen F1_ Paula Soria .pdf"
+  ],
+  "topics": [
+    {
+      "name": "Cinemática - Movimiento Rectilíneo",
+      "cards": [
+        {
+          "id": 1,
+          "question": "¿Cuál es la diferencia entre Movimiento Rectilíneo Uniforme (MRU) y Movimiento Rectilíneo Uniformemente Acelerado (MRUA)?",
+          "answer": "En el MRU la velocidad es constante (a=0, v=cte), mientras que en el MRUA la aceleración es constante y diferente de cero. En MRU: Δx = v·Δt. En MRUA: a = Δv/Δt y x = x₀ + v₀t + ½at²",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 2,
+          "question": "¿Cuáles son las ecuaciones fundamentales del MRU?",
+          "answer": "Δx = x₂ - x₀, v = Δx/Δt = (x₂-x₀)/(t₂-t₀), y x = x₀ + v(t-t₀). La velocidad permanece constante durante todo el movimiento.",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 3,
+          "question": "¿Cuáles son las ecuaciones cinemáticas del MRUA?",
+          "answer": "a = Δv/Δt = (v-v₀)/(t-t₀), v = v₀ + at, x = x₀ + v₀t + ½at². La aceleración es constante y la velocidad cambia linealmente con el tiempo.",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 4,
+          "question": "¿Qué representa el encuentro entre dos móviles y cómo se resuelve?",
+          "answer": "El encuentro ocurre cuando xₐ = xᵦ en el mismo instante t. Se resuelve igualando las ecuaciones de posición de ambos móviles y despejando el tiempo.",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 5,
+          "question": "¿Cuál es la definición de velocidad media e instantánea?",
+          "answer": "Velocidad media: Vmedia = Δx/Δt = (x₂-x₁)/(t₂-t₁). Velocidad instantánea: V = lim(Δt→0) Δx/Δt = dx/dt. La instantánea es la derivada de la posición respecto al tiempo.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 1"
+        },
+        {
+          "id": 6,
+          "question": "¿Cuál es la definición de aceleración media e instantánea?",
+          "answer": "Aceleración media: amedia = Δv/Δt = (v₂-v₁)/(t₂-t₁). Aceleración instantánea: a = lim(Δt→0) Δv/Δt = dv/dt. Es la derivada de la velocidad o segunda derivada de la posición.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 1"
+        },
+        {
+          "id": 7,
+          "question": "En un MRU, ¿cómo se clasifican los movimientos según la aceleración?",
+          "answer": "Si a=0 y v=cte, es MRU. Si v=0, el objeto está en reposo. Si x = x₀ + v, es movimiento uniforme.",
+          "source": "formulometro_ Paula Soria .pdf, Page 1"
+        },
+        {
+          "id": 8,
+          "question": "¿Qué condiciones debe cumplir un movimiento proyectil?",
+          "answer": "En el eje x es MRU (altura máxima vy=0, alcance horizontal y=0). En el eje y es MRUA (caída libre). Las ecuaciones son: x=(v₀cosα)t, y=y₀+(v₀senα)t - ½gt²",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 2"
+        }
+      ]
+    },
+    {
+      "name": "Dinámica - Leyes de Newton",
+      "cards": [
+        {
+          "id": 9,
+          "question": "¿Qué establece la Primera Ley de Newton?",
+          "answer": "Cuando un cuerpo está en un marco de referencia inercial, en reposo o movimiento constante (v=cte), entonces ΣF = 0. Un cuerpo permanece en su estado de reposo o movimiento rectilíneo uniforme a menos que actúe una fuerza externa sobre él.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 10,
+          "question": "¿Qué establece la Segunda Ley de Newton?",
+          "answer": "ΣF = ma. La suma de las fuerzas que actúan sobre un cuerpo es igual al producto de su masa por su aceleración. Esta es la ecuación fundamental de la dinámica.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 4; formulometro_ Paula Soria .pdf, Page 1"
+        },
+        {
+          "id": 11,
+          "question": "¿Qué establece la Tercera Ley de Newton?",
+          "answer": "Las fuerzas de acción-reacción nunca actúan sobre el mismo cuerpo. Fₐ = -Fᵦ. Si un cuerpo A ejerce una fuerza sobre B, entonces B ejerce una fuerza igual y opuesta sobre A.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 12,
+          "question": "¿Qué es la fuerza de fricción y cuándo actúa?",
+          "answer": "Cuando un cuerpo se desliza sobre una superficie de contacto se denomina fricción cinética (Fₖ = μₖN). Si un cuerpo no se desliza con respecto a la superficie, la fuerza se denomina fricción estática (Fₛ ≤ μₛN).",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 13,
+          "question": "¿Cuáles son las ecuaciones fundamentales de la dinámica?",
+          "answer": "F = ma (Segunda Ley de Newton), P = mg (Peso), Froz = μₙN (Fuerza de rozamiento), donde μₛ > μₖ. La fuerza máxima de fricción estática es mayor que la cinética.",
+          "source": "Formulometro..pdf, Page 1"
+        }
+      ]
+    },
+    {
+      "name": "Movimiento Circular",
+      "cards": [
+        {
+          "id": 14,
+          "question": "¿Cuáles son las ecuaciones del movimiento circular uniforme (MCU)?",
+          "answer": "Fcp = macp = mω²R = mv²/R, donde acp = v²/R. También: rθ = vΔt, v = Rθ̇ = Rω, ω = v/R = θ̇/Δt. La aceleración centrípeta apunta hacia el centro.",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 15,
+          "question": "¿Cuál es la relación entre velocidad angular y velocidad lineal en MCU?",
+          "answer": "v = ωR, donde ω es la velocidad angular y R es el radio. La aceleración centrípeta es acp = Rω² = v²/R. También ω = Δθ/Δt.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 16,
+          "question": "¿Qué representa la aceleración centrípeta y cuál es su fórmula?",
+          "answer": "La aceleración centrípeta es la aceleración dirigida hacia el centro en el movimiento circular. aₜₒₜₐₗ = v²/R = 4π²R/T² = ω²R. Siempre apunta al centro del círculo.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 17,
+          "question": "En el MCU, ¿cuál es la relación entre frecuencia, período y velocidad angular?",
+          "answer": "1 rpm = 2π/60 rad/s. n = θ(t)/2π (número de vueltas). f = 1/T y ω = 2πf = 2π/T. La frecuencia es el inverso del período.",
+          "source": "Formulometro..pdf, Page 1; Resumen F1_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 18,
+          "question": "¿Qué condiciones caracterizan el MCU rapidez constante?",
+          "answer": "vᴛ = cte, movimiento circular uniforme. Velocidad angular: ω = Δθ/Δt = dθ/dt. Aceleración: aᴛ = v²/R = Rω², aᴛ = Rα̇",
+          "source": "formulometro_ Paula Soria .pdf, Page 1"
+        },
+        {
+          "id": 19,
+          "question": "¿Cuál es la diferencia entre MCU y MCUV?",
+          "answer": "MCU: velocidad angular constante (ω = cte). MCUV: aceleración angular constante (α = cte). En MCUV: θ = θ₀ + ω₀t + ½αt² y ω² = ω₀² + 2α(θ-θ₀).",
+          "source": "formulometro_ Paula Soria .pdf, Page 4"
+        }
+      ]
+    },
+    {
+      "name": "Rotación - Cinemática y Dinámica",
+      "cards": [
+        {
+          "id": 20,
+          "question": "¿Cuáles son las ecuaciones de la cinemática de rotación?",
+          "answer": "α = dω/dt (aceleración angular), ω = dθ/dt (velocidad angular), θ = ∫ωdt (desplazamiento angular), x = Rθ, vᴛ = Rω, aᴛ = Rα. La rotación es análoga al movimiento lineal.",
+          "source": "Formulometro..pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 11"
+        },
+        {
+          "id": 21,
+          "question": "¿Qué es la inercia en rotación y cómo se calcula?",
+          "answer": "Inercia I: Σmᵢrᵢ². Para eje arbitrario: Iejerotación = Icm + Md² (Teorema de ejes paralelos). Es la resistencia de un cuerpo a cambiar su estado de rotación.",
+          "source": "Formulometro..pdf, Page 3"
+        },
+        {
+          "id": 22,
+          "question": "¿Cuáles son los momentos de inercia para diferentes geometrías?",
+          "answer": "Aro: I=MR²; Cilindro hueco: I=½(R₁²+R₂²); Cilindro: I=½MR²; Varilla: I=ML²/12 o ML²/3 (según eje); Esfera: I=2MR²/5; Cascarón: I=2MR²/3; Placa rectangular: I=M(a²+b²)/12",
+          "source": "Formulometro..pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 13"
+        },
+        {
+          "id": 23,
+          "question": "¿Qué representa la energía cinética de rotación?",
+          "answer": "Ecin = ½Iω². Es la energía asociada al movimiento de rotación de un cuerpo, análoga a ½mv² para traslación. Depende del momento de inercia y la velocidad angular al cuadrado.",
+          "source": "Formulometro..pdf, Page 3"
+        },
+        {
+          "id": 24,
+          "question": "¿Cuál es la ecuación del torque y su relación con la fuerza?",
+          "answer": "τ = R×F, |τ| = |R||F|senθ. El torque es el producto vectorial de la distancia por la fuerza. Cuando no hay distancia, no hay torque.",
+          "source": "Formulometro..pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 13"
+        },
+        {
+          "id": 25,
+          "question": "¿Qué establece la ecuación de dinámica de rotación?",
+          "answer": "Στ = Iα. La suma de torques externos es igual al momento de inercia por la aceleración angular. Es análoga a la Segunda Ley de Newton (ΣF=ma).",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 13"
+        },
+        {
+          "id": 26,
+          "question": "¿Cómo se calcula el trabajo realizado por un torque?",
+          "answer": "W = ∫τdθ desde θᵢ hasta θf. Si un torque actúa sobre un cuerpo rígido que gira, efectúa un trabajo. W = τΔθ = τ(θf-θᵢ) cuando τ es constante.",
+          "source": "Formulometro..pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 14"
+        },
+        {
+          "id": 27,
+          "question": "¿Qué es la potencia en rotación?",
+          "answer": "P = τω. La potencia es el producto del torque por la velocidad angular. P = dW/dt análogamente a P = F·v en traslación.",
+          "source": "Formulometro..pdf, Page 3"
+        },
+        {
+          "id": 28,
+          "question": "¿Qué representa el impulso angular?",
+          "answer": "Impulso angular J = FΔt. Cantidad de movimiento P = mv. Para partículas: P = MRω, partícula: L = rAP = r·p·senθ, rígido: L = Iω.",
+          "source": "Formulometro..pdf, Page 3"
+        },
+        {
+          "id": 29,
+          "question": "¿Cuál es la relación entre velocidad angular, aceleración angular y posición angular en rotación constante?",
+          "answer": "θ = θ₀ + ω₀t + ½αt², velocidad angular ω₂ = lim(Δt→0) Δθ/Δt = dθ/dt. Si α=cte ⇒ ω = ω₀ + αt. Aceleración angular: αᴛ = v²/R = Rω² = α.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 11; formulometro_ Paula Soria .pdf, Page 4"
+        }
+      ]
+    },
+    {
+      "name": "Trabajo y Energía",
+      "cards": [
+        {
+          "id": 30,
+          "question": "¿Cuál es la definición de trabajo y su fórmula?",
+          "answer": "T = F·d·cosα. El trabajo efectuado por una fuerza es W = ∫F·ds = F·s·cosθ. El trabajo puede ser positivo o negativo; debe haber un desplazamiento, donde d es el desplazamiento.",
+          "source": "Formulometro..pdf, Page 2; formulometro_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 31,
+          "question": "¿Cuáles son los tipos de energía y sus fórmulas?",
+          "answer": "Energía cinética: K = ½mv²; Energía potencial gravitacional: U = mgh; Energía potencial elástica: Eel = ½kx². La energía cinética siempre es positiva o cero.",
+          "source": "Formulometro..pdf, Page 2; formulometro_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 32,
+          "question": "¿Qué es el trabajo mecánico total y cómo se calcula?",
+          "answer": "Wmec = ΔK = k₂ - k₁ = ΔK (Teorema del Trabajo-Energía). El trabajo neto realizado sobre un cuerpo es igual al cambio en su energía cinética.",
+          "source": "formulometro_ Paula Soria .pdf, Page 2; Resumen F1_ Paula Soria .pdf, Page 5"
+        },
+        {
+          "id": 33,
+          "question": "¿Qué establece el teorema de conservación de la energía?",
+          "answer": "Si solo las fuerzas gravitatorias y elásticas realizan trabajo, entonces: ΔE = 0 ⇒ Emec = K + U ⇒ ΔU + ΔK = 0. Además: K₁ + U₁ = K₂ + U₂. La energía mecánica total se conserva.",
+          "source": "formulometro_ Paula Soria .pdf, Page 2; Resumen F1_ Paula Soria .pdf, Page 6"
+        },
+        {
+          "id": 34,
+          "question": "¿Cuándo NO se conserva la energía mecánica y qué pasa?",
+          "answer": "Cuando otras fuerzas distintas a las anteriores efectúan trabajo: K₁ + U₁ + Wotros = K₂ + U₂. Emec = K + Ug + Ue, donde K = mv²/2, Ug = mgh, Ue = kΔx²/2.",
+          "source": "formulometro_ Paula Soria .pdf, Page 2; Resumen F1_ Paula Soria .pdf, Page 6"
+        },
+        {
+          "id": 35,
+          "question": "¿Qué es la potencia y cuál es su fórmula?",
+          "answer": "Potencia es la rapidez con la que se efectúa el trabajo. Unidad: Watt = W. Pmed = W/Δt, P = lim(Δt→0) ΔW/Δt = dW/dt, P = F·v.",
+          "source": "formulometro_ Paula Soria .pdf, Page 2; Resumen F1_ Paula Soria .pdf, Page 5"
+        },
+        {
+          "id": 36,
+          "question": "¿Qué es una fuerza conservativa y qué implica?",
+          "answer": "Es aquella para la cual el TH trabajo-energía es reversible: W = 0 ⇒ Uᵢ - Uf = -ΔU. No conservativa: W < 0 (cambios de energía internos), Wfnc = -ΔE, donde Wfnc < 0.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 6-7"
+        },
+        {
+          "id": 37,
+          "question": "¿Cuál es la ley de conservación de energía incluyendo fuerzas no conservativas?",
+          "answer": "ΔK + ΔU + ΔUint = 0. Para fuerzas conservativas: W = 0 ⇒ Uᵢ - Uf = -ΔU. Para no conservativas: Wfnc = -ΔE, donde los cambios internos se disipan.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 7"
+        },
+        {
+          "id": 38,
+          "question": "¿Cómo se calcula el trabajo de una fuerza variable?",
+          "answer": "W = ∫Fₓdx desde xᵢ hasta xf. También W = ∫Fcosθ dr desde Pᵢ hasta Pf. Para fuerza constante: W = F·Δr = ∫F·dr.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 5"
+        }
+      ]
+    },
+    {
+      "name": "Movimiento Relativo",
+      "cards": [
+        {
+          "id": 39,
+          "question": "¿Cuál es la ecuación de movimiento relativo para la posición?",
+          "answer": "rₜₒₜₐₗ = rₛᵣᶜᵤʳˢᵢᵒⁿᶜᵢₐ + rᵣₑₛₑᵣᵥₒ ₐₗ ₛᵣ. La posición total es la suma vectorial de la posición respecto al sistema de referencia más la posición del sistema de referencia.",
+          "source": "Formulometro..pdf, Page 1"
+        },
+        {
+          "id": 40,
+          "question": "¿Cuál es la ecuación de velocidad relativa?",
+          "answer": "Vₜₒₜₐₗ = Vₛᵣ + Vᶜᵒⁿʳᵉˢᵖᵉᶜᵗᵒₐₗₛᵣ. Velocidad relativa en una línea: VP/A = Vp/p - VB/A. Velocidad relativa en el espacio: VP/A = VP/B + VB/A.",
+          "source": "Formulometro..pdf, Page 1; Resumen F1_ Paula Soria .pdf, Page 3"
+        },
+        {
+          "id": 41,
+          "question": "¿Cuál es la ecuación de aceleración relativa?",
+          "answer": "aₜₒₜₐₗ = aP/A = āP/B + āB/A. La aceleración total es la suma de las aceleraciones relativas. Si xP/A = vB/A ⇒ VP/B = 0 (está en reposo).",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 3"
+        },
+        {
+          "id": 42,
+          "question": "¿Cuándo un objeto está en reposo o se mueve con respecto a un sistema de referencia?",
+          "answer": "Si xP/A = vB/A ⇒ VP/B = 0, está en reposo respecto a B. Si VP/B = cte ⇒ āP/B = āB/A.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 3"
+        }
+      ]
+    },
+    {
+      "name": "Momento Lineal y Colisiones",
+      "cards": [
+        {
+          "id": 43,
+          "question": "¿Qué es el momento lineal y cuál es su fórmula?",
+          "answer": "p = mv. Si se aplican fuerzas externas el momento lineal NO se conserva: Σfₑₓₜ ≠ 0 ⇒ p ≠ cte. El momento lineal cambia cuando actúan fuerzas externas.",
+          "source": "formulometro_ Paula Soria .pdf, Page 3"
+        },
+        {
+          "id": 44,
+          "question": "¿Cuál es la ley de conservación del momento lineal?",
+          "answer": "Si el sistema se encuentra aislado, es decir, no actúan fuerzas externas al sistema, entonces el momento lineal se conserva: ΣFₑₓₜ = 0 ⇒ p = cte, p = m₁v̄₁ + m₂v̄₂ + ... + mₙv̄ₙ.",
+          "source": "formulometro_ Paula Soria .pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 8"
+        },
+        {
+          "id": 45,
+          "question": "¿Cuál es la ecuación del centro de masa?",
+          "answer": "xcm = (m₁x₁ + m₂x₂ + ... + mₙxₙ)/(m₁ + m₂ + ... + mₙ). vcm = (m₁v̄₁ + m₂v̄₂ + ... + mₙv̄ₙ)/(m₁ + m₂ + ... + mₙ). acm = (m₁ā₁ + m₂ā₂ + ... + mₙāₙ)/(m₁ + m₂ + ... + mₙ). El centro de masa está más cerca del que tiene mayor masa.",
+          "source": "Formulometro..pdf, Page 2; formulometro_ Paula Soria .pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 8"
+        },
+        {
+          "id": 46,
+          "question": "¿Cómo se conserva el momento lineal en colisiones?",
+          "answer": "Si ΣFₑₓₜ = 0 ⇒ vcm = cte. Si ΣFₑₓₜ ≠ 0 ⇒ P̄ₜₒₜ = Mₜₒₜ·vcm. ΣF̄ₑₓₜ = Mācm. En todo tipo de choques, el momento lineal total al inicio y al final son iguales.",
+          "source": "formulometro_ Paula Soria .pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 8"
+        },
+        {
+          "id": 47,
+          "question": "¿Qué es un choque elástico y qué se conserva?",
+          "answer": "ΔE = 0, p = cte, |v₁| = |v₂|. En un choque elástico se conserva tanto el momento lineal como la energía cinética (Emec = 0).",
+          "source": "formulometro_ Paula Soria .pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 9"
+        },
+        {
+          "id": 48,
+          "question": "¿Qué es un choque inelástico y qué se conserva?",
+          "answer": "ΔE < 0, Kf < Ki. En un choque inelástico solo se conserva el momento lineal, pero la energía cinética disminuye. Los cuerpos pueden quedar unidos (vcm = vcm').",
+          "source": "formulometro_ Paula Soria .pdf, Page 3; Resumen F1_ Paula Soria .pdf, Page 9"
+        },
+        {
+          "id": 49,
+          "question": "¿Cuáles son las condiciones para cada tipo de choque?",
+          "answer": "Choque elástico: ki = kf, |vi| = |vf|, Emec = 0. Choque inelástico: ΔE < 0, Kf < Ki. Velocidades relativas: para elásticos |vi| = |vf|, para inelásticos vcm = vcm'.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 9"
+        }
+      ]
+    },
+    {
+      "name": "Momento Angular",
+      "cards": [
+        {
+          "id": 50,
+          "question": "¿Qué es el momento angular de una partícula y cuál es su fórmula?",
+          "answer": "L̄ = r̄ ∧ p̄ = r̄ ∧ mv̄ para una partícula. OBS: dL̄/dt = τ̄ₙₑₜₒ. El momento angular es perpendicular al plano formado por r y p.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 14"
+        },
+        {
+          "id": 51,
+          "question": "¿Cuál es el momento angular de un cuerpo simétrico alrededor de un eje de simetría?",
+          "answer": "Para un cuerpo simétrico que gira alrededor de un eje de simetría, su momento angular es: L̄ = Īω̄. L = Iω (magnitud), P = mv.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 14"
+        },
+        {
+          "id": 52,
+          "question": "¿Cuál es la ley de conservación del momento angular?",
+          "answer": "Si τₑₓₜ = 0 ⇒ L̄ₛᵢₛ = cte (Sistema: ΣLₛᵢₛ = Lₛᵢₛ, Rígido: Lᵢ = Iω). Muchas veces tengo que tomar el origen como punto de aplicación y que τₑₓₜ⁰ = 0 y L̄ = cte.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 14"
+        },
+        {
+          "id": 53,
+          "question": "¿Cómo se calcula la derivada del momento angular en movimiento circular?",
+          "answer": "En mov. circular: L = mR²ω = ĪW. dLₛᵢₛ/dt = τₑₓₜ, ley de conservación: Si τₑₓₜ = 0 ⇒ L̄ₛᵢₛ = cte.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 14"
+        }
+      ]
+    },
+    {
+      "name": "Sistemas de Partículas",
+      "cards": [
+        {
+          "id": 54,
+          "question": "¿Cuáles son las fórmulas del centro de masa para sistemas de partículas?",
+          "answer": "rcm = (ΣPᵢ·mᵢ)/(Mₜₒₜₐₗ), rcm = (1/Mₜₒₜₐₗ)Σmᵢxᵢ. |FR|≤Mcm, |TR|≤Mcm. El sistema de partículas satisface rcm = (m₁x̄₁ + m₂x̄₂ +...+ mₙx̄ₙ)/(m₁+m₂+...+mₙ).",
+          "source": "Formulometro..pdf, Page 2"
+        },
+        {
+          "id": 55,
+          "question": "¿Qué condiciones determinan el equilibrio de un sistema de partículas?",
+          "answer": "Primera condición: ΣF̄ₑₓₜ = 0, Σₓ = 0, Σᵧ = 0, Σᵧ = 0. Segunda condición: Στ = 0 alrededor de cualquier punto. La primera indica que no hay aceleración, la segunda que no hay tendencia a girar.",
+          "source": "Formulometro..pdf, Page 2; formulometro_ Paula Soria .pdf, Page 3"
+        },
+        {
+          "id": 56,
+          "question": "¿Qué establece el Teorema de los Ejes Paralelos?",
+          "answer": "IP = Icm + Md². El momento de inercia respecto a un eje es igual al momento de inercia del centro de masa más la masa total por la distancia entre los ejes al cuadrado.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 12"
+        }
+      ]
+    },
+    {
+      "name": "Equilibrio Estático",
+      "cards": [
+        {
+          "id": 57,
+          "question": "¿Cuáles son las condiciones de equilibrio para un cuerpo rígido?",
+          "answer": "Para que un cuerpo rígido esté en equilibrio, deben cumplirse dos condiciones: ① ΣF = 0, ΣFₓ = 0, ΣFᵧ = 0, ΣFᵧ = 0. ② Στ = 0 alrededor de cualquier punto.",
+          "source": "Formulometro..pdf, Page 4; Resumen F1_ Paula Soria .pdf, Page 10"
+        },
+        {
+          "id": 58,
+          "question": "¿Qué significa cada condición cardinal del equilibrio?",
+          "answer": "La primera cardinal nos dice que el cuerpo no tiene aceleración. La segunda cardinal nos dice que no tiene tendencia a girar. Para ello: ΣFₑₓₜ = 0 y Στ = 0 (respecto a cualquier punto).",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 10"
+        }
+      ]
+    },
+    {
+      "name": "Producto Vectorial",
+      "cards": [
+        {
+          "id": 59,
+          "question": "¿Cómo se calcula el producto vectorial y cuáles son sus propiedades?",
+          "answer": "v̄ = āî + b̄ĵ + c̄k̂, w̄ = a'î + b'ĵ + c'k̂. v̄ ∧ w̄ = |v̄||w̄|senθ = |î ĵ k̂; a b c; a' b' c'|. El resultado es un vector perpendicular a ambos vectores.",
+          "source": "Formulometro..pdf, Page 4"
+        }
+      ]
+    },
+    {
+      "name": "Oscilaciones",
+      "cards": [
+        {
+          "id": 60,
+          "question": "¿Qué es una oscilación armónica simple y cuáles son sus características?",
+          "answer": "Ley de Hooke: Fₓ = -kx. ω = √(k/m), f = ω/(2π) = (1/(2π))√(k/m), T = 1/f = 2π√(m/k). No dependen de la amplitud.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 5"
+        },
+        {
+          "id": 61,
+          "question": "¿Cuáles son las ecuaciones de posición, velocidad y aceleración en MAS?",
+          "answer": "aₓ = Fₓ/m = -(k/m)x, x = Acos(ωt+φ). Φ: ángulo de fase. Solución general: x(t) = A₁sen(ωt) + A₂cos(ωt). Energía: E = ½mv² + ½kx² = ½kA² = cte, donde Vₘₐₓ = ωA.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 5"
+        },
+        {
+          "id": 62,
+          "question": "¿Cómo funcionan las oscilaciones en un péndulo simple?",
+          "answer": "ω = √(g/L), f = (1/(2π))√(g/L), T = 2π√(L/g). -mgsenθ = mx̄. Pequeñas oscilaciones: -gθ ≈ x̄, ẍ = x². No dependen de la amplitud. T: lo que tarda en un ciclo, f: número de ciclos.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 5"
+        },
+        {
+          "id": 63,
+          "question": "¿Cuál es la diferencia entre MAS y péndulo físico?",
+          "answer": "Péndulo físico: ω = √(mga/I), T = 2π√(I/mga). El peso causa torque: τ = -(mg)dsenθ ⇒ -mgdsenθ = Iα̈ ⇒ Στ = Iα = -mga·θ, entonces I = MR².",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 16"
+        },
+        {
+          "id": 64,
+          "question": "¿Qué son las pequeñas oscilaciones en un péndulo?",
+          "answer": "Para pequeñas oscilaciones: Fo = -mgsenθ ≈ Fuerza de restitución. OBS: o frecuencia ≠ frecuencia angular: 1/T + 2πf. Cuando ciclos de oscilación = segundo corresponde esto en el círculo de referencia.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 16"
+        },
+        {
+          "id": 65,
+          "question": "¿Qué es el movimiento periódico y cuáles son sus parámetros?",
+          "answer": "Un movimiento periódico se repite en un ciclo definido. Se presenta la siempre que un cuerpo tiene una posición de equilibrio estable y una fuerza de restitución. Período T = 1/f. Frecuencia f = 1/T (número de ciclos por t). 1 hertz = 1 ciclo/s.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 15"
+        },
+        {
+          "id": 66,
+          "question": "¿Cuáles son las características del MAS (Movimiento Armónico Simple)?",
+          "answer": "Frecuencia angular: ω = 2πf = 2π/T. Amplitud: valor máximo de separación respecto al equilibrio. Solución general: x(t) = A₁sen(ωt) + A₂cos(ωt). Energía: E = ½mv² + ½kx² = ½kA² = cte, Vₘₐₓ = ωA.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 15"
+        },
+        {
+          "id": 67,
+          "question": "¿Cuáles son las observaciones importantes sobre el MAS?",
+          "answer": "En MAS el período y la frecuencia no dependen de la amplitud. Para valores pequeños y m y el tiempo de oscilación es el mismo. En MAS, la posición es una función periódica, sen θ: x₀δα = sen(a+π). Velocidad y aceleración en MAS: vₓ = -ωAsen(ωt+φ), aₓ = -ω²Acos(ωt+φ) = -ω²x = -(k/m)x.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 16"
+        },
+        {
+          "id": 68,
+          "question": "¿Cómo determinar el torque del resorte se opone al desplazamiento angular en oscilaciones?",
+          "answer": "El torque del resorte se opone al desplazamiento angular: cte θ = Iθ̈ ⇒ ω²i = cte/I ⇒ Wᴛₒᴛ = ½Iω² = cte. La clave para estos ejercicios es determinar el torque y sabemos que: cte θ = Iθ̈ ⇒ ω²i = cte/I.",
+          "source": "formulometro_ Paula Soria .pdf, Page 5"
+        }
+      ]
+    },
+    {
+      "name": "Dinámica de Traslación y Rotación",
+      "cards": [
+        {
+          "id": 69,
+          "question": "¿Qué establece la dinámica de rotación en equilibrio estático?",
+          "answer": "Si Σταₑₜₐ = 0 ⇒ α = 0 (equilibrio estático). En dinámica de rotación: Σταₑₜₐ = Iα.",
+          "source": "formulometro_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 70,
+          "question": "¿Cómo se relacionan traslación y rotación en un cuerpo rígido que gira?",
+          "answer": "Si un cuerpo rígido se mueve en el espacio girando, su movimiento puede considerarse como: Kᴛₒᴛ = Kᴛᵣₒₛ + Kᵣₒᴛ ⇒ Kᴛₒᴛ = ½mvcm² + ½Icmω². El punto de apoyo de un cuerpo que rota y se traslada sin deslizar con respecto a la superficie: ωₙₒᵤ. Si rueda sin deslizar: Ei = Ef ⇒ Wᴛₒᵣₒ.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 13"
+        },
+        {
+          "id": 71,
+          "question": "¿Qué implica rodar sin deslizar (RSD)?",
+          "answer": "RSD: ΔE = 0 y W = 0, vcm = Rω, α = Rα, ar = Rα. Vcm = Rω, Vsup = 0, Vcm = 2vᴛ. El punto de apoyo de un cuerpo que rota y se traslada sin deslizar con respecto a la superficie ωₙₒᵤ.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 13; formulometro_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 72,
+          "question": "¿Cuáles son las observaciones importantes del sistema rotación-traslación?",
+          "answer": "OBS: Wᵣₒₜₒ = ΔE, Wᵣₒᴛₒ = ΔdΨ ⇒ Desplazamiento angular. Partícula: L = r ∧ P. Sistema: L = Lω. Rígido: L = Iω. Στₑₓₜ = 0 ⇒ Lₛᵢₛ = cte.",
+          "source": "formulometro_ Paula Soria .pdf, Page 4"
+        },
+        {
+          "id": 73,
+          "question": "¿Cómo se calcula el momento de inercia y energía de rotación?",
+          "answer": "Momento de inercia: I = Σmᵢxᵢ². Energía de rotación: Kᵣₒᴛ = (m₁v₁² + m₂v₂² + ...)/2 = (m₁x₁²ω² + m₂x₂²ω² + ...)/2 ⇒ Kᵣₒᴛ = ½Iω².",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 11"
+        }
+      ]
+    },
+    {
+      "name": "Cinemática Vectorial",
+      "cards": [
+        {
+          "id": 74,
+          "question": "¿Cuáles son las ecuaciones vectoriales de posición, velocidad y aceleración en 2D/3D?",
+          "answer": "r̄ = r̄ᵢ = x̄î + ȳĵ + z̄k̂. Vₘ = (x₂-x₁)/(t₂-t₁) = Δx/Δt. V̄ = lim(Δt→0) Δr̄/Δt = dr̄/dt. āₘ = (V̄₂-V̄₁)/(t₂-t₁) = ΔV̄/Δt. ā = lim(Δt→0) ΔV̄/Δt = dV̄/dt. Componentes: vₓ = dx/dt, vᵧ = dy/dt, vᵧ = dz/dt; aₓ = dvₓ/dt, aᵧ = dvᵧ/dt, aᵧ = dvᵧ/dt.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 2"
+        },
+        {
+          "id": 75,
+          "question": "¿Cuáles son las ecuaciones del movimiento de proyectiles?",
+          "answer": "aₓ = 0, aᵧ = -g (constante en módulo y dirección). x = (v₀cosα)t, y = y₀ + (v₀senα)t - ½gt². MRU (x): vₓ = cte, movimiento circular uniforme. Altura máxima: vᵧ = 0. Alcance horizontal: y = 0.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 2"
+        }
+      ]
+    },
+    {
+      "name": "Fuerzas en Movimiento Circular",
+      "cards": [
+        {
+          "id": 76,
+          "question": "¿Cuáles son las fuerzas que actúan en el movimiento circular?",
+          "answer": "El movimiento se rige por 2da ley ΣF̄ = mā con ā = v²/R = 4π²R/T² = ω²R. Con aceleración centrípeta: aᵣₐₐₗ = v²/R = 4π²R/T² = α ⇒ |aᴛ| = Rdω/dt, |aₙ| = ω²R. Unidad: ω real/s o rpm ⇒ 1rpm = 2π/60 rad/s. α real/s² o rpm.",
+          "source": "Resumen F1_ Paula Soria .pdf, Page 4"
+        }
+      ]
+    }
+  ],
+  "additionalNotes": {
+    "documentSummary": "These flashcards cover comprehensive Physics 1 topics including kinematics, dynamics, rotation, work-energy, momentum, oscillations, and more. All formulas and concepts are extracted from Paula Soria's study materials and formularios.",
+    "studyTips": [
+      "Pay special attention to the distinction between MRU (uniform motion) and MRUA (uniformly accelerated motion)",
+      "Remember that in conservative forces, mechanical energy is conserved (ΔE = 0)",
+      "For rotational motion, always identify the axis of rotation and calculate the moment of inertia accordingly",
+      "In collisions, momentum is always conserved, but kinetic energy is only conserved in elastic collisions",
+      "Small angle approximations are crucial for pendulum problems (senθ ≈ θ for small angles)"
+    ]
+  }
+}

@@ -1,0 +1,980 @@
+{
+  "course": "Arquitectura de Computadoras",
+  "totalCards": 158,
+  "sources": [
+    "Resumen Práctico Completo Arqui.pdf"
+  ],
+  "topics": [
+    {
+      "name": "Representaciones de Datos - Sistemas de Codificación",
+      "cards": [
+        {
+          "id": 1,
+          "question": "¿Qué es un bit?",
+          "answer": "Un bit es un símbolo que puede tomar el valor 0 o 1. Es la unidad básica de información en sistemas digitales.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 2,
+          "question": "¿Qué es un byte?",
+          "answer": "Un byte es una colección ordenada de 8 bits. Es la unidad fundamental de almacenamiento en la mayoría de sistemas computacionales.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 3,
+          "question": "¿Qué es un código binario?",
+          "answer": "Un código binario es un conjunto ordenado de bits que se utiliza para representar información en sistemas digitales.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 4,
+          "question": "¿Cómo se define la distancia entre dos códigos binarios?",
+          "answer": "La distancia entre el código binario A y el código binario B es el número de bits que hay que cambiar en A para llegar a B. Por ejemplo, la distancia entre 1010 y 1110 es 1.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 5,
+          "question": "¿Qué es la distancia d de un sistema de codificación binario?",
+          "answer": "La distancia d es la menor de las distancias entre todos los códigos del sistema. Esta propiedad determina las capacidades de detección y corrección de errores del sistema.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        }
+      ]
+    },
+    {
+      "name": "Detección y Corrección de Errores",
+      "cards": [
+        {
+          "id": 6,
+          "question": "¿Cuál es la condición para detectar errores en un sistema de codificación?",
+          "answer": "Es posible detectar errores cuando t < d, donde t es la cantidad máxima de bits modificados y d es la distancia del sistema. Esto asume que la probabilidad de falla es baja y las fallas son independientes.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 7,
+          "question": "¿Cuál es la condición para corregir errores en un sistema de codificación?",
+          "answer": "Es posible corregir errores cuando t < d/2, donde t es la cantidad máxima de bits modificados y d es la distancia del sistema.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 8,
+          "question": "¿En qué consiste el método de la paridad para detección de errores?",
+          "answer": "Se agregan bits controladores de la paridad del código para detectar errores. Para corregir errores, se puede implementar la paridad vertical, donde se controla la paridad por fila y por columna.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 9,
+          "question": "¿Cuántos bits de redundancia se necesitan para generar códigos de distancia d=3?",
+          "answer": "Para generar códigos de distancia d=3 para objetos representables en k bits, se necesitan utilizar p bits adicionales tal que 2^p >= p + k + 1.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 10,
+          "question": "¿Cómo funcionan los códigos de Hamming?",
+          "answer": "Para un código a4a3a2a1 se agregan bits de redundancia p3p2p1 calculando: p1 = a4 XOR a2 XOR a1, p2 = a4 XOR a3 XOR a1, p3 = a4 XOR a3 XOR a2. Luego se calcula s como combinación XOR de posiciones específicas. Si s=0 no hay errores; si s=x, indica la posición del bit errado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 2"
+        },
+        {
+          "id": 11,
+          "question": "¿Qué son los códigos de redundancia cíclica (CRC)?",
+          "answer": "Se define un polinomio M(x) de grado m-1 cuyos coeficientes coinciden con los bits del mensaje, y un polinomio G(x) de grado r. Se calcula x^r·M(x) = Q(x)·G(x) + R(x) y se envía T(x) = x^r·M(x) + R(x). Si T(x) es divisible por G(x), el código es correcto.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        }
+      ]
+    },
+    {
+      "name": "Representación Interna de Datos",
+      "cards": [
+        {
+          "id": 12,
+          "question": "¿Cómo se representa el tipo carácter internamente?",
+          "answer": "Se representan asociando un código binario distinto para cada carácter distinto según estándares. Los más usados actualmente son ISO 10646 y UNICODE.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 13,
+          "question": "¿Cuáles son las tres formas de implementar un string?",
+          "answer": "1) De largo fijo, 2) De largo indeterminado indicando el final con un carácter especial, 3) Un registro de dos campos: el primero contiene el largo y el segundo la cadena de caracteres.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 14,
+          "question": "¿Cuántos números se pueden representar con n bits en enteros sin signo?",
+          "answer": "Con n bits se pueden representar 2^n números, desde 0 hasta 2^n - 1. Esta representación preserva el orden y las operaciones coinciden con lo que representan.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 15,
+          "question": "¿Cómo funciona la representación de valor absoluto y signo?",
+          "answer": "Se utilizan todos los bits disponibles menos 1 para almacenar el número, y el bit restante para almacenar el signo. Permite representar -(2^(n-1) - 1) a 2^(n-1) - 1. Tiene dos representaciones para el cero.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 16,
+          "question": "¿Cómo funciona la representación por desplazamiento?",
+          "answer": "Aplica un desplazamiento d (típicamente d = 2^(n-1) o d = 2^(n-1) - 1) al número en binario: N -> N + d. Permite representar -d <= N <= 2^n - 1 - d. Preserva el orden pero las operaciones no coinciden.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 17,
+          "question": "¿Cómo funciona la representación en complemento a uno?",
+          "answer": "Los números positivos se representan en binario, y los negativos como el complemento de cada bit del positivo correspondiente. Permite representar -(2^(n-1) - 1) a 2^(n-1) - 1. Tiene dos representaciones para el cero.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 18,
+          "question": "¿Cómo funciona la representación en complemento a dos?",
+          "answer": "Representa los números por complemento a uno y luego le suma 1. Permite representar -2^(n-1) a 2^(n-1) - 1. Tiene una única representación para el cero y las operaciones coinciden con lo representado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 19,
+          "question": "Compara las propiedades de las representaciones de enteros con signo",
+          "answer": "Valor absoluto y signo: 2 ceros, orden no preservado, operaciones no coinciden. Desplazamiento: 1 cero, orden preservado, operaciones no coinciden. Complemento a uno: 2 ceros, orden no preservado, operaciones no coinciden. Complemento a dos: 1 cero, orden no preservado, operaciones coinciden.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 4"
+        },
+        {
+          "id": 20,
+          "question": "¿Qué es el problema de overflow en representación de enteros?",
+          "answer": "El overflow está dado por el bit de acarreo (carry bit), que es el bit más significativo 'sobrante' de la operación cuando el resultado excede la capacidad de representación.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 3"
+        },
+        {
+          "id": 21,
+          "question": "¿Qué es la representación decimal empaquetado?",
+          "answer": "Se representa el número como un string de caracteres: un número se representa como una sucesión de caracteres que son símbolos numéricos. El final del carácter implementado se indica con un carácter especial.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 4"
+        },
+        {
+          "id": 22,
+          "question": "¿Cómo se representa un número en punto flotante?",
+          "answer": "N se representa como N = (-1)^s · b^e · M, donde s es el signo, e el exponente, M la mantisa, y b la base. Generalmente en base 2: N = (-1)^s · 1.F · 2^E y se almacena la terna (S, F, E) según el estándar IEEE 754.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 4"
+        },
+        {
+          "id": 23,
+          "question": "¿Qué diferencia hay entre un número normalizado y denormalizado en punto flotante?",
+          "answer": "Un número está normalizado si la mantisa es 1.F (el bit más significativo es 1). Está denormalizado si la mantisa es 0.F. La normalización maximiza la mantisa tomando su bit más significativo distinto de 0.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 4"
+        }
+      ]
+    },
+    {
+      "name": "Álgebra de Boole - Axiomas y Propiedades",
+      "cards": [
+        {
+          "id": 24,
+          "question": "¿Cuál es el primer axioma del Álgebra de Boole?",
+          "answer": "Existe un conjunto G de objetos, sujetos a una relación de equivalencia denotada por '=' que satisface el principio de sustitución.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 25,
+          "question": "¿Qué establece el axioma de las reglas de combinación en Álgebra de Boole?",
+          "answer": "Se definen dos operaciones '+' (suma) y '·' (producto) tal que para todo a, b en G: a + b pertenece a G y a · b pertenece a G. Es decir, el conjunto es cerrado bajo estas operaciones.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 26,
+          "question": "¿Cuál es el axioma de los elementos neutros en Álgebra de Boole?",
+          "answer": "Existe un elemento 0 tal que para cada a en G: a + 0 = a. Existe un elemento 1 tal que para cada a en G: a · 1 = a.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 27,
+          "question": "¿Qué establece el axioma conmutativo del Álgebra de Boole?",
+          "answer": "Para todo a, b en G ocurre que a + b = b + a y a · b = b · a. El orden de los operandos no altera el resultado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 28,
+          "question": "¿Qué establece el axioma distributivo del Álgebra de Boole?",
+          "answer": "Para todo a, b, c en G: a + (b · c) = (a + b) · (a + c) y a · (b + c) = (a · b) + (a · c). Cada operación se distribuye sobre la otra.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 29,
+          "question": "¿Qué establece el axioma del complemento en Álgebra de Boole?",
+          "answer": "Para todo a en G, existe ā tal que ā · a = 0 y ā + a = 1. Cada elemento tiene un complemento.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 30,
+          "question": "¿Qué establece la propiedad de dualidad en Álgebra de Boole?",
+          "answer": "Todo enunciado válido posee un dual también válido intercambiando '0' por '1' y '+' por '·' simultáneamente.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 31,
+          "question": "¿Qué establece la propiedad de asociatividad en Álgebra de Boole?",
+          "answer": "a + (b + c) = (a + b) + c y a · (b · c) = (a · b) · c. Los paréntesis pueden moverse sin cambiar el resultado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 32,
+          "question": "¿Qué establece la propiedad de idempotencia en Álgebra de Boole?",
+          "answer": "a + a = a y a · a = a. Combinar un elemento consigo mismo devuelve el mismo elemento.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 33,
+          "question": "¿Qué establecen las propiedades de neutros cruzados?",
+          "answer": "a + 1 = 1 y a · 0 = 0. El elemento 1 absorbe en la suma y el 0 absorbe en el producto.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 34,
+          "question": "¿Qué establece la propiedad de doble complemento?",
+          "answer": "El complemento del complemento de a es a. También: a + ab = a y a + āb = a + b.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 35,
+          "question": "¿Qué establece la Ley de De Morgan?",
+          "answer": "El complemento de una suma es el producto de los complementos, y viceversa: (a + b) negado = ā · b̄.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        }
+      ]
+    },
+    {
+      "name": "Álgebra de Boole - Modelos",
+      "cards": [
+        {
+          "id": 36,
+          "question": "¿Cuál es el modelo lógico del Álgebra de Boole?",
+          "answer": "G = {V, F} con las operaciones OR (disyunción), AND (conjunción) y negación. El isomorfismo es: V↔1, F↔0, AND↔·, OR↔+.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 5"
+        },
+        {
+          "id": 37,
+          "question": "¿Cuál es el modelo circuital del Álgebra de Boole?",
+          "answer": "G = {A, C} donde A es circuito abierto y C es circuito cerrado. El isomorfismo es: A↔0, C↔1, circuito en paralelo↔+, circuito en serie↔·.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 38,
+          "question": "¿Cuál es el modelo binario del Álgebra de Boole?",
+          "answer": "G = {0, 1} con operaciones AND y OR. El isomorfismo es: 0↔0, 1↔1, OR↔+, AND↔·. Este es el modelo que se utilizará en el resto del curso.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 39,
+          "question": "¿Qué es la operación XOR?",
+          "answer": "XOR (OR exclusivo) es equivalente a 'distinto' o 'no igual'. Devuelve 1 cuando los operandos son diferentes: 0 XOR 0 = 0, 0 XOR 1 = 1, 1 XOR 0 = 1, 1 XOR 1 = 0.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 40,
+          "question": "¿Qué es la operación NAND?",
+          "answer": "NAND es la negación del AND. Devuelve 0 solo cuando ambos operandos son 1: 0 NAND 0 = 1, 0 NAND 1 = 1, 1 NAND 0 = 1, 1 NAND 1 = 0.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 41,
+          "question": "¿Qué es la operación NOR?",
+          "answer": "NOR es la negación del OR. Devuelve 1 solo cuando ambos operandos son 0: 0 NOR 0 = 1, 0 NOR 1 = 0, 1 NOR 0 = 0, 1 NOR 1 = 0.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        }
+      ]
+    },
+    {
+      "name": "Funciones Booleanas",
+      "cards": [
+        {
+          "id": 42,
+          "question": "¿Cómo se define una función booleana por extensión?",
+          "answer": "Una función F: G^n -> G se define por extensión mediante una tabla llamada 'tabla de verdad' que especifica el valor de salida para cada posible combinación de entradas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 43,
+          "question": "¿Cómo se define una función booleana por comprensión?",
+          "answer": "Una función F: G^n -> G se define por comprensión indicando los puntos donde se anula F = suma(a1,...,an) o los puntos donde no se anula F = producto(b1,...,bn).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 44,
+          "question": "Enuncia el teorema de la expresión algebraica para funciones booleanas",
+          "answer": "Toda función booleana f de n variables puede expresarse como la suma de productos de las variables para todas las filas donde la función vale 1, conjugando cada variable según sea necesario.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 45,
+          "question": "¿Cómo se obtiene la expresión algebraica de una función desde su tabla de verdad?",
+          "answer": "La expresión algebraica se obtiene como la suma de los productos de las variables (conjugando según sea necesario para que el producto no se anule con esas entradas) para todas las filas donde la función no se anula (vale 1).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 46,
+          "question": "¿Cuáles son las propiedades para simplificación algebraica de funciones?",
+          "answer": "1) f·f̄ = 0, 2) f + f̄ = 1, 3) gf + gf̄ = f, 4) gf + f̄ = f, 5) f + f̄g = f + g.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 6"
+        },
+        {
+          "id": 47,
+          "question": "¿Cuál es el procedimiento para crear un Mapa de Karnaugh de 3-4 variables?",
+          "answer": "1) Dibujar cuadrícula con columnas 00, 01, 11, 10 y filas para c o d. 2) Marcar con 1 donde la función vale 1. 3) Agrupar la mayor cantidad de unos cuya cantidad sea potencia de 2. 4) Sumar términos asociados a cada rectángulo (producto de variables cuyo valor no cambia).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 7"
+        },
+        {
+          "id": 48,
+          "question": "¿Cómo se maneja un Mapa de Karnaugh de 5 variables?",
+          "answer": "Se hacen dos mapas de Karnaugh superpuestos. En uno se supone la quinta variable de valor 0 y en la otra de valor 1. Esto permite manejar las 32 combinaciones posibles.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 7"
+        }
+      ]
+    },
+    {
+      "name": "Circuitos Combinatorios - Compuertas",
+      "cards": [
+        {
+          "id": 49,
+          "question": "¿Qué es un circuito combinatorio?",
+          "answer": "Un circuito combinatorio se define como un circuito cuya salida está determinada en todo instante por la entrada actual. No tiene memoria de estados anteriores.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 8"
+        },
+        {
+          "id": 50,
+          "question": "¿Cuáles son las compuertas lógicas básicas?",
+          "answer": "Las compuertas básicas son NOT (inversor), AND (producto), OR (suma), NAND (AND negado), NOR (OR negado), y XOR (OR exclusivo). Cada una tiene representación triangular/curva y rectangular con sus símbolos correspondientes.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 8"
+        },
+        {
+          "id": 51,
+          "question": "¿Qué son los bloques lógicos en circuitos?",
+          "answer": "Los bloques lógicos son representaciones compactadas de circuitos lógicos complejos. Se simbolizan como cajas rectangulares con entradas y salidas. Cuando se usan, debe especificarse cada salida si = fi(a1,...,an).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 8"
+        }
+      ]
+    },
+    {
+      "name": "Bloques Constructivos",
+      "cards": [
+        {
+          "id": 52,
+          "question": "¿Qué es un circuito decodificador?",
+          "answer": "Un decodificador tiene N entradas y 2^N salidas. Dada una combinación de unos y ceros a la entrada, todas las salidas están en 0 salvo la que corresponde al número binario coincidente con la combinación de entrada.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 9"
+        },
+        {
+          "id": 53,
+          "question": "¿Qué es un circuito multiplexor?",
+          "answer": "Un multiplexor tiene N + 2^N entradas y una salida. La salida Y toma el valor de la entrada de datos D cuyo índice coincida con el número binario representado por las entradas de control A, B, C. Funciona como selector de datos.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 10"
+        },
+        {
+          "id": 54,
+          "question": "¿Qué diferencia hay entre entradas de control y de datos en un multiplexor?",
+          "answer": "Las entradas de control (A, B, C) determinan cuál entrada de datos se selecciona. Las entradas de datos (D0, D1, ..., D7) son las fuentes de información que pueden pasar a la salida según la selección.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 10"
+        },
+        {
+          "id": 55,
+          "question": "¿Qué es un circuito demultiplexor?",
+          "answer": "Un demultiplexor recibe una señal de entrada G (Gate) y las entradas de control determinan por cuál salida Y se envía el valor de G. Es la operación inversa al multiplexor.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 10"
+        },
+        {
+          "id": 56,
+          "question": "¿Qué es un sumador completo de 1 bit?",
+          "answer": "Suma dos números de un bit cada uno (a y b) con un acarreo de entrada (cin) y devuelve la suma (s) y un acarreo de salida (cout). Implementa la suma binaria completa de un dígito.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 12"
+        },
+        {
+          "id": 57,
+          "question": "¿Cómo se construye un sumador completo de N bits?",
+          "answer": "Se conexionan en cascada sumadores completos de 1 bit. El acarreo de salida (cout) de cada sumador se conecta al acarreo de entrada (cin) del siguiente sumador, permitiendo sumar números de múltiples bits.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 13"
+        },
+        {
+          "id": 58,
+          "question": "¿Qué es una ROM y cuál es su estructura?",
+          "answer": "Una ROM (Read-Only Memory) tiene m + 2 entradas y n salidas. Dada una entrada, devuelve n bits 'almacenados' en esa dirección. CS (Chip Select) selecciona o deselecciona la ROM (si está deseleccionada, todas las salidas son 0).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 13"
+        },
+        {
+          "id": 59,
+          "question": "¿Cómo se implementa internamente una ROM?",
+          "answer": "Internamente usa un decodificador de m entradas a 2^m salidas, y cada salida se conecta a través de compuertas OR a las n líneas de datos de salida según el patrón deseado. El CS controla la habilitación de las salidas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 13"
+        },
+        {
+          "id": 60,
+          "question": "¿Qué es el retardo de conmutación en circuitos?",
+          "answer": "Es el tiempo de reacción debido a corrientes transitorias que causan resultados reales incorrectos temporalmente. También llamado tiempo de propagación o tiempo de setup.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 14"
+        },
+        {
+          "id": 61,
+          "question": "¿Cómo se soluciona el problema del retardo de conmutación?",
+          "answer": "Se incorporan relojes (clocks) tras los cambios para que las salidas puedan tomarse como válidas solo después de que las corrientes transitorias se hayan disipado, garantizando lecturas correctas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 14"
+        },
+        {
+          "id": 62,
+          "question": "¿Qué es la lógica del tercer estado (tri-state)?",
+          "answer": "Agrega a los estados 0 y 1 el estado Z (alta impedancia). Con Z=1 se habilita la salida, con Z=0 se inhabilita. Se implementa con una entrada OE (Output Enabled) que controla si la salida está activa o en alta impedancia.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 14"
+        }
+      ]
+    },
+    {
+      "name": "Circuitos Secuenciales - Flip-Flops",
+      "cards": [
+        {
+          "id": 63,
+          "question": "¿Qué es un circuito secuencial?",
+          "answer": "Es un circuito cuya salida no depende solo de las entradas actuales, sino también de los valores de las entradas anteriores. Tiene 'memoria' de estados previos.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 15"
+        },
+        {
+          "id": 64,
+          "question": "¿Qué es un flip-flop?",
+          "answer": "Es un circuito capaz de 'recordar' un valor de la entrada previa y por ello puede considerarse un 'elemento de memoria'. Es la unidad básica de almacenamiento en circuitos secuenciales.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 15"
+        },
+        {
+          "id": 65,
+          "question": "¿Cómo funciona un flip-flop R-S asincrónico (Latch)?",
+          "answer": "Tiene entradas R (Reset) y S (Set). Cuando R=0 y S=1, Q=1. Cuando R=1 y S=0, Q=0. Cuando R=0 y S=0, mantiene el estado anterior. R=1 y S=1 es una condición no permitida.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 15"
+        },
+        {
+          "id": 66,
+          "question": "¿Qué diferencia hay entre un flip-flop sincrónico y uno asincrónico?",
+          "answer": "Los asincrónicos (Latch) cambian inmediatamente cuando cambian las entradas. Los sincrónicos solo cambian cuando lo permite una señal de control G (generalmente proveniente de un reloj - CLK).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 16"
+        },
+        {
+          "id": 67,
+          "question": "¿Qué diferencia hay entre control por reloj y control por flanco de reloj?",
+          "answer": "Control por reloj: El acceso al contenido se habilita cuando G vale 1. Control por flanco: El acceso se habilita solo en los cambios de valor de G (flancos ascendentes o descendentes).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 16"
+        },
+        {
+          "id": 68,
+          "question": "¿Cómo funciona un flip-flop D?",
+          "answer": "El nuevo valor de la salida Q corresponde al valor de la entrada D mientras G está en 1. Mientras G está en 0, la salida mantiene el valor de D inmediatamente antes de la transición de 1 a 0 en G. Su ecuación característica es Qn+1 = D.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 17"
+        },
+        {
+          "id": 69,
+          "question": "¿Cuándo se actualiza un flip-flop D con control por flanco?",
+          "answer": "Con control por flanco, se actualiza en el flanco ascendente del reloj (cuando el reloj va de 0 a 1). Esto permite sincronización precisa de las operaciones.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 17"
+        },
+        {
+          "id": 70,
+          "question": "¿Cómo funciona un flip-flop T?",
+          "answer": "Mantiene su salida incambiada (T=0) o bien la invierte (T=1). Su ecuación característica es Qn+1 = Q̄nT + QnT̄. Es útil para contadores y división de frecuencia.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 18"
+        },
+        {
+          "id": 71,
+          "question": "¿Cómo funciona un flip-flop J-K?",
+          "answer": "Funciona bajo flancos descendentes de reloj. Cuando J=0 y K=0 mantiene el estado, J=0 y K=1 pone Q=0, J=1 y K=0 pone Q=1, J=1 y K=1 invierte Q. Su ecuación característica es Qn+1 = JQ̄n + K̄Qn.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 18"
+        },
+        {
+          "id": 72,
+          "question": "¿Cómo puede un flip-flop J-K emular otros tipos de flip-flops?",
+          "answer": "R-S: J=S, K=R. D: J=D, K=D̄. T: J=T, K=T. Esto hace al J-K un flip-flop universal que puede configurarse para comportarse como cualquier otro tipo.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 18"
+        },
+        {
+          "id": 73,
+          "question": "¿Para qué sirven las entradas Set y Clear en los flip-flops?",
+          "answer": "Son entradas asincrónicas. Set (o Preset): Pone el flip-flop en 1 independientemente del reloj. Clear: Pone el flip-flop en 0 independientemente del reloj. Útiles para inicialización.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 19"
+        },
+        {
+          "id": 74,
+          "question": "¿Qué es la entrada Clock Enabled (CE)?",
+          "answer": "Sirve para indicarle al flip-flop cuándo debe modificar el contenido. La información solo se guarda si CE=1 y hay un flanco de reloj. Evita escribir en el flip-flop cuando no interesa, pese a que ocurra un flanco de reloj.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 19"
+        },
+        {
+          "id": 75,
+          "question": "¿Cómo funciona un contador regresivo con flip-flops T?",
+          "answer": "Se conectan flip-flops T en cascada con T=1 (siempre invertir). La salida Q de cada flip-flop se conecta al CLK del siguiente. Cada flanco de reloj decrementa el contador. El patrón va de 1111 hacia 0000.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 19"
+        },
+        {
+          "id": 76,
+          "question": "¿Cómo funciona un contador progresivo con flip-flops T?",
+          "answer": "Similar al regresivo pero conectando la salida Q̄ al CLK del siguiente flip-flop. Cada flanco de reloj incrementa el contador. El patrón va de 0000 hacia 1111.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 20"
+        },
+        {
+          "id": 77,
+          "question": "¿Qué es un contador basado en flip-flops D?",
+          "answer": "Cuenta según cada flanco de reloj de forma progresiva. Cada flip-flop D recibe como entrada una función lógica de los estados actuales que determina el siguiente bit del contador.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 20"
+        }
+      ]
+    },
+    {
+      "name": "Modelación y Diseño de Circuitos Secuenciales",
+      "cards": [
+        {
+          "id": 78,
+          "question": "¿Cómo se modela matemáticamente un circuito secuencial?",
+          "answer": "Se modela como Y = G(X, E) y E' = H(X, E), donde Y es la salida, X la entrada, E el estado interno, E' el próximo estado, y G y H son funciones. Corresponde a una máquina de Mealy.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 21"
+        },
+        {
+          "id": 79,
+          "question": "¿Cuáles son los pasos para diseñar un circuito secuencial?",
+          "answer": "1) Modelar con AFD mediante diagrama de estados, 2) Deducir tablas de salida y transición, 3) Determinar número de flip-flops y codificación, 4) Incorporar codificación a las tablas, 5) Determinar funciones lógicas, 6) Minimizar con Karnaugh, 7) Dibujar el circuito.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 21"
+        }
+      ]
+    },
+    {
+      "name": "Máquinas de Estado",
+      "cards": [
+        {
+          "id": 80,
+          "question": "¿Qué es un estado en un circuito secuencial?",
+          "answer": "Dadas dos secuencias de valores de entrada de un circuito secuencial, son equivalentes si a partir de cierto punto coinciden las entradas y las salidas. Cada clase de equivalencia que define esta relación es un estado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 24"
+        },
+        {
+          "id": 81,
+          "question": "¿Qué es un AFD (Autómata Finito Determinista)?",
+          "answer": "Es un modelo matemático de un sistema con entradas y salidas discretas que tiene el mismo comportamiento para la misma combinación entrada-salida. Es fundamental para el diseño de circuitos secuenciales.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 24"
+        },
+        {
+          "id": 82,
+          "question": "¿Cómo se define formalmente una máquina de estado?",
+          "answer": "Son cuaternas M = (E, e0, Σ, δ) donde E es el conjunto finito de estados, e0 es el estado inicial, Σ es el alfabeto de entrada, y δ: E × Σ -> E es la función de transición.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 24"
+        },
+        {
+          "id": 83,
+          "question": "¿Qué es una Máquina de Mealy?",
+          "answer": "Se define como M = (E, e0, Σ, Δ, δ, λ) donde Δ es el alfabeto de salida y λ: E × Σ -> Δ es la función de salida. La salida está asociada con la transición (depende del estado actual y la entrada).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 24"
+        },
+        {
+          "id": 84,
+          "question": "¿Qué es una Máquina de Moore?",
+          "answer": "Se define como M = (E, e0, Σ, Δ, δ, λ) donde λ: E -> Δ. La salida está asociada con el estado (solo depende del estado actual, no de la entrada).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 25"
+        },
+        {
+          "id": 85,
+          "question": "¿Qué diferencia hay entre máquina de Mealy y máquina de Moore?",
+          "answer": "En Mealy la salida depende del estado actual y la entrada (Y = G(X,E)). En Moore la salida solo depende del estado actual (Y = G(E)). Mealy suele ser más compacta, Moore más fácil de diseñar.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 24-25"
+        },
+        {
+          "id": 86,
+          "question": "¿Qué es una máquina lógica general?",
+          "answer": "Es una máquina que puede comportarse tanto como traductor de símbolos como reconocedora de secuencias. Puede resolver cualquier problema computable (admitido sin demostrar).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 25"
+        },
+        {
+          "id": 87,
+          "question": "¿Cuál es el diseño general de una máquina lógica general?",
+          "answer": "Consta de una ROM que recibe la entrada X y el estado E, y genera la salida Y. El estado E se almacena en una RAM que recibe el nuevo estado E' desde la ROM.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 25"
+        },
+        {
+          "id": 88,
+          "question": "¿Cuál es el diseño de una máquina lógica general programable?",
+          "answer": "Similar a la general pero usando RAM en lugar de ROM. Esto permite que las funciones G y H sean programables (modificables), haciendo la máquina más versátil.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 25"
+        }
+      ]
+    },
+    {
+      "name": "Arquitectura de Von Neumann",
+      "cards": [
+        {
+          "id": 89,
+          "question": "¿Qué es una computadora según la arquitectura de Von Neumann?",
+          "answer": "Es una máquina lógica general programable que puede resolver cualquier problema computable mediante la ejecución de programas almacenados en memoria.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 90,
+          "question": "¿Cuál es el concepto fundamental de la Arquitectura de Von Neumann?",
+          "answer": "Utiliza el concepto de que una operación compleja puede dividirse como una secuencia ordenada de operaciones más simples. Introdujo el 'programa almacenado' como una 'secuencia lógicamente ordenada de instrucciones'.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 91,
+          "question": "¿Cuáles son los tres bloques constructivos básicos de la arquitectura de Von Neumann?",
+          "answer": "CPU: Ejecuta los programas. Memoria (MEM): Almacena el programa y los datos. Entrada/Salida (E/S): Comunica el computador con los usuarios.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 92,
+          "question": "¿Cuáles son las variantes principales de la arquitectura de Von Neumann?",
+          "answer": "1) Set de instrucciones, 2) Formato de instrucción, 3) Set de registros, 4) Modos de direccionamiento, 5) Manejo de la E/S, 6) Manejo de interrupciones. Cada variante afecta las capacidades y el desempeño del sistema.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        }
+      ]
+    },
+    {
+      "name": "CPU - Componentes",
+      "cards": [
+        {
+          "id": 93,
+          "question": "¿Qué es la ALU (Unidad Aritmético-Lógica)?",
+          "answer": "Es un circuito lógico que implementa operaciones de aritmética binaria, operaciones lógicas y operaciones de desplazamiento o rotación de bits. Es donde se realizan los cálculos.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 94,
+          "question": "¿Qué es la UC (Unidad de Control)?",
+          "answer": "Es un circuito secuencial que implementa el 'ciclo de instrucción', permitiendo acceder a la siguiente instrucción de un programa, leer sus operandos, efectuar la operación indicada en la ALU y guardar el resultado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 95,
+          "question": "¿Qué es el Banco de Registros en una CPU?",
+          "answer": "Es una serie de posiciones de memoria ubicadas dentro de la propia CPU que permiten acceso a operandos y almacenamiento de resultados mucho más veloz que la memoria normal. Algunos son internos y otros utilizables por el programador.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 26"
+        },
+        {
+          "id": 96,
+          "question": "¿Qué es un registro totalmente visible?",
+          "answer": "Contiene operandos o direcciones para la utilización en instrucciones. Es accesible al programador directamente a través de las instrucciones.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        },
+        {
+          "id": 97,
+          "question": "¿Qué es un registro parcialmente visible?",
+          "answer": "Contiene funciones especiales y es manipulado indirectamente por el programador para funciones específicas. Ejemplos: IP (Instruction Pointer), PC (Program Counter), SP (Stack Pointer), PS (Processor Status) y FLAGS.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        },
+        {
+          "id": 98,
+          "question": "¿Qué son los registros internos de la CPU?",
+          "answer": "Los utiliza la CPU para poder ejecutar las instrucciones. Almacenan constantes, el estado de la UC, la instrucción en ejecución y resultados intermedios de cálculos de direcciones. No son accesibles al programador.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        }
+      ]
+    },
+    {
+      "name": "Ciclo de Instrucción",
+      "cards": [
+        {
+          "id": 99,
+          "question": "¿Cuáles son las fases del ciclo de instrucción?",
+          "answer": "1) Fetch: Leer la próxima instrucción de memoria, 2) Decode: Analizar el código binario, 3) Read: Acceder a memoria para operandos, 4) Execute: Ejecutar la operación en la ALU, 5) Write: Escribir el resultado en el destino.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        },
+        {
+          "id": 100,
+          "question": "¿Qué hace la fase Fetch del ciclo de instrucción?",
+          "answer": "Lee la próxima instrucción a ejecutarse desde la memoria. Utiliza el registro IP (Instruction Pointer) para saber qué dirección de memoria contiene la siguiente instrucción.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        },
+        {
+          "id": 101,
+          "question": "¿Qué hace la fase Decode del ciclo de instrucción?",
+          "answer": "Analiza el código binario de la instrucción para determinar qué se debe realizar: cuál operación ejecutar, qué operandos usar y dónde almacenar el resultado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        },
+        {
+          "id": 102,
+          "question": "¿Qué hace la fase Execute del ciclo de instrucción?",
+          "answer": "Ejecuta la operación especificada en la ALU (Unidad Aritmético-Lógica) utilizando los operandos que fueron leídos en la fase Read.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 27"
+        }
+      ]
+    },
+    {
+      "name": "Registros de la CPU",
+      "cards": [
+        {
+          "id": 103,
+          "question": "¿Qué es el registro IP (Instruction Pointer)?",
+          "answer": "Almacena la dirección de memoria de la próxima instrucción a ejecutar. También llamado PC (Program Counter). Se incrementa automáticamente después de cada fetch.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        },
+        {
+          "id": 104,
+          "question": "¿Qué es el registro SP (Stack Pointer)?",
+          "answer": "Es el puntero a la pila (stack). Indica la dirección del tope de la pila, una estructura de datos LIFO usada para llamadas a funciones y almacenamiento temporal.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        },
+        {
+          "id": 105,
+          "question": "¿Qué es el registro PS (Processor Status)?",
+          "answer": "Almacena el estado del procesador, en particular los FLAGS (banderas) como Carry, Overflow y Zero que indican condiciones resultantes de operaciones aritméticas y lógicas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        },
+        {
+          "id": 106,
+          "question": "¿Qué es el registro IR (Instruction Register)?",
+          "answer": "Almacena la instrucción leída desde memoria durante la fase Fetch. La Unidad de Control analiza este registro para determinar qué hacer en las fases siguientes.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        },
+        {
+          "id": 107,
+          "question": "¿Qué es el registro MAR (Memory Address Register)?",
+          "answer": "Contiene la dirección de memoria que se presenta en el bus de direcciones durante una operación de lectura o escritura de la memoria.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        },
+        {
+          "id": 108,
+          "question": "¿Qué es el registro MDR (Memory Data Register)?",
+          "answer": "Contiene el dato leído de la memoria (en una operación de lectura) o el dato a escribir en la memoria (en una operación de escritura). Actúa como buffer entre la CPU y la memoria.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 28"
+        }
+      ]
+    },
+    {
+      "name": "Unidad de Control",
+      "cards": [
+        {
+          "id": 109,
+          "question": "¿Qué diferencia hay entre lógica cableada y lógica microprogramada?",
+          "answer": "Lógica cableada: La UC se construye como una Máquina de Mealy basada en diagrama de estados. Lógica microprogramada: Para cada instrucción existe un microprograma (secuencia de microinstrucciones) que establece el orden de eventos.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 110,
+          "question": "¿Qué diferencia hay entre microprogramación vertical y horizontal?",
+          "answer": "Vertical: Cada microinstrucción contiene los bits codificados de las señales de control. Horizontal: Utiliza microinstrucciones con los bits de control sin codificar (más directas pero más largas).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        }
+      ]
+    },
+    {
+      "name": "Entrada/Salida - Buses",
+      "cards": [
+        {
+          "id": 111,
+          "question": "¿Qué es un bus?",
+          "answer": "Es una agrupación de 'líneas' que comunican tres tipos de información en el computador: Dirección, Datos y Control. Permite la comunicación entre los diferentes componentes del sistema.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 112,
+          "question": "¿Qué es el bus de direcciones?",
+          "answer": "Son líneas de conexión que transportan las direcciones de memoria o E/S a ser accedidas durante una transferencia. Determina qué dispositivo o posición de memoria se está accediendo.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 113,
+          "question": "¿Qué es el bus de datos?",
+          "answer": "Son líneas de conexión que transportan la información que es transferida sobre el bus. Lleva los datos reales entre la CPU, memoria y dispositivos de E/S.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 114,
+          "question": "¿Qué señales incluye el bus de control?",
+          "answer": "Memory_Read, Memory_Write, I/O_Read, I/O_Write, Bus_Request, Bus_Grant, Transfer_ACK, Interrupt_Request, Interrupt_ACK, Clock y Reset. Controlan el uso del bus y la comunicación.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 115,
+          "question": "¿Para qué sirve la señal Bus_Request?",
+          "answer": "Indica que un sub-sistema desea tomar control del bus para iniciar una transferencia. Es parte del mecanismo de arbitraje del bus.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 116,
+          "question": "¿Para qué sirve la señal Bus_Grant?",
+          "answer": "Confirma que el bus está disponible para quien lo solicitó mediante Bus_Request. Permite al solicitante tomar control del bus.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 30"
+        },
+        {
+          "id": 117,
+          "question": "¿Qué diferencia hay entre un bus simple y un bus inteligente?",
+          "answer": "Bus simple (Master-Slave): Una sola entidad (Master, generalmente la CPU) controla el bus y las demás son Slaves. Bus inteligente: Cualquier entidad puede ser potencialmente el Master mediante arbitraje.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        },
+        {
+          "id": 118,
+          "question": "¿Qué es el arbitraje centralizado de bus?",
+          "answer": "Hay una entidad con mayor jerarquía (generalmente la CPU) encargada de controlar el bus. Cada entidad interesada en ser el Master se lo solicita al árbitro.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        },
+        {
+          "id": 119,
+          "question": "¿Qué es el arbitraje distribuido de bus?",
+          "answer": "Todas las entidades conectadas tienen el mismo rango y no hay un árbitro: la inteligencia del bus se encuentra distribuida entre todos los participantes.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        },
+        {
+          "id": 120,
+          "question": "¿Qué diferencia hay entre buses internos y externos?",
+          "answer": "Internos: Se utilizan para conectar sub-sistemas dentro de la 'frontera' del sistema (dentro del gabinete). Externos: Se utilizan para conectar sub-sistemas fuera de la 'frontera' del sistema.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        }
+      ]
+    },
+    {
+      "name": "Periféricos y Controladores",
+      "cards": [
+        {
+          "id": 121,
+          "question": "¿Qué son los periféricos?",
+          "answer": "Son dispositivos que realizan el vínculo del computador con el mundo exterior. A través de ellos se realiza el ingreso de programas y datos, se obtienen resultados en formato legible para el ser humano, o se provoca alteración del mundo físico circundante.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        },
+        {
+          "id": 122,
+          "question": "¿Qué es el controlador de un periférico?",
+          "answer": "Es la parte del periférico que contiene su inteligencia. Maneja la comunicación entre la CPU y el dispositivo físico, implementando el protocolo de comunicación necesario.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 31"
+        },
+        {
+          "id": 123,
+          "question": "¿Cuáles son las posibles ubicaciones de un controlador?",
+          "answer": "1) Contenido en el gabinete del computador (conectado directamente al bus o mediante adaptador), 2) Contenido en el gabinete del periférico (conectado mediante interfaz o adaptador), 3) Distribuido entre ambos gabinetes.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 32"
+        },
+        {
+          "id": 124,
+          "question": "¿Cuáles son las dos arquitecturas para acceder a controladores?",
+          "answer": "1) La CPU dispone de un espacio de direcciones reservado accedido mediante instrucciones especiales (E/S mapeada en puertos). 2) La CPU accede a los controladores como posiciones normales de memoria (E/S mapeada en memoria).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 32"
+        },
+        {
+          "id": 125,
+          "question": "¿Qué es un registro de solo lectura en un controlador?",
+          "answer": "El registro puede solamente ser leído; la escritura no surte efecto. Se usa típicamente para leer el estado del dispositivo o datos de entrada.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        },
+        {
+          "id": 126,
+          "question": "¿Qué es un registro de solo escritura en un controlador?",
+          "answer": "El registro solo puede ser escrito; la lectura tiene un resultado impredecible. Se usa típicamente para enviar comandos o datos de salida al dispositivo.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        },
+        {
+          "id": 127,
+          "question": "¿Qué es un registro de Lectura/Escritura independiente?",
+          "answer": "Hay dos registros diferentes en la misma dirección: uno para solo lectura y otro para solo escritura, que funcionan independientemente según la operación realizada.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        },
+        {
+          "id": 128,
+          "question": "¿Cuáles son los tipos de registros en un controlador?",
+          "answer": "Entrada: Dato destinado a la CPU. Salida: Dato destinado al periférico. Estado: Bits que indican el estado del controlador/periférico. Control: Bits que indican al controlador/periférico realizar determinada acción.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        },
+        {
+          "id": 129,
+          "question": "¿Qué son los bridges en la arquitectura de E/S de un PC?",
+          "answer": "Son dispositivos que interconectan diferentes buses del sistema. Por ejemplo, el System Controller (Northbridge) conecta CPU, AGP y memoria, mientras el Peripheral Bus Controller (Southbridge) conecta PCI, LAN, SCSI y otros buses.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        }
+      ]
+    },
+    {
+      "name": "Interrupciones",
+      "cards": [
+        {
+          "id": 130,
+          "question": "¿Qué es una interrupción?",
+          "answer": "Es un mecanismo que provoca la alteración del orden lógico de ejecución de instrucciones como respuesta a un evento externo, generado por el hardware de E/S en forma asincrónica al programa que está siendo ejecutado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 33"
+        },
+        {
+          "id": 131,
+          "question": "¿Cómo se genera un pedido de interrupción?",
+          "answer": "Los controladores de E/S disponen de una señal de salida INT que toma el valor 1 cuando el controlador interrumpe. La CPU tiene una entrada INT que consulta para saber si hay pedido de interrupción.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 34"
+        },
+        {
+          "id": 132,
+          "question": "¿Qué diferencia hay entre detección por nivel y por flanco?",
+          "answer": "Por nivel: La CPU reconocerá que hay pedido de interrupción mientras INT valga 1. Por flanco: La CPU reconocerá el pedido por el flanco ascendente de INT (transición de 0 a 1).",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 34"
+        },
+        {
+          "id": 133,
+          "question": "¿Cuáles son los pasos del proceso de interrupción?",
+          "answer": "1) 'Termina' la instrucción actual, 2) Guarda el IP para continuar después, 3) Identifica el controlador que interrumpió, 4) Obtiene la dirección de la rutina de servicio del vector de interrupciones, 5) Enmascara nuevas interrupciones, 6) Ejecuta la rutina de servicio.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 34"
+        },
+        {
+          "id": 134,
+          "question": "¿Qué es el mecanismo INT/INTA?",
+          "answer": "La CPU dispone de una única entrada INT a la cual se conectan en OR todos los pedidos de interrupción. INTA (Interrupt Acknowledge) es la señal de respuesta de la CPU confirmando que procesará la interrupción.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 135,
+          "question": "¿Qué es un controlador de interrupciones?",
+          "answer": "Es un dispositivo que gestiona múltiples fuentes de interrupción. Genera el pedido a la CPU a través de INT y devuelve por INTA la decisión tomada sobre cuál interrupción atender, implementando esquemas de prioridad.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 136,
+          "question": "¿Cómo funciona la identificación de interrupción por software?",
+          "answer": "Aplica cuando hay múltiples controladores conectados en OR a INT. La rutina de servicio recorre los controladores leyendo sus registros de estado hasta encontrar el que tiene su bit de pedido de interrupción en 1, luego invoca la subrutina específica.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 137,
+          "question": "¿Qué es el enmascaramiento de interrupciones?",
+          "answer": "La CPU inhibe la aceptación de todas las solicitudes de interrupción. Es el estado inicial y puede usarse para secciones críticas del código que no deben ser interrumpidas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 138,
+          "question": "¿Qué es la deshabilitación de interrupciones?",
+          "answer": "La CPU actúa individualmente sobre cada controlador para inhibir su eventual pedido de interrupción. Permite control más fino que el enmascaramiento global.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 139,
+          "question": "¿Qué tipos de prioridad existen para interrupciones?",
+          "answer": "Prioridad fija: Se atiende en orden jerárquico predeterminado. Prioridad configurable: Cambia en función de las condiciones del sistema. Sin prioridad: Sistema de selección sin jerarquía definida.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 35"
+        },
+        {
+          "id": 140,
+          "question": "¿Qué son las interrupciones simultáneas?",
+          "answer": "Ocurren cuando múltiples dispositivos interrumpen al mismo tiempo. Se resuelve adoptando una estrategia de prioridades para determinar cuál se atiende primero.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 36"
+        },
+        {
+          "id": 141,
+          "question": "¿Qué es la interrupción de interrupción?",
+          "answer": "Ocurre cuando llega una solicitud de interrupción mientras se está procesando otra. La atención o no de la nueva solicitud dependerá del esquema de jerarquía/prioridades implementado.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 36"
+        },
+        {
+          "id": 142,
+          "question": "¿Qué son las rutinas de interrupción?",
+          "answer": "Son piezas de código que se ejecutan como resultado del mecanismo que desencadena la CPU al procesar un pedido de interrupción. Deben preservar el contexto (registros, estado) para no afectar el programa interrumpido.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 36"
+        },
+        {
+          "id": 143,
+          "question": "¿Qué diferencia hay entre máquina dedicada y no dedicada para interrupciones?",
+          "answer": "No dedicada: Múltiples programas ejecutándose, programados por distintos equipos sin coordinación; debe preservar todo el contexto. Dedicada: Completamente dedicada a una función, todos los programas coordinados; puede optimizar preservación de contexto.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 36"
+        },
+        {
+          "id": 144,
+          "question": "¿Cuáles son las estrategias de programación con interrupciones?",
+          "answer": "1) Toda la lógica en el programa principal, rutinas solo modifican banderas. 2) Toda la lógica en las rutinas, programa principal en loop o solo inicializa. 3) Lógica distribuida entre programa principal y rutinas.",
+          "source": "Resumen Práctico Completo Arqui.pdf, Página 36"
+        }
+      ]
+    }
+  ],
+  "additionalNotes": {
+    "documentSummary": "These flashcards cover comprehensive Computer Architecture topics including data representation, error detection/correction, Boolean algebra, combinatorial and sequential circuits, state machines, Von Neumann architecture, CPU components, instruction cycle, I/O systems, and interrupts. All concepts are extracted from Diego González's practical summary for the course.",
+    "studyTips": [
+      "Pay attention to the different number representations (complement a uno vs complement a dos) and their properties",
+      "Understand the distinction between combinatorial circuits (output depends only on current input) and sequential circuits (output depends on current and previous inputs)",
+      "Master the different types of flip-flops (R-S, D, T, J-K) and their characteristic equations",
+      "Remember that Mealy machines have output dependent on state AND input, while Moore machines have output dependent only on state",
+      "The instruction cycle (Fetch-Decode-Read-Execute-Write) is fundamental to understanding how a CPU works",
+      "Understand the difference between polling and interrupt-driven I/O",
+      "Know the bus types (address, data, control) and their signals"
+    ]
+  }
+}

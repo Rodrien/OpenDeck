@@ -1,0 +1,5 @@
+.DS_Store
+opendeck-frontend/.angular
+
+opendeck-frontend/node_modules
+opendeck-frontend/dist
