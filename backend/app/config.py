@@ -54,9 +54,9 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     # CORS
-    allowed_origins: list[str] = Field(
-        default=["http://localhost:4200", "http://localhost:3000"],
-        description="Allowed CORS origins",
+    allowed_origins: str = Field(
+        default="http://localhost:4200,http://localhost:3000",
+        description="Allowed CORS origins (comma-separated)",
     )
 
     # Rate Limiting
@@ -80,11 +80,16 @@ class Settings(BaseSettings):
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
-    def parse_origins(cls, v: str | list[str]) -> list[str]:
+    def parse_origins(cls, v: str | list[str]) -> str:
         """Parse comma-separated origins from environment variable."""
-        if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+        if isinstance(v, list):
+            return ",".join(v)
         return v
+
+    @property
+    def origins_list(self) -> list[str]:
+        """Get allowed origins as a list."""
+        return [origin.strip() for origin in self.allowed_origins.split(",")]
 
     @property
     def is_development(self) -> bool:

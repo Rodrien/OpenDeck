@@ -52,7 +52,7 @@ export class AuthService {
     const token = this.getToken();
     const userJson = localStorage.getItem(this.USER_KEY);
 
-    if (token && userJson) {
+    if (token && userJson && userJson !== 'undefined' && userJson !== 'null') {
       try {
         const user = JSON.parse(userJson) as User;
         this.isAuthenticatedSignal.set(true);
@@ -61,6 +61,9 @@ export class AuthService {
         console.error('Error parsing stored user data:', error);
         this.clearAuthData();
       }
+    } else {
+      // Clear invalid data
+      this.clearAuthData();
     }
   }
 
@@ -83,12 +86,12 @@ export class AuthService {
   /**
    * Register new user
    * @param email - User email
-   * @param username - Username
+   * @param name - User name
    * @param password - User password
    * @returns Observable of AuthTokenResponse
    */
-  register(email: string, username: string, password: string): Observable<AuthTokenResponse> {
-    const registerData: RegisterRequest = { email, username, password };
+  register(email: string, name: string, password: string): Observable<AuthTokenResponse> {
+    const registerData: RegisterRequest = { email, name, password };
 
     return this.http.post<AuthTokenResponse>(`${this.apiUrl}/register`, registerData)
       .pipe(

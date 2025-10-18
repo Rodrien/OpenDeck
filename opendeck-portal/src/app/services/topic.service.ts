@@ -28,10 +28,10 @@ export class TopicService {
 
   /**
    * Get topic by ID
-   * @param id - Topic ID
+   * @param id - Topic ID (UUID string)
    * @returns Observable of Topic
    */
-  getById(id: number): Observable<Topic> {
+  getById(id: string): Observable<Topic> {
     return this.http.get<Topic>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
@@ -48,21 +48,21 @@ export class TopicService {
 
   /**
    * Update existing topic
-   * @param id - Topic ID
+   * @param id - Topic ID (UUID string)
    * @param topic - Update Topic DTO
    * @returns Observable of updated Topic
    */
-  update(id: number, topic: UpdateTopicDto): Observable<Topic> {
+  update(id: string, topic: UpdateTopicDto): Observable<Topic> {
     return this.http.put<Topic>(`${this.apiUrl}/${id}`, topic)
       .pipe(catchError(this.handleError));
   }
 
   /**
    * Delete topic
-   * @param id - Topic ID
+   * @param id - Topic ID (UUID string)
    * @returns Observable of void
    */
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }

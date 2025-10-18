@@ -11,8 +11,8 @@ export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
  * Represents a collection of flashcards
  */
 export interface Deck {
-  id: number;
-  user_id: number;
+  id: string;
+  user_id: string;
   title: string;
   description: string | null;
   category: string | null;
@@ -32,7 +32,7 @@ export interface CreateDeckDto {
   description?: string;
   category?: string;
   difficulty?: DifficultyLevel;
-  topic_ids?: number[];
+  topic_ids?: string[];
 }
 
 /**
@@ -44,7 +44,7 @@ export interface UpdateDeckDto {
   description?: string;
   category?: string;
   difficulty?: DifficultyLevel;
-  topic_ids?: number[];
+  topic_ids?: string[];
 }
 
 /**
@@ -54,7 +54,7 @@ export interface UpdateDeckDto {
 export interface DeckFilterParams {
   category?: string;
   difficulty?: DifficultyLevel;
-  topic_id?: number;
+  topic_id?: string;
   limit?: number;
   offset?: number;
 }

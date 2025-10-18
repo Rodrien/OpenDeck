@@ -2,6 +2,7 @@ import { Component, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 // PrimeNG Imports
 import { Card } from 'primeng/card';
@@ -15,6 +16,7 @@ import { Message } from 'primeng/message';
 
 // Services
 import { DeckService } from '../../services/deck.service';
+import { TranslateService } from '@ngx-translate/core';
 
 // Models
 import { Deck as ApiDeck, DifficultyLevel } from '../../models/deck.model';
@@ -25,6 +27,7 @@ import { DeckStats } from './models/deck.interface';
     imports: [
         CommonModule,
         FormsModule,
+        TranslateModule,
         Card,
         InputText,
         IconField,
@@ -90,7 +93,8 @@ export class FlashcardDecksListComponent implements OnInit {
 
     constructor(
         private router: Router,
-        private deckService: DeckService
+        private deckService: DeckService,
+        private translate: TranslateService
     ) {}
 
     ngOnInit(): void {
@@ -111,7 +115,7 @@ export class FlashcardDecksListComponent implements OnInit {
                 this.loading.set(false);
             },
             error: (err) => {
-                this.error.set('Failed to load decks. Please try again later.');
+                this.error.set(this.translate.instant('errors.loadFailed'));
                 this.loading.set(false);
                 console.error('Error loading decks:', err);
             }
@@ -147,13 +151,15 @@ export class FlashcardDecksListComponent implements OnInit {
     }
 
     /**
-     * Format difficulty for display (capitalize first letter)
+     * Format difficulty for display with translation
      */
     formatDifficulty(difficulty: DifficultyLevel | null): string {
         if (!difficulty) {
             return 'N/A';
         }
-        return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+
+        const translationKey = `deck.difficulty.${difficulty.toLowerCase()}`;
+        return this.translate.instant(translationKey);
     }
 
     /**

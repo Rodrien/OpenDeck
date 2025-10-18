@@ -3,9 +3,9 @@
  * Represents a user in the system
  */
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  username: string;
+  name: string;
   created_at: string;
   updated_at: string;
 }
@@ -25,7 +25,7 @@ export interface LoginRequest {
  */
 export interface RegisterRequest {
   email: string;
-  username: string;
+  name: string;
   password: string;
 }
 

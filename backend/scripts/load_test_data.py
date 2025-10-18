@@ -127,7 +127,7 @@ def load_flashcards_from_json(json_path: Path, user_id: str, db: Session):
 def create_test_user(db: Session) -> UserModel:
     """Create or get the test user."""
 
-    test_email = "test@opendeck.local"
+    test_email = "test@opendeck.com"
 
     # Check if user already exists
     existing_user = db.query(UserModel).filter(UserModel.email == test_email).first()
@@ -136,12 +136,15 @@ def create_test_user(db: Session) -> UserModel:
         print(f"👤 Using existing test user: {test_email}")
         return existing_user
 
-    # Create new test user
+    # Create new test user with properly hashed password
+    from passlib.context import CryptContext
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    
     user = UserModel(
         id=str(uuid.uuid4()),
         email=test_email,
         name="Test User",
-        password_hash="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzS0MQ/5JO",  # "password123"
+        password_hash=pwd_context.hash("password123"),
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow()
     )

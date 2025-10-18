@@ -3,7 +3,7 @@
         <!-- Header Section -->
         <div class="header-section mb-6">
             <p-button
-                label="Back to Decks"
+                [label]="'deck.backToDecks' | translate"
                 icon="pi pi-chevron-left"
                 [text]="true"
                 severity="secondary"
@@ -28,7 +28,7 @@
                     strokeWidth="4"
                     [attr.aria-label]="'Loading flashcards'"
                 />
-                <p class="mt-4 text-surface-600 dark:text-surface-400">Loading flashcards...</p>
+                <p class="mt-4 text-surface-600 dark:text-surface-400">{{ 'common.loading' | translate }}</p>
             </div>
         }
 
@@ -64,7 +64,7 @@
                         <!-- Question Section -->
                         <div class="question-section">
                             <p-tag
-                                value="Question"
+                                [value]="'flashcard.question' | translate"
                                 severity="info"
                                 class="mb-4"
                                 [rounded]="true"
@@ -80,7 +80,7 @@
                                 <div class="divider"></div>
 
                                 <p-tag
-                                    value="Answer"
+                                    [value]="'flashcard.answer' | translate"
                                     severity="success"
                                     class="mb-4"
                                     [rounded]="true"
@@ -97,10 +97,10 @@
                                             <i class="pi pi-file-pdf text-xl text-primary"></i>
                                             <div class="flex-1">
                                                 <p class="source-label text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase mb-1">
-                                                    Source Reference
+                                                    {{ 'flashcard.sourceReference' | translate }}
                                                 </p>
                                                 <p class="source-text text-sm text-surface-700 dark:text-surface-200">
-                                                    {{ card.source || 'Source not available' }}
+                                                    {{ card.source || ('flashcard.sourceNotAvailable' | translate) }}
                                                 </p>
                                             </div>
                                             @if (card.source_url && card.source_url !== '#') {
@@ -122,7 +122,7 @@
                         @if (!showAnswer()) {
                             <div class="show-answer-section">
                                 <p-button
-                                    label="Show Answer"
+                                    [label]="'flashcard.showAnswer' | translate"
                                     icon="pi pi-eye"
                                     (onClick)="toggleAnswer()"
                                     severity="info"
@@ -141,7 +141,7 @@
         <div class="navigation-controls flex items-center justify-between">
             <!-- Previous Button -->
             <p-button
-                label="Previous"
+                [label]="'flashcard.previous' | translate"
                 icon="pi pi-chevron-left"
                 (onClick)="previousCard()"
                 [disabled]="isFirstCard()"
@@ -158,7 +158,7 @@
 
             <!-- Next Button -->
             <p-button
-                label="Next"
+                [label]="'flashcard.next' | translate"
                 icon="pi pi-chevron-right"
                 iconPos="right"
                 (onClick)="nextCard()"
@@ -175,22 +175,22 @@
             <p>
                 <span class="inline-flex items-center gap-1">
                     <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">←</kbd>
-                    <span>Previous</span>
+                    <span>{{ 'flashcard.previous' | translate }}</span>
                 </span>
                 <span class="mx-4">|</span>
                 <span class="inline-flex items-center gap-1">
                     <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">→</kbd>
-                    <span>Next</span>
+                    <span>{{ 'flashcard.next' | translate }}</span>
                 </span>
                 <span class="mx-4">|</span>
                 <span class="inline-flex items-center gap-1">
                     <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">Space</kbd>
-                    <span>Show/Hide Answer</span>
+                    <span>{{ 'flashcard.toggleAnswer' | translate }}</span>
                 </span>
                 <span class="mx-4">|</span>
                 <span class="inline-flex items-center gap-1">
                     <kbd class="keyboard-key bg-surface-200 dark:bg-surface-700 border border-surface-300 dark:border-surface-600 text-surface-700 dark:text-surface-200">Esc</kbd>
-                    <span>Back to Decks</span>
+                    <span>{{ 'deck.backToDecks' | translate }}</span>
                 </span>
             </p>
         </div>

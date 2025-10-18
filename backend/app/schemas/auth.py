@@ -1,6 +1,7 @@
 """Authentication API Schemas"""
 
 from pydantic import BaseModel, EmailStr, Field
+from app.schemas.user import UserResponse
 
 
 class LoginRequest(BaseModel):
@@ -17,6 +18,7 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     expires_in: int  # seconds
+    user: UserResponse
 
 
 class RefreshTokenRequest(BaseModel):

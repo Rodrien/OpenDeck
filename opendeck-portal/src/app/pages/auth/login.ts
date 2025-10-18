@@ -7,6 +7,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { MessageModule } from 'primeng/message';
+import { TranslateModule } from '@ngx-translate/core';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
@@ -24,7 +25,8 @@ import { CommonModule } from '@angular/common';
         RouterModule,
         RippleModule,
         AppFloatingConfigurator,
-        MessageModule
+        MessageModule,
+        TranslateModule
     ],
     template: `
         <app-floating-configurator />
@@ -34,8 +36,8 @@ import { CommonModule } from '@angular/common';
                     <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px">
                         <div class="text-center mb-8">
                             <img src="images/opendeck_cards_cropped.png" alt="OpenDeck Logo" class="mb-8 w-64 shrink-0 mx-auto" />
-                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to OpenDeck!</div>
-                            <span class="text-muted-color font-medium">Sign in to continue</span>
+                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">{{ 'auth.welcomeToOpenDeck' | translate }}</div>
+                            <span class="text-muted-color font-medium">{{ 'auth.signInToContinue' | translate }}</span>
                         </div>
 
                         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
@@ -43,12 +45,12 @@ import { CommonModule } from '@angular/common';
                                 <p-message severity="error" [text]="errorMessage()" styleClass="mb-4 w-full" />
                             }
 
-                            <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
+                            <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">{{ 'auth.email' | translate }}</label>
                             <input
                                 pInputText
                                 id="email"
                                 type="email"
-                                placeholder="Enter email"
+                                [placeholder]="'auth.enterEmail' | translate"
                                 class="w-full md:w-120 mb-2"
                                 formControlName="email"
                                 [class.ng-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
@@ -57,20 +59,20 @@ import { CommonModule } from '@angular/common';
                             @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
                                 <small class="block text-red-500 mb-4">
                                     @if (loginForm.get('email')?.errors?.['required']) {
-                                        Email is required
+                                        {{ 'auth.emailRequired' | translate }}
                                     }
                                     @if (loginForm.get('email')?.errors?.['email']) {
-                                        Please enter a valid email
+                                        {{ 'auth.emailInvalid' | translate }}
                                     }
                                 </small>
                             } @else {
                                 <div class="mb-4"></div>
                             }
 
-                            <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
+                            <label for="password" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">{{ 'auth.password' | translate }}</label>
                             <p-password
                                 id="password"
-                                placeholder="Enter password"
+                                [placeholder]="'auth.enterPassword' | translate"
                                 [toggleMask]="true"
                                 styleClass="mb-2"
                                 [fluid]="true"
@@ -80,7 +82,7 @@ import { CommonModule } from '@angular/common';
                                 [class.ng-dirty]="loginForm.get('password')?.touched"
                             ></p-password>
                             @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-                                <small class="block text-red-500 mb-4">Password is required</small>
+                                <small class="block text-red-500 mb-4">{{ 'auth.passwordRequired' | translate }}</small>
                             } @else {
                                 <div class="mb-4"></div>
                             }
@@ -88,12 +90,12 @@ import { CommonModule } from '@angular/common';
                             <div class="flex items-center justify-between mt-2 mb-8 gap-8">
                                 <div class="flex items-center">
                                     <p-checkbox formControlName="rememberMe" id="rememberme1" binary class="mr-2"></p-checkbox>
-                                    <label for="rememberme1" class="text-surface-900 dark:text-surface-0">Remember me</label>
+                                    <label for="rememberme1" class="text-surface-900 dark:text-surface-0">{{ 'auth.rememberMe' | translate }}</label>
                                 </div>
                             </div>
 
                             <p-button
-                                label="Sign In"
+                                [label]="'auth.loginButton' | translate"
                                 styleClass="w-full"
                                 type="submit"
                                 [loading]="isLoading()"
@@ -101,8 +103,8 @@ import { CommonModule } from '@angular/common';
                             ></p-button>
 
                             <div class="text-center mt-6">
-                                <span class="text-muted-color">Don't have an account? </span>
-                                <a routerLink="/auth/register" class="text-primary font-medium hover:underline">Sign up</a>
+                                <span class="text-muted-color">{{ 'auth.noAccount' | translate }} </span>
+                                <a routerLink="/auth/register" class="text-primary font-medium hover:underline">{{ 'auth.signUp' | translate }}</a>
                             </div>
                         </form>
                     </div>

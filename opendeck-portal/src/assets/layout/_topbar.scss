@@ -97,6 +97,69 @@
         display: flex;
         gap: 1rem;
     }
+
+    .user-avatar-container {
+        display: flex;
+        align-items: center;
+        position: relative;
+
+        ::ng-deep {
+            .p-avatar {
+                transition: transform 0.2s ease;
+
+                &:hover {
+                    transform: scale(1.1);
+                }
+            }
+
+            .user-menu {
+                min-width: 250px;
+
+                .user-menu-header {
+                    background-color: var(--surface-card);
+
+                    .p-avatar {
+                        &:hover {
+                            transform: none;
+                        }
+                    }
+                }
+
+                .p-menu-list {
+                    padding: 0.5rem 0;
+                }
+
+                .p-menuitem {
+                    &:hover {
+                        background-color: var(--surface-hover);
+                    }
+
+                    .p-menuitem-link {
+                        padding: 0.75rem 1rem;
+                        color: var(--text-color);
+
+                        .p-menuitem-icon {
+                            color: var(--text-color-secondary);
+                            margin-right: 0.5rem;
+                        }
+
+                        &:hover {
+                            background-color: transparent;
+
+                            .p-menuitem-icon {
+                                color: var(--primary-color);
+                            }
+                        }
+                    }
+                }
+
+                .p-menuitem-separator {
+                    margin: 0.5rem 0;
+                    border-top: 1px solid var(--surface-border);
+                }
+            }
+        }
+    }
 }
 
 @media (max-width: 991px) {

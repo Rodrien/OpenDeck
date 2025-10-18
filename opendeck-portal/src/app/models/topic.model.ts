@@ -3,7 +3,7 @@
  * Represents a subject or category for organizing flashcards
  */
 export interface Topic {
-  id: number;
+  id: string;
   name: string;
   description: string | null;
 }

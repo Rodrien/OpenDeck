@@ -50,10 +50,10 @@ export class DeckService {
 
   /**
    * Get deck by ID
-   * @param id - Deck ID
+   * @param id - Deck ID (UUID string)
    * @returns Observable of Deck
    */
-  getById(id: number): Observable<Deck> {
+  getById(id: string): Observable<Deck> {
     return this.http.get<Deck>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
@@ -70,21 +70,21 @@ export class DeckService {
 
   /**
    * Update existing deck
-   * @param id - Deck ID
+   * @param id - Deck ID (UUID string)
    * @param deck - Update Deck DTO
    * @returns Observable of updated Deck
    */
-  update(id: number, deck: UpdateDeckDto): Observable<Deck> {
+  update(id: string, deck: UpdateDeckDto): Observable<Deck> {
     return this.http.put<Deck>(`${this.apiUrl}/${id}`, deck)
       .pipe(catchError(this.handleError));
   }
 
   /**
    * Delete deck
-   * @param id - Deck ID
+   * @param id - Deck ID (UUID string)
    * @returns Observable of void
    */
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
@@ -113,12 +113,12 @@ export class DeckService {
 
   /**
    * Get decks by topic
-   * @param topicId - Topic ID
+   * @param topicId - Topic ID (UUID string)
    * @param limit - Optional limit
    * @param offset - Optional offset
    * @returns Observable of Paginated Deck response
    */
-  getByTopic(topicId: number, limit?: number, offset?: number): Observable<PaginatedResponse<Deck>> {
+  getByTopic(topicId: string, limit?: number, offset?: number): Observable<PaginatedResponse<Deck>> {
     return this.getAll({ topic_id: topicId, limit, offset });
   }
 

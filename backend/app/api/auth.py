@@ -80,6 +80,7 @@ async def login(
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
+        user=UserResponse.model_validate(user),
     )
 
 
@@ -110,6 +111,15 @@ async def refresh_token(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Get user data to include in response
+    user = auth_service.user_repository.get_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     access_token = auth_service.create_access_token(user_id)
     new_refresh_token = auth_service.create_refresh_token(user_id)
 
@@ -118,4 +128,5 @@ async def refresh_token(
         refresh_token=new_refresh_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
+        user=UserResponse.model_validate(user),
     )

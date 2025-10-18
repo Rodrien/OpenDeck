@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { forkJoin } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // PrimeNG Imports
 import { Card } from 'primeng/card';
@@ -24,6 +25,7 @@ import { CardDirection } from './models/flashcard-data.interface';
     selector: 'app-flashcard-viewer',
     imports: [
         CommonModule,
+        TranslateModule,
         Card,
         Button,
         ProgressBar,
@@ -73,28 +75,23 @@ export class FlashcardViewerComponent implements OnInit {
     cardCountText = computed(() => {
         const current = this.currentIndex() + 1;
         const total = this.cards().length;
-        return `Card ${current} of ${total}`;
+        return this.translate.instant('flashcard.progress', { current, total });
     });
 
     constructor(
         private route: ActivatedRoute,
         private router: Router,
         private deckService: DeckService,
-        private cardService: CardService
+        private cardService: CardService,
+        private translate: TranslateService
     ) {}
 
     ngOnInit(): void {
         // Get deck ID from route parameters
-        const deckIdParam = this.route.snapshot.paramMap.get('deckId');
+        const deckId = this.route.snapshot.paramMap.get('deckId');
 
-        if (deckIdParam) {
-            const deckId = parseInt(deckIdParam, 10);
-            if (!isNaN(deckId)) {
-                this.loadDeckAndCards(deckId);
-            } else {
-                this.error.set('Invalid deck ID');
-                console.error('Invalid deck ID:', deckIdParam);
-            }
+        if (deckId) {
+            this.loadDeckAndCards(deckId);
         } else {
             // No deck ID provided, navigate back to listing
             this.router.navigate(['/pages/flashcards']);
@@ -105,14 +102,14 @@ export class FlashcardViewerComponent implements OnInit {
      * Load deck metadata and cards from the API
      * Uses forkJoin to load both deck and cards in parallel
      */
-    private loadDeckAndCards(deckId: number): void {
+    private loadDeckAndCards(deckId: string): void {
         this.loading.set(true);
         this.error.set(null);
 
         // Load deck metadata and cards in parallel
         forkJoin({
             deck: this.deckService.getById(deckId),
-            cards: this.cardService.getCardsForDeck(deckId, 1000) // Load up to 1000 cards
+            cards: this.cardService.getCardsForDeck(deckId, 100) // Backend max limit is 100
         }).subscribe({
             next: (result) => {
                 this.deckTitle.set(result.deck.title);
@@ -121,11 +118,11 @@ export class FlashcardViewerComponent implements OnInit {
 
                 // If no cards, show error
                 if (result.cards.items.length === 0) {
-                    this.error.set('This deck has no flashcards yet.');
+                    this.error.set(this.translate.instant('flashcard.noCards'));
                 }
             },
             error: (err) => {
-                this.error.set('Failed to load deck. Please try again later.');
+                this.error.set(this.translate.instant('errors.loadFailed'));
                 this.loading.set(false);
                 console.error('Error loading deck and cards:', err);
             }

@@ -1,14 +1,16 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { MenuItem } from 'primeng/api';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { StyleClassModule } from 'primeng/styleclass';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
+import { Menu } from 'primeng/menu';
 import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
+import { LanguageSelectorComponent } from '../../components/language-selector/language-selector.component';
 
 @Component({
     selector: 'app-topbar',
@@ -19,7 +21,9 @@ import { User } from '../../models/user.model';
         StyleClassModule,
         AvatarModule,
         BadgeModule,
-        AppConfigurator
+        Menu,
+        AppConfigurator,
+        LanguageSelectorComponent
     ],
     template: `
         <div class="layout-topbar">
@@ -34,9 +38,15 @@ import { User } from '../../models/user.model';
 
             <div class="layout-topbar-actions">
                 <div class="layout-config-menu">
+                    <!-- Language Selector -->
+                    <app-language-selector></app-language-selector>
+
+                    <!-- Dark Mode Toggle -->
                     <button type="button" class="layout-topbar-action" (click)="toggleDarkMode()">
                         <i [ngClass]="{ 'pi ': true, 'pi-moon': layoutService.isDarkTheme(), 'pi-sun': !layoutService.isDarkTheme() }"></i>
                     </button>
+
+                    <!-- Theme Configurator -->
                     <div class="relative">
                         <button
                             class="layout-topbar-action layout-topbar-action-highlight"
@@ -53,79 +63,53 @@ import { User } from '../../models/user.model';
                     </div>
                 </div>
 
-                @if (currentUser()) {
+                <!-- User Avatar -->
+                <div class="user-avatar-container">
                     <button
-                        class="layout-topbar-menu-button layout-topbar-action"
-                        pStyleClass="@next"
-                        enterFromClass="hidden"
-                        enterActiveClass="animate-scalein"
-                        leaveToClass="hidden"
-                        leaveActiveClass="animate-fadeout"
-                        [hideOnOutsideClick]="true"
+                        type="button"
+                        class="avatar-button p-0 border-none bg-transparent cursor-pointer"
+                        (click)="toggleUserMenu($event)"
+                        [attr.aria-label]="'User menu'"
                     >
-                        <i class="pi pi-user"></i>
+                        <p-avatar
+                            [label]="getUserInitials()"
+                            styleClass="bg-primary text-white"
+                            shape="circle"
+                            size="large"
+                        ></p-avatar>
                     </button>
-
-                    <div class="layout-topbar-menu hidden lg:flex">
-                        <div class="layout-topbar-menu-content flex items-center gap-4">
-                            <div class="flex flex-col items-end text-sm">
-                                <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.username }}</span>
-                                <span class="text-muted-color text-xs">{{ currentUser()?.email }}</span>
-                            </div>
-                            <p-avatar
-                                [label]="getUserInitials()"
-                                styleClass="bg-primary text-white"
-                                shape="circle"
-                            ></p-avatar>
-                            <button
-                                type="button"
-                                class="layout-topbar-action ml-2"
-                                (click)="logout()"
-                                title="Logout"
-                            >
-                                <i class="pi pi-sign-out"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Mobile menu -->
-                    <div class="layout-topbar-menu lg:hidden">
-                        <div class="layout-topbar-menu-content">
-                            <div class="flex flex-col p-4 gap-3">
-                                <div class="flex items-center gap-3 mb-2">
+                    <p-menu #userMenu [model]="userMenuItems" [popup]="true" styleClass="user-menu">
+                        <ng-template pTemplate="start">
+                            <div class="user-menu-header">
+                                <div class="flex items-center gap-3 p-3 border-bottom-1 surface-border">
                                     <p-avatar
                                         [label]="getUserInitials()"
                                         styleClass="bg-primary text-white"
                                         shape="circle"
                                     ></p-avatar>
-                                    <div class="flex flex-col text-sm">
-                                        <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.username }}</span>
-                                        <span class="text-muted-color text-xs">{{ currentUser()?.email }}</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.name || 'User' }}</span>
+                                        <span class="text-muted-color text-sm">{{ currentUser()?.email || 'Not logged in' }}</span>
                                     </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    class="layout-topbar-action w-full justify-start"
-                                    (click)="logout()"
-                                >
-                                    <i class="pi pi-sign-out mr-2"></i>
-                                    <span>Logout</span>
-                                </button>
                             </div>
-                        </div>
-                    </div>
-                }
+                        </ng-template>
+                    </p-menu>
+                </div>
             </div>
         </div>
     `
 })
 export class AppTopbar implements OnInit {
+    @ViewChild('userMenu') userMenu!: Menu;
     items!: MenuItem[];
     currentUser = signal<User | null>(null);
+    userMenuItems: MenuItem[] = [];
 
     constructor(
         public layoutService: LayoutService,
-        private authService: AuthService
+        private authService: AuthService,
+        private router: Router
     ) {}
 
     ngOnInit(): void {
@@ -133,6 +117,23 @@ export class AppTopbar implements OnInit {
         this.authService.currentUser$.subscribe(user => {
             this.currentUser.set(user);
         });
+
+        // Setup user menu items
+        this.userMenuItems = [
+            {
+                label: 'Preferences',
+                icon: 'pi pi-cog',
+                command: () => this.navigateToPreferences()
+            },
+            {
+                separator: true
+            },
+            {
+                label: 'Logout',
+                icon: 'pi pi-sign-out',
+                command: () => this.logout()
+            }
+        ];
     }
 
     toggleDarkMode() {
@@ -142,11 +143,21 @@ export class AppTopbar implements OnInit {
         }));
     }
 
+    toggleUserMenu(event: Event) {
+        if (this.userMenu) {
+            this.userMenu.toggle(event);
+        }
+    }
+
     logout() {
         // Confirm logout
         if (confirm('Are you sure you want to logout?')) {
             this.authService.logout();
         }
+    }
+
+    navigateToPreferences() {
+        this.router.navigate(['/pages/preferences']);
     }
 
     /**
@@ -157,9 +168,9 @@ export class AppTopbar implements OnInit {
         const user = this.currentUser();
         if (!user) return '?';
 
-        if (user.username) {
-            // Take first two characters of username
-            return user.username.substring(0, 2).toUpperCase();
+        if (user.name) {
+            // Take first two characters of name
+            return user.name.substring(0, 2).toUpperCase();
         }
 
         if (user.email) {

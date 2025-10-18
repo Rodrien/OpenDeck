@@ -5,8 +5,8 @@ import { Topic } from './topic.model';
  * Represents an individual flashcard with question and answer
  */
 export interface Card {
-  id: number;
-  deck_id: number;
+  id: string;
+  deck_id: string;
   question: string;
   answer: string;
   source: string | null;
@@ -27,12 +27,12 @@ export type FlashCard = Card;
  * Used when creating a new card
  */
 export interface CreateCardDto {
-  deck_id: number;
+  deck_id: string;
   question: string;
   answer: string;
   source?: string;
   source_url?: string;
-  topic_ids?: number[];
+  topic_ids?: string[];
 }
 
 /**
@@ -44,7 +44,7 @@ export interface UpdateCardDto {
   answer?: string;
   source?: string;
   source_url?: string;
-  topic_ids?: number[];
+  topic_ids?: string[];
 }
 
 /**
@@ -52,8 +52,8 @@ export interface UpdateCardDto {
  * Query parameters for filtering cards
  */
 export interface CardFilterParams {
-  deck_id?: number;
-  topic_id?: number;
+  deck_id?: string;
+  topic_id?: string;
   limit?: number;
   offset?: number;
 }

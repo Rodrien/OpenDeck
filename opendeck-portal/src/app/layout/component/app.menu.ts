@@ -24,11 +24,6 @@ export class AppMenu {
                 label: 'Main',
                 items: [
                     {
-                        label: 'Dashboard',
-                        icon: 'pi pi-fw pi-home',
-                        routerLink: ['/']
-                    },
-                    {
                         label: 'Flashcards',
                         icon: 'pi pi-fw pi-book',
                         routerLink: ['/pages/flashcards']

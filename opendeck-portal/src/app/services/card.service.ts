@@ -50,30 +50,42 @@ export class CardService {
    * @param id - Card ID
    * @returns Observable of Card
    */
-  getById(id: number): Observable<Card> {
+  getById(id: string): Observable<Card> {
     return this.http.get<Card>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
 
   /**
    * Get all cards for a specific deck
-   * @param deckId - Deck ID
+   * @param deckId - Deck ID (UUID string)
    * @param limit - Optional limit
    * @param offset - Optional offset
    * @returns Observable of Paginated Card response
    */
-  getCardsForDeck(deckId: number, limit?: number, offset?: number): Observable<PaginatedResponse<Card>> {
-    return this.getAll({ deck_id: deckId, limit, offset });
+  getCardsForDeck(deckId: string, limit?: number, offset?: number): Observable<PaginatedResponse<Card>> {
+    let params = new HttpParams();
+
+    if (limit !== undefined) {
+      params = params.set('limit', limit.toString());
+    }
+    if (offset !== undefined) {
+      params = params.set('offset', offset.toString());
+    }
+
+    // Use the correct backend endpoint: /decks/{deck_id}/cards
+    const url = `${environment.apiBaseUrl}/decks/${deckId}/cards`;
+    return this.http.get<PaginatedResponse<Card>>(url, { params })
+      .pipe(catchError(this.handleError));
   }
 
   /**
    * Get cards by topic
-   * @param topicId - Topic ID
+   * @param topicId - Topic ID (UUID string)
    * @param limit - Optional limit
    * @param offset - Optional offset
    * @returns Observable of Paginated Card response
    */
-  getCardsByTopic(topicId: number, limit?: number, offset?: number): Observable<PaginatedResponse<Card>> {
+  getCardsByTopic(topicId: string, limit?: number, offset?: number): Observable<PaginatedResponse<Card>> {
     return this.getAll({ topic_id: topicId, limit, offset });
   }
 
@@ -89,21 +101,21 @@ export class CardService {
 
   /**
    * Update existing card
-   * @param id - Card ID
+   * @param id - Card ID (UUID string)
    * @param card - Update Card DTO
    * @returns Observable of updated Card
    */
-  update(id: number, card: UpdateCardDto): Observable<Card> {
+  update(id: string, card: UpdateCardDto): Observable<Card> {
     return this.http.put<Card>(`${this.apiUrl}/${id}`, card)
       .pipe(catchError(this.handleError));
   }
 
   /**
    * Delete card
-   * @param id - Card ID
+   * @param id - Card ID (UUID string)
    * @returns Observable of void
    */
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(catchError(this.handleError));
   }
