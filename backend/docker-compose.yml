@@ -46,7 +46,6 @@ services:
       - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
       - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
       - DB_BACKEND=postgres
-      - ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000
     ports:
       - "8000:8000"
     depends_on:

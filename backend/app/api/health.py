@@ -1,6 +1,7 @@
 """Health Check Endpoint"""
 
 from fastapi import APIRouter, Depends
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.db.base import get_db
@@ -26,7 +27,7 @@ async def health_check(db: Session = Depends(get_db)) -> HealthResponse:
     """
     # Test database connection
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "connected"
     except Exception:
         db_status = "disconnected"
