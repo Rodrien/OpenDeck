@@ -18,7 +18,7 @@
                 <div class="hidden md:flex items-center gap-6">
                     <div class="text-right">
                         <p class="text-sm text-surface-600 dark:text-surface-400">Total Decks</p>
-                        <p class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ mockDecks.length }}</p>
+                        <p class="text-xl font-semibold text-surface-900 dark:text-surface-0">{{ decks().length }}</p>
                     </div>
                     <div class="text-right">
                         <p class="text-sm text-surface-600 dark:text-surface-400">Total Cards</p>
@@ -46,6 +46,39 @@
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Loading State -->
+        @if (loading()) {
+            <div class="flex flex-col items-center justify-center py-16">
+                <p-progressSpinner
+                    styleClass="w-16 h-16"
+                    strokeWidth="4"
+                    [attr.aria-label]="'Loading decks'"
+                />
+                <p class="mt-4 text-surface-600 dark:text-surface-400">Loading decks...</p>
+            </div>
+        }
+
+        <!-- Error State -->
+        @if (error() && !loading()) {
+            <div class="mb-6">
+                <p-message
+                    severity="error"
+                    [text]="error()!"
+                    styleClass="w-full"
+                />
+                <div class="text-center mt-4">
+                    <p-button
+                        label="Retry"
+                        icon="pi pi-refresh"
+                        (onClick)="loadDecks()"
+                        severity="secondary"
+                    />
+                </div>
+            </div>
+        }
+
+        <!-- Content (only show when not loading) -->
+        @if (!loading()) {
         <!-- Stats Cards Section -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Available Decks Card -->
@@ -97,8 +130,8 @@
             <p class="text-surface-600 dark:text-surface-400">Select a deck to start studying</p>
         </div>
 
-        <!-- Empty State -->
-        @if (filteredDecks().length === 0) {
+        <!-- Empty State (when no decks match search or no decks loaded) -->
+        @if (filteredDecks().length === 0 && !error()) {
             <p-card styleClass="shadow-md">
                 <div class="text-center py-12">
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-surface-100 dark:bg-surface-800 rounded-full mb-4">
@@ -119,8 +152,8 @@
             </p-card>
         }
 
-        <!-- Decks Grid -->
-        @if (filteredDecks().length > 0) {
+        <!-- Decks Grid (only show when not in error state) -->
+        @if (filteredDecks().length > 0 && !error()) {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @for (deck of filteredDecks(); track deck.id) {
                     <p-card
@@ -131,18 +164,22 @@
                         <div class="mb-4">
                             <div class="flex items-start justify-between mb-3">
                                 <div class="p-3 bg-primary-500/10 dark:bg-primary-500/20 rounded-lg">
-                                    <i [class]="'pi ' + deck.icon + ' text-primary-500 dark:text-primary-400 text-2xl'"></i>
+                                    <i [class]="'pi ' + getCategoryIcon(deck.category) + ' text-primary-500 dark:text-primary-400 text-2xl'"></i>
                                 </div>
-                                <p-badge
-                                    [value]="deck.difficulty"
-                                    [severity]="getDifficultySeverity(deck.difficulty)"
-                                />
+                                @if (deck.difficulty) {
+                                    <p-badge
+                                        [value]="formatDifficulty(deck.difficulty)"
+                                        [severity]="getDifficultySeverity(deck.difficulty)"
+                                    />
+                                }
                             </div>
 
                             <!-- Category Tag -->
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300">
-                                {{ deck.category }}
-                            </span>
+                            @if (deck.category) {
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300">
+                                    {{ deck.category }}
+                                </span>
+                            }
                         </div>
 
                         <!-- Card Content -->
@@ -152,14 +189,14 @@
                             </h3>
 
                             <p class="text-sm text-surface-600 dark:text-surface-400 line-clamp-2 min-h-[2.5rem]">
-                                {{ deck.description }}
+                                {{ deck.description || 'No description available' }}
                             </p>
 
                             <!-- Card Count -->
                             <div class="flex items-center gap-2 pt-2 border-t border-surface-200 dark:border-surface-700">
                                 <i class="pi pi-clone text-surface-500 dark:text-surface-400 text-sm"></i>
                                 <span class="text-sm font-medium text-surface-700 dark:text-surface-300">
-                                    {{ deck.cardCount }} cards
+                                    {{ deck.card_count }} cards
                                 </span>
                             </div>
                         </div>
@@ -175,6 +212,7 @@
                 }
             </div>
         }
+        } <!-- End of !loading() condition -->
     </main>
 
     <!-- Footer -->

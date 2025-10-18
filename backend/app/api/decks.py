@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Query
 from app.schemas.deck import DeckCreate, DeckUpdate, DeckResponse, DeckListResponse
 from app.schemas.topic import TopicResponse
-from app.api.dependencies import CurrentUser, DeckRepoDepends, TopicRepoDepends
+from app.api.dependencies import CurrentUser, CurrentUserOptional, DeckRepoDepends, TopicRepoDepends
 from app.core.models import Deck, DifficultyLevel
 
 router = APIRouter(prefix="/decks", tags=["Decks"])
@@ -12,7 +12,7 @@ router = APIRouter(prefix="/decks", tags=["Decks"])
 
 @router.get("", response_model=DeckListResponse)
 async def list_decks(
-    current_user: CurrentUser,
+    current_user: CurrentUserOptional,
     deck_repo: DeckRepoDepends,
     topic_repo: TopicRepoDepends,
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -24,8 +24,12 @@ async def list_decks(
     """
     List user's decks with optional filters.
 
+    NOTE: For Phase 1 development, authentication is optional.
+    If no user is authenticated, returns the first user's decks.
+    This should be replaced with proper authentication before production.
+
     Args:
-        current_user: Authenticated user
+        current_user: Authenticated user (optional in development)
         deck_repo: Deck repository dependency
         topic_repo: Topic repository dependency
         category: Optional category filter
@@ -37,6 +41,12 @@ async def list_decks(
     Returns:
         Paginated list of decks
     """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No users found in the system",
+        )
+
     decks = deck_repo.list(
         user_id=current_user.id,
         category=category,
@@ -69,16 +79,18 @@ async def list_decks(
 @router.get("/{deck_id}", response_model=DeckResponse)
 async def get_deck(
     deck_id: str,
-    current_user: CurrentUser,
+    current_user: CurrentUserOptional,
     deck_repo: DeckRepoDepends,
     topic_repo: TopicRepoDepends,
 ) -> DeckResponse:
     """
     Get a single deck by ID.
 
+    NOTE: For Phase 1 development, authentication is optional.
+
     Args:
         deck_id: Deck identifier
-        current_user: Authenticated user
+        current_user: Authenticated user (optional in development)
         deck_repo: Deck repository dependency
         topic_repo: Topic repository dependency
 
@@ -88,6 +100,12 @@ async def get_deck(
     Raises:
         HTTPException: If deck not found or access denied
     """
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No users found in the system",
+        )
+
     deck = deck_repo.get(deck_id, current_user.id)
 
     if not deck:

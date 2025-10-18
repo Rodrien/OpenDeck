@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -10,9 +10,15 @@ import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
 import { Badge } from 'primeng/badge';
 import { Button } from 'primeng/button';
+import { ProgressSpinner } from 'primeng/progressspinner';
+import { Message } from 'primeng/message';
+
+// Services
+import { DeckService } from '../../services/deck.service';
 
 // Models
-import { Deck, DeckStats } from './models/deck.interface';
+import { Deck as ApiDeck, DifficultyLevel } from '../../models/deck.model';
+import { DeckStats } from './models/deck.interface';
 
 @Component({
     selector: 'app-flashcard-decks-list',
@@ -24,85 +30,33 @@ import { Deck, DeckStats } from './models/deck.interface';
         IconField,
         InputIcon,
         Badge,
-        Button
+        Button,
+        ProgressSpinner,
+        Message
     ],
     templateUrl: './flashcard-decks-list.component.html',
     styleUrls: ['./flashcard-decks-list.component.scss']
 })
-export class FlashcardDecksListComponent {
+export class FlashcardDecksListComponent implements OnInit {
     // Signals for reactive state management
     searchQuery = signal<string>('');
-
-    // Mock data - matches the Figma design
-    readonly mockDecks: Deck[] = [
-        {
-            id: 1,
-            title: 'Introduction to Computer Science',
-            description: 'Fundamental concepts of programming, algorithms, and data structures.',
-            cardCount: 25,
-            category: 'Computer Science',
-            difficulty: 'Beginner',
-            icon: 'pi-code'
-        },
-        {
-            id: 2,
-            title: 'Organic Chemistry Basics',
-            description: 'Essential organic chemistry concepts including functional groups and reactions.',
-            cardCount: 30,
-            category: 'Chemistry',
-            difficulty: 'Intermediate',
-            icon: 'pi-flask'
-        },
-        {
-            id: 3,
-            title: 'Calculus I: Derivatives',
-            description: 'Understanding derivatives, limits, and their applications.',
-            cardCount: 28,
-            category: 'Mathematics',
-            difficulty: 'Intermediate',
-            icon: 'pi-calculator'
-        },
-        {
-            id: 4,
-            title: 'World History: Ancient Civilizations',
-            description: 'Exploring ancient civilizations from Mesopotamia to Rome.',
-            cardCount: 35,
-            category: 'History',
-            difficulty: 'Beginner',
-            icon: 'pi-globe'
-        },
-        {
-            id: 5,
-            title: 'Microeconomics Principles',
-            description: 'Supply and demand, market structures, and consumer behavior.',
-            cardCount: 22,
-            category: 'Economics',
-            difficulty: 'Intermediate',
-            icon: 'pi-chart-line'
-        },
-        {
-            id: 6,
-            title: 'Data Structures & Algorithms',
-            description: 'Advanced data structures, sorting algorithms, and complexity analysis.',
-            cardCount: 40,
-            category: 'Computer Science',
-            difficulty: 'Advanced',
-            icon: 'pi-sitemap'
-        }
-    ];
+    decks = signal<ApiDeck[]>([]);
+    loading = signal<boolean>(false);
+    error = signal<string | null>(null);
 
     // Computed filtered decks based on search query
     filteredDecks = computed(() => {
         const query = this.searchQuery().toLowerCase().trim();
+        const allDecks = this.decks();
 
         if (!query) {
-            return this.mockDecks;
+            return allDecks;
         }
 
-        return this.mockDecks.filter(deck =>
+        return allDecks.filter(deck =>
             deck.title.toLowerCase().includes(query) ||
-            deck.category.toLowerCase().includes(query) ||
-            deck.description.toLowerCase().includes(query)
+            (deck.category && deck.category.toLowerCase().includes(query)) ||
+            (deck.description && deck.description.toLowerCase().includes(query))
         );
     });
 
@@ -112,7 +66,9 @@ export class FlashcardDecksListComponent {
         const categories = new Map<string, number>();
 
         decks.forEach(deck => {
-            categories.set(deck.category, (categories.get(deck.category) || 0) + 1);
+            if (deck.category) {
+                categories.set(deck.category, (categories.get(deck.category) || 0) + 1);
+            }
         });
 
         let mostPopular = 'N/A';
@@ -128,29 +84,62 @@ export class FlashcardDecksListComponent {
             availableDecks: decks.length,
             mostPopularCategory: mostPopular,
             categoryCount: categories.size,
-            totalCards: decks.reduce((sum, deck) => sum + deck.cardCount, 0)
+            totalCards: decks.reduce((sum, deck) => sum + deck.card_count, 0)
         };
     });
 
-    constructor(private router: Router) {}
+    constructor(
+        private router: Router,
+        private deckService: DeckService
+    ) {}
+
+    ngOnInit(): void {
+        this.loadDecks();
+    }
+
+    /**
+     * Load all decks from the API
+     * Public method to allow retry from template
+     */
+    loadDecks(): void {
+        this.loading.set(true);
+        this.error.set(null);
+
+        this.deckService.getAll({ limit: 100 }).subscribe({
+            next: (response) => {
+                this.decks.set(response.items);
+                this.loading.set(false);
+            },
+            error: (err) => {
+                this.error.set('Failed to load decks. Please try again later.');
+                this.loading.set(false);
+                console.error('Error loading decks:', err);
+            }
+        });
+    }
 
     /**
      * Navigate to the flashcard viewer for the selected deck
      */
-    onDeckSelect(deck: Deck): void {
+    onDeckSelect(deck: ApiDeck): void {
         this.router.navigate(['/pages/flashcards/viewer', deck.id]);
     }
 
     /**
      * Get the appropriate severity for the difficulty badge
+     * Backend returns lowercase difficulty values
      */
-    getDifficultySeverity(difficulty: Deck['difficulty']): 'success' | 'warn' | 'danger' {
-        switch (difficulty) {
-            case 'Beginner':
+    getDifficultySeverity(difficulty: DifficultyLevel | null): 'success' | 'warn' | 'danger' {
+        if (!difficulty) {
+            return 'success';
+        }
+
+        switch (difficulty.toLowerCase()) {
+            case 'beginner':
                 return 'success';
-            case 'Intermediate':
+            case 'intermediate':
                 return 'warn';
-            case 'Advanced':
+            case 'advanced':
                 return 'danger';
             default:
                 return 'success';
@@ -158,11 +147,39 @@ export class FlashcardDecksListComponent {
     }
 
     /**
-     * Get the appropriate icon for a category
+     * Format difficulty for display (capitalize first letter)
      */
-    getCategoryIcon(category: string): string {
-        const deck = this.mockDecks.find(d => d.category === category);
-        return deck?.icon || 'pi-book';
+    formatDifficulty(difficulty: DifficultyLevel | null): string {
+        if (!difficulty) {
+            return 'N/A';
+        }
+        return difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+    }
+
+    /**
+     * Get the appropriate icon for a category
+     * Maps category names to PrimeIcons
+     */
+    getCategoryIcon(category: string | null): string {
+        if (!category) {
+            return 'pi-book';
+        }
+
+        const iconMap: { [key: string]: string } = {
+            'Computer Science': 'pi-code',
+            'Chemistry': 'pi-flask',
+            'Mathematics': 'pi-calculator',
+            'History': 'pi-globe',
+            'Economics': 'pi-chart-line',
+            'Physics': 'pi-bolt',
+            'Biology': 'pi-leaf',
+            'Literature': 'pi-book',
+            'Art': 'pi-palette',
+            'Music': 'pi-volume-up',
+            'default': 'pi-book'
+        };
+
+        return iconMap[category] || iconMap['default'];
     }
 
     /**

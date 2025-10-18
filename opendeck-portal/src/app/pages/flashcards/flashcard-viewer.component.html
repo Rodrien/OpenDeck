@@ -12,9 +12,39 @@
                 [attr.aria-label]="'Navigate back to deck listing'"
             />
 
-            <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 mb-2">{{ deckTitle() }}</h1>
-            <p class="text-surface-600 dark:text-surface-400 text-lg">{{ cardCountText() }}</p>
+            @if (!loading()) {
+                <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 mb-2">{{ deckTitle() }}</h1>
+                @if (cards().length > 0) {
+                    <p class="text-surface-600 dark:text-surface-400 text-lg">{{ cardCountText() }}</p>
+                }
+            }
         </div>
+
+        <!-- Loading State -->
+        @if (loading()) {
+            <div class="flex flex-col items-center justify-center py-16">
+                <p-progressSpinner
+                    styleClass="w-16 h-16"
+                    strokeWidth="4"
+                    [attr.aria-label]="'Loading flashcards'"
+                />
+                <p class="mt-4 text-surface-600 dark:text-surface-400">Loading flashcards...</p>
+            </div>
+        }
+
+        <!-- Error State -->
+        @if (error() && !loading()) {
+            <div class="mb-6">
+                <p-message
+                    severity="error"
+                    [text]="error()!"
+                    styleClass="w-full"
+                />
+            </div>
+        }
+
+        <!-- Content (only show when not loading and no error) -->
+        @if (!loading() && !error() && cards().length > 0) {
 
         <!-- Progress Bar -->
         <div class="mb-8">
@@ -70,13 +100,13 @@
                                                     Source Reference
                                                 </p>
                                                 <p class="source-text text-sm text-surface-700 dark:text-surface-200">
-                                                    {{ card.source }}
+                                                    {{ card.source || 'Source not available' }}
                                                 </p>
                                             </div>
-                                            @if (card.sourceUrl && card.sourceUrl !== '#') {
+                                            @if (card.source_url && card.source_url !== '#') {
                                                 <button
                                                     class="source-link-btn"
-                                                    (click)="openSource(card.sourceUrl)"
+                                                    (click)="openSource(card.source_url)"
                                                     [attr.aria-label]="'Open source document'"
                                                 >
                                                     <i class="pi pi-external-link"></i>
@@ -164,5 +194,6 @@
                 </span>
             </p>
         </div>
+        } <!-- End of !loading() && !error() && cards().length > 0 condition -->
     </div>
 </div>

@@ -1,35 +1,60 @@
 import { inject } from '@angular/core';
-import { Router, CanActivateFn } from '@angular/router';
+import { Router, CanActivateFn, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Auth Guard to protect routes
- * Redirects to login if user is not authenticated
+ * Auth Guard (Functional)
+ * Protects routes requiring authentication
+ * Redirects to login page if user is not authenticated
+ * Stores the attempted URL for redirecting after login
+ * Uses Angular 18+ functional guard pattern
  */
-export const authGuard: CanActivateFn = (route, state) => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+export const authGuard: CanActivateFn = (
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    if (authService.isLoggedIn()) {
-        return true;
-    }
+  // Check if user is authenticated
+  if (authService.isLoggedIn()) {
+    return true;
+  }
 
-    // Redirect to login page
-    return router.createUrlTree(['/auth/login']);
+  // Store the attempted URL for redirecting after login
+  const returnUrl = state.url;
+  console.warn('Unauthorized access attempt to:', returnUrl);
+
+  // Redirect to login page with return URL
+  return router.createUrlTree(['/auth/login'], {
+    queryParams: { returnUrl }
+  });
 };
 
 /**
- * Login Guard to prevent authenticated users from accessing login page
- * Redirects to home if user is already authenticated
+ * Guest Guard (Functional)
+ * Prevents authenticated users from accessing auth pages (login, register)
+ * Redirects to dashboard if already authenticated
+ * Renamed from loginGuard for clarity
  */
-export const loginGuard: CanActivateFn = (route, state) => {
-    const authService = inject(AuthService);
-    const router = inject(Router);
+export const guestGuard: CanActivateFn = (
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot
+) => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
 
-    if (!authService.isLoggedIn()) {
-        return true;
-    }
-
-    // Redirect to home page if already logged in
+  // If user is authenticated, redirect to dashboard
+  if (authService.isLoggedIn()) {
     return router.createUrlTree(['/']);
+  }
+
+  // Allow access to auth pages
+  return true;
 };
+
+/**
+ * Legacy alias for backward compatibility
+ * @deprecated Use guestGuard instead
+ */
+export const loginGuard = guestGuard;

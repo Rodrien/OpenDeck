@@ -1,66 +1,202 @@
 import { Injectable, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Observable, throwError, BehaviorSubject } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  AuthTokenResponse,
+  AuthState
+} from '../models/user.model';
 
+/**
+ * Authentication Service
+ * Handles user authentication, registration, and token management
+ */
 @Injectable({
-    providedIn: 'root'
+  providedIn: 'root'
 })
 export class AuthService {
-    // Signal to track authentication state
-    private isAuthenticatedSignal = signal<boolean>(false);
+  private readonly apiUrl = `${environment.apiBaseUrl}/auth`;
+  private readonly TOKEN_KEY = 'opendeck_token';
+  private readonly USER_KEY = 'opendeck_user';
 
-    // Public readonly signal
-    isAuthenticated = this.isAuthenticatedSignal.asReadonly();
+  // Signal to track authentication state
+  private isAuthenticatedSignal = signal<boolean>(false);
 
-    // Test credentials
-    private readonly TEST_USERNAME = 'admin';
-    private readonly TEST_PASSWORD = 'admin';
+  // BehaviorSubject for current user
+  private currentUserSubject = new BehaviorSubject<User | null>(null);
 
-    private readonly AUTH_KEY = 'opendeck_auth';
+  // Public readonly signal
+  public isAuthenticated = this.isAuthenticatedSignal.asReadonly();
 
-    constructor(private router: Router) {
-        // Check if user is already logged in
-        this.checkAuthStatus();
+  // Public observable for current user
+  public currentUser$ = this.currentUserSubject.asObservable();
+
+  constructor(
+    private http: HttpClient,
+    private router: Router
+  ) {
+    // Check if user is already logged in
+    this.checkAuthStatus();
+  }
+
+  /**
+   * Check authentication status on init
+   * Restores auth state from localStorage
+   */
+  private checkAuthStatus(): void {
+    const token = this.getToken();
+    const userJson = localStorage.getItem(this.USER_KEY);
+
+    if (token && userJson) {
+      try {
+        const user = JSON.parse(userJson) as User;
+        this.isAuthenticatedSignal.set(true);
+        this.currentUserSubject.next(user);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        this.clearAuthData();
+      }
+    }
+  }
+
+  /**
+   * Login with email and password
+   * @param email - User email
+   * @param password - User password
+   * @returns Observable of AuthTokenResponse
+   */
+  login(email: string, password: string): Observable<AuthTokenResponse> {
+    const loginData: LoginRequest = { email, password };
+
+    return this.http.post<AuthTokenResponse>(`${this.apiUrl}/login`, loginData)
+      .pipe(
+        tap(response => this.handleAuthSuccess(response)),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Register new user
+   * @param email - User email
+   * @param username - Username
+   * @param password - User password
+   * @returns Observable of AuthTokenResponse
+   */
+  register(email: string, username: string, password: string): Observable<AuthTokenResponse> {
+    const registerData: RegisterRequest = { email, username, password };
+
+    return this.http.post<AuthTokenResponse>(`${this.apiUrl}/register`, registerData)
+      .pipe(
+        tap(response => this.handleAuthSuccess(response)),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Handle successful authentication
+   * Stores token and user data
+   * @param response - Auth token response
+   */
+  private handleAuthSuccess(response: AuthTokenResponse): void {
+    this.setToken(response.access_token);
+    localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+    this.isAuthenticatedSignal.set(true);
+    this.currentUserSubject.next(response.user);
+  }
+
+  /**
+   * Get stored JWT token
+   * @returns Token string or null
+   */
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Store JWT token
+   * @param token - JWT token string
+   */
+  setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  /**
+   * Clear authentication data
+   */
+  private clearAuthData(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem(this.USER_KEY);
+    this.isAuthenticatedSignal.set(false);
+    this.currentUserSubject.next(null);
+  }
+
+  /**
+   * Logout and clear authentication
+   * Redirects to login page
+   */
+  logout(): void {
+    this.clearAuthData();
+    this.router.navigate(['/auth/login']);
+  }
+
+  /**
+   * Check if user is authenticated
+   * @returns boolean - Authentication status
+   */
+  isLoggedIn(): boolean {
+    return this.isAuthenticatedSignal();
+  }
+
+  /**
+   * Get current user
+   * @returns Current user or null
+   */
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
+
+  /**
+   * Get current auth state
+   * @returns AuthState object
+   */
+  getAuthState(): AuthState {
+    return {
+      isAuthenticated: this.isLoggedIn(),
+      user: this.getCurrentUser(),
+      token: this.getToken()
+    };
+  }
+
+  /**
+   * Handle HTTP errors
+   * @param error - HTTP error response
+   * @returns Observable error
+   */
+  private handleError(error: HttpErrorResponse): Observable<never> {
+    let errorMessage = 'An error occurred during authentication';
+
+    if (error.error instanceof ErrorEvent) {
+      // Client-side error
+      errorMessage = `Error: ${error.error.message}`;
+    } else {
+      // Server-side error
+      if (error.status === 401) {
+        errorMessage = 'Invalid credentials';
+      } else if (error.status === 409) {
+        errorMessage = 'User already exists';
+      } else if (error.error?.detail) {
+        errorMessage = error.error.detail;
+      } else {
+        errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+      }
     }
 
-    /**
-     * Check authentication status on init
-     */
-    private checkAuthStatus(): void {
-        const authStatus = localStorage.getItem(this.AUTH_KEY);
-        if (authStatus === 'true') {
-            this.isAuthenticatedSignal.set(true);
-        }
-    }
-
-    /**
-     * Login with username and password
-     * @param username - Username
-     * @param password - Password
-     * @returns boolean - Success status
-     */
-    login(username: string, password: string): boolean {
-        // Check credentials
-        if (username === this.TEST_USERNAME && password === this.TEST_PASSWORD) {
-            this.isAuthenticatedSignal.set(true);
-            localStorage.setItem(this.AUTH_KEY, 'true');
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Logout and clear authentication
-     */
-    logout(): void {
-        this.isAuthenticatedSignal.set(false);
-        localStorage.removeItem(this.AUTH_KEY);
-        this.router.navigate(['/auth/login']);
-    }
-
-    /**
-     * Check if user is authenticated (for guards)
-     */
-    isLoggedIn(): boolean {
-        return this.isAuthenticatedSignal();
-    }
+    console.error('AuthService Error:', errorMessage);
+    return throwError(() => new Error(errorMessage));
+  }
 }

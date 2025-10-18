@@ -79,8 +79,42 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_optional(
+    db: Session = Depends(get_db),
+) -> User | None:
+    """
+    Get the first available user for development/testing purposes.
+
+    This is a temporary solution for Phase 1 frontend integration.
+    In production, all endpoints should use proper authentication.
+
+    Returns:
+        First user in the database, or None if no users exist
+    """
+    from app.config import settings
+    from app.db.models import UserModel
+
+    if not settings.is_development:
+        return None
+
+    # Get the first user for development purposes
+    user_model = db.query(UserModel).first()
+    if not user_model:
+        return None
+
+    return User(
+        id=user_model.id,
+        email=user_model.email,
+        name=user_model.name,
+        password_hash=user_model.password_hash,
+        created_at=user_model.created_at,
+        updated_at=user_model.updated_at,
+    )
+
+
 # Type aliases for cleaner dependency injection
 CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUserOptional = Annotated[User | None, Depends(get_current_user_optional)]
 UserRepoDepends = Annotated[PostgresUserRepo, Depends(get_user_repo)]
 DeckRepoDepends = Annotated[PostgresDeckRepo, Depends(get_deck_repo)]
 CardRepoDepends = Annotated[PostgresCardRepo, Depends(get_card_repo)]
