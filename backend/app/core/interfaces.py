@@ -6,8 +6,9 @@ These interfaces enable dependency injection and allow swapping between
 PostgreSQL and DynamoDB implementations without changing business logic.
 """
 
-from typing import Protocol, Optional
-from app.core.models import User, Deck, Card, Document
+from __future__ import annotations
+from typing import Protocol, Optional, List
+from app.core.models import User, Deck, Card, Document, Topic
 
 
 class UserRepository(Protocol):
@@ -55,9 +56,10 @@ class DeckRepository(Protocol):
         user_id: str,
         category: Optional[str] = None,
         difficulty: Optional[str] = None,
+        topic_id: Optional[str] = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> list[Deck]:
+    ) -> List[Deck]:
         """
         List decks for a user with optional filters.
 
@@ -65,6 +67,7 @@ class DeckRepository(Protocol):
             user_id: User ID to filter by
             category: Optional category filter
             difficulty: Optional difficulty filter
+            topic_id: Optional topic filter
             limit: Maximum number of results
             offset: Number of results to skip
 
@@ -99,12 +102,19 @@ class CardRepository(Protocol):
         """Get card by ID."""
         ...
 
-    def list_by_deck(self, deck_id: str, limit: int = 100, offset: int = 0) -> list[Card]:
+    def list_by_deck(
+        self,
+        deck_id: str,
+        topic_id: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Card]:
         """
         List all cards in a deck.
 
         Args:
             deck_id: Deck ID to filter by
+            topic_id: Optional topic filter
             limit: Maximum number of results
             offset: Number of results to skip
 
@@ -113,11 +123,30 @@ class CardRepository(Protocol):
         """
         ...
 
+    def list_by_topic(
+        self,
+        topic_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Card]:
+        """
+        List all cards associated with a topic.
+
+        Args:
+            topic_id: Topic ID to filter by
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of cards for the topic
+        """
+        ...
+
     def create(self, card: Card) -> Card:
         """Create a new card."""
         ...
 
-    def create_many(self, cards: list[Card]) -> list[Card]:
+    def create_many(self, cards: List[Card]) -> List[Card]:
         """
         Create multiple cards in a single operation.
 
@@ -156,7 +185,7 @@ class DocumentRepository(Protocol):
         """
         ...
 
-    def list(self, user_id: str, limit: int = 100, offset: int = 0) -> list[Document]:
+    def list(self, user_id: str, limit: int = 100, offset: int = 0) -> List[Document]:
         """
         List documents for a user.
 
@@ -185,5 +214,147 @@ class DocumentRepository(Protocol):
         Args:
             doc_id: Document to delete
             user_id: User ID for authorization check
+        """
+        ...
+
+
+class TopicRepository(Protocol):
+    """Abstract interface for topic data access."""
+
+    def get(self, topic_id: str) -> Optional[Topic]:
+        """
+        Get topic by ID.
+
+        Args:
+            topic_id: Topic identifier
+
+        Returns:
+            Topic if found, None otherwise
+        """
+        ...
+
+    def get_by_name(self, name: str) -> Optional[Topic]:
+        """
+        Get topic by name.
+
+        Args:
+            name: Topic name
+
+        Returns:
+            Topic if found, None otherwise
+        """
+        ...
+
+    def list(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Topic]:
+        """
+        List all topics.
+
+        Args:
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of topics
+        """
+        ...
+
+    def create(self, topic: Topic) -> Topic:
+        """
+        Create a new topic.
+
+        Args:
+            topic: Topic to create
+
+        Returns:
+            Created topic with ID
+        """
+        ...
+
+    def update(self, topic: Topic) -> Topic:
+        """
+        Update existing topic.
+
+        Args:
+            topic: Topic with updated data
+
+        Returns:
+            Updated topic
+        """
+        ...
+
+    def delete(self, topic_id: str) -> None:
+        """
+        Delete topic by ID.
+
+        Args:
+            topic_id: Topic to delete
+        """
+        ...
+
+    def get_topics_for_deck(self, deck_id: str) -> List[Topic]:
+        """
+        Get all topics associated with a deck.
+
+        Args:
+            deck_id: Deck identifier
+
+        Returns:
+            List of topics for the deck
+        """
+        ...
+
+    def get_topics_for_card(self, card_id: str) -> List[Topic]:
+        """
+        Get all topics associated with a card.
+
+        Args:
+            card_id: Card identifier
+
+        Returns:
+            List of topics for the card
+        """
+        ...
+
+    def associate_deck_topic(self, deck_id: str, topic_id: str) -> None:
+        """
+        Associate a topic with a deck.
+
+        Args:
+            deck_id: Deck identifier
+            topic_id: Topic identifier
+        """
+        ...
+
+    def dissociate_deck_topic(self, deck_id: str, topic_id: str) -> None:
+        """
+        Remove topic association from a deck.
+
+        Args:
+            deck_id: Deck identifier
+            topic_id: Topic identifier
+        """
+        ...
+
+    def associate_card_topic(self, card_id: str, topic_id: str) -> None:
+        """
+        Associate a topic with a card.
+
+        Args:
+            card_id: Card identifier
+            topic_id: Topic identifier
+        """
+        ...
+
+    def dissociate_card_topic(self, card_id: str, topic_id: str) -> None:
+        """
+        Remove topic association from a card.
+
+        Args:
+            card_id: Card identifier
+            topic_id: Topic identifier
         """
         ...

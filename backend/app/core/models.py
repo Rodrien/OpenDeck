@@ -158,3 +158,28 @@ class Document:
         self.status = DocumentStatus.FAILED
         self.error_message = error_message
         self.updated_at = datetime.utcnow()
+
+
+@dataclass
+class Topic:
+    """
+    Topic domain model.
+
+    Represents a topic or subject area that can be associated with decks and cards.
+    Enables content organization and filtering by topic.
+    """
+
+    id: str
+    name: str
+    description: Optional[str] = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate topic data after initialization."""
+        if not self.name:
+            raise ValueError("Topic name cannot be empty")
+        if len(self.name) > 100:
+            raise ValueError("Topic name cannot exceed 100 characters")
+        if self.description and len(self.description) > 500:
+            raise ValueError("Topic description cannot exceed 500 characters")

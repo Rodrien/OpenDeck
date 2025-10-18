@@ -15,6 +15,7 @@ from app.db.postgres_repo import (
     PostgresDeckRepo,
     PostgresCardRepo,
     PostgresDocumentRepo,
+    PostgresTopicRepo,
 )
 from app.services.auth_service import AuthService
 from app.core.models import User
@@ -41,6 +42,11 @@ def get_card_repo(db: Session = Depends(get_db)) -> PostgresCardRepo:
 def get_document_repo(db: Session = Depends(get_db)) -> PostgresDocumentRepo:
     """Get document repository instance."""
     return PostgresDocumentRepo(db)
+
+
+def get_topic_repo(db: Session = Depends(get_db)) -> PostgresTopicRepo:
+    """Get topic repository instance."""
+    return PostgresTopicRepo(db)
 
 
 def get_auth_service(
@@ -79,4 +85,5 @@ UserRepoDepends = Annotated[PostgresUserRepo, Depends(get_user_repo)]
 DeckRepoDepends = Annotated[PostgresDeckRepo, Depends(get_deck_repo)]
 CardRepoDepends = Annotated[PostgresCardRepo, Depends(get_card_repo)]
 DocumentRepoDepends = Annotated[PostgresDocumentRepo, Depends(get_document_repo)]
+TopicRepoDepends = Annotated[PostgresTopicRepo, Depends(get_topic_repo)]
 AuthServiceDepends = Annotated[AuthService, Depends(get_auth_service)]

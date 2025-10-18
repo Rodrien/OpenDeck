@@ -28,8 +28,10 @@
         font-weight: 500;
         gap: 0.5rem;
 
-        svg {
-            width: 3rem;
+        .opendeck-logo {
+            height: 2rem;
+            width: auto;
+            object-fit: contain;
         }
 
         &:focus-visible {

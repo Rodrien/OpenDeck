@@ -3,7 +3,8 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Query
 from app.schemas.deck import DeckCreate, DeckUpdate, DeckResponse, DeckListResponse
-from app.api.dependencies import CurrentUser, DeckRepoDepends
+from app.schemas.topic import TopicResponse
+from app.api.dependencies import CurrentUser, DeckRepoDepends, TopicRepoDepends
 from app.core.models import Deck, DifficultyLevel
 
 router = APIRouter(prefix="/decks", tags=["Decks"])
@@ -13,8 +14,10 @@ router = APIRouter(prefix="/decks", tags=["Decks"])
 async def list_decks(
     current_user: CurrentUser,
     deck_repo: DeckRepoDepends,
+    topic_repo: TopicRepoDepends,
     category: Optional[str] = Query(None, description="Filter by category"),
     difficulty: Optional[DifficultyLevel] = Query(None, description="Filter by difficulty"),
+    topic_id: Optional[str] = Query(None, description="Filter by topic"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
 ) -> DeckListResponse:
@@ -24,8 +27,10 @@ async def list_decks(
     Args:
         current_user: Authenticated user
         deck_repo: Deck repository dependency
+        topic_repo: Topic repository dependency
         category: Optional category filter
         difficulty: Optional difficulty filter
+        topic_id: Optional topic filter
         limit: Maximum number of results (1-100)
         offset: Pagination offset
 
@@ -36,16 +41,25 @@ async def list_decks(
         user_id=current_user.id,
         category=category,
         difficulty=difficulty.value if difficulty else None,
+        topic_id=topic_id,
         limit=limit,
         offset=offset,
     )
+
+    # Enrich decks with topics
+    deck_responses = []
+    for deck in decks:
+        topics = topic_repo.get_topics_for_deck(deck.id)
+        deck_dict = deck.__dict__.copy()
+        deck_dict['topics'] = [TopicResponse.model_validate(topic) for topic in topics]
+        deck_responses.append(DeckResponse.model_validate(deck_dict))
 
     # For total count, we'd need a count query in a real implementation
     # For Phase 1, we'll use the returned count
     total = len(decks) + offset
 
     return DeckListResponse(
-        items=[DeckResponse.model_validate(deck) for deck in decks],
+        items=deck_responses,
         total=total,
         limit=limit,
         offset=offset,
@@ -57,6 +71,7 @@ async def get_deck(
     deck_id: str,
     current_user: CurrentUser,
     deck_repo: DeckRepoDepends,
+    topic_repo: TopicRepoDepends,
 ) -> DeckResponse:
     """
     Get a single deck by ID.
@@ -65,6 +80,7 @@ async def get_deck(
         deck_id: Deck identifier
         current_user: Authenticated user
         deck_repo: Deck repository dependency
+        topic_repo: Topic repository dependency
 
     Returns:
         Deck details
@@ -80,7 +96,12 @@ async def get_deck(
             detail="Deck not found",
         )
 
-    return DeckResponse.model_validate(deck)
+    # Enrich with topics
+    topics = topic_repo.get_topics_for_deck(deck.id)
+    deck_dict = deck.__dict__.copy()
+    deck_dict['topics'] = [TopicResponse.model_validate(topic) for topic in topics]
+
+    return DeckResponse.model_validate(deck_dict)
 
 
 @router.post("", response_model=DeckResponse, status_code=status.HTTP_201_CREATED)

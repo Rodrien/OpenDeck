@@ -53,6 +53,9 @@ services:
         condition: service_healthy
     volumes:
       - ./app:/app/app  # Mount for hot reload in development
+      - ./scripts:/app/scripts  # Mount scripts directory
+      - ../cards:/app/cards  # Mount cards data directory
+      - ./alembic/versions:/app/alembic/versions  # Mount migration files
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # Celery Worker (for Phase 2)

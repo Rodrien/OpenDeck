@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import structlog
 
 from app.config import settings
-from app.api import health, auth, decks, cards
+from app.api import health, auth, decks, cards, topics
 from app.db.base import engine
 from app.db.models import Base
 
@@ -71,6 +71,7 @@ app.include_router(health.router)
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
 app.include_router(decks.router, prefix=settings.api_v1_prefix)
 app.include_router(cards.router, prefix=settings.api_v1_prefix)
+app.include_router(topics.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")

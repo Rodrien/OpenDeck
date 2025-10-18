@@ -1,8 +1,13 @@
 """Deck API Schemas"""
+from __future__ import annotations
 
 from datetime import datetime
+from typing import List, TYPE_CHECKING
 from pydantic import BaseModel, Field
 from app.core.models import DifficultyLevel
+
+if TYPE_CHECKING:
+    from app.schemas.topic import TopicResponse
 
 
 class DeckBase(BaseModel):
@@ -35,6 +40,7 @@ class DeckResponse(DeckBase):
     id: str
     user_id: str
     card_count: int
+    topics: List["TopicResponse"] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -45,7 +51,12 @@ class DeckResponse(DeckBase):
 class DeckListResponse(BaseModel):
     """Schema for paginated deck list response."""
 
-    items: list[DeckResponse]
+    items: List[DeckResponse]
     total: int
     limit: int
     offset: int
+
+
+# Rebuild models to resolve forward references
+from app.schemas.topic import TopicResponse  # noqa: E402
+DeckResponse.model_rebuild()

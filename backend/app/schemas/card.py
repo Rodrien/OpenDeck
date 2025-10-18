@@ -1,7 +1,12 @@
 """Flashcard API Schemas"""
+from __future__ import annotations
 
 from datetime import datetime
+from typing import List, TYPE_CHECKING
 from pydantic import BaseModel, Field, field_validator
+
+if TYPE_CHECKING:
+    from app.schemas.topic import TopicResponse
 
 
 class CardBase(BaseModel):
@@ -49,6 +54,7 @@ class CardResponse(CardBase):
 
     id: str
     deck_id: str
+    topics: list["TopicResponse"] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
@@ -59,7 +65,12 @@ class CardResponse(CardBase):
 class CardListResponse(BaseModel):
     """Schema for paginated card list response."""
 
-    items: list[CardResponse]
+    items: List[CardResponse]
     total: int
     limit: int
     offset: int
+
+
+# Rebuild models to resolve forward references
+from app.schemas.topic import TopicResponse  # noqa: E402
+CardResponse.model_rebuild()

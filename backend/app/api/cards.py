@@ -1,8 +1,10 @@
 """Flashcard API Endpoints"""
 
+from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Query
 from app.schemas.card import CardCreate, CardUpdate, CardResponse, CardListResponse
-from app.api.dependencies import CurrentUser, CardRepoDepends, DeckRepoDepends
+from app.schemas.topic import TopicResponse
+from app.api.dependencies import CurrentUser, CardRepoDepends, DeckRepoDepends, TopicRepoDepends
 from app.core.models import Card
 
 router = APIRouter(tags=["Flashcards"])
@@ -14,6 +16,8 @@ async def list_cards_in_deck(
     current_user: CurrentUser,
     card_repo: CardRepoDepends,
     deck_repo: DeckRepoDepends,
+    topic_repo: TopicRepoDepends,
+    topic_id: Optional[str] = Query(None, description="Filter by topic"),
     limit: int = Query(100, ge=1, le=100, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Number of results to skip"),
 ) -> CardListResponse:
@@ -25,6 +29,8 @@ async def list_cards_in_deck(
         current_user: Authenticated user
         card_repo: Card repository dependency
         deck_repo: Deck repository dependency
+        topic_repo: Topic repository dependency
+        topic_id: Optional topic filter
         limit: Maximum number of results (1-100)
         offset: Pagination offset
 
@@ -42,11 +48,20 @@ async def list_cards_in_deck(
             detail="Deck not found",
         )
 
-    cards = card_repo.list_by_deck(deck_id, limit=limit, offset=offset)
+    cards = card_repo.list_by_deck(deck_id, topic_id=topic_id, limit=limit, offset=offset)
+
+    # Enrich cards with topics
+    card_responses = []
+    for card in cards:
+        topics = topic_repo.get_topics_for_card(card.id)
+        card_dict = card.__dict__.copy()
+        card_dict['topics'] = [TopicResponse.model_validate(topic) for topic in topics]
+        card_responses.append(CardResponse.model_validate(card_dict))
+
     total = deck.card_count
 
     return CardListResponse(
-        items=[CardResponse.model_validate(card) for card in cards],
+        items=card_responses,
         total=total,
         limit=limit,
         offset=offset,
@@ -59,6 +74,7 @@ async def get_card(
     current_user: CurrentUser,
     card_repo: CardRepoDepends,
     deck_repo: DeckRepoDepends,
+    topic_repo: TopicRepoDepends,
 ) -> CardResponse:
     """
     Get a single card by ID.
@@ -68,6 +84,7 @@ async def get_card(
         current_user: Authenticated user
         card_repo: Card repository dependency
         deck_repo: Deck repository dependency
+        topic_repo: Topic repository dependency
 
     Returns:
         Card details
@@ -91,7 +108,12 @@ async def get_card(
             detail="Card not found",
         )
 
-    return CardResponse.model_validate(card)
+    # Enrich with topics
+    topics = topic_repo.get_topics_for_card(card.id)
+    card_dict = card.__dict__.copy()
+    card_dict['topics'] = [TopicResponse.model_validate(topic) for topic in topics]
+
+    return CardResponse.model_validate(card_dict)
 
 
 @router.post("/decks/{deck_id}/cards", response_model=CardResponse, status_code=status.HTTP_201_CREATED)

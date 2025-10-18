@@ -14,10 +14,30 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     Enum as SQLEnum,
+    Table,
 )
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 from app.core.models import DifficultyLevel, DocumentStatus
+
+
+# Junction table for deck-topic many-to-many relationship
+deck_topics = Table(
+    "deck_topics",
+    Base.metadata,
+    Column("deck_id", String(36), ForeignKey("decks.id", ondelete="CASCADE"), primary_key=True),
+    Column("topic_id", String(36), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True),
+    Column("created_at", DateTime, default=datetime.utcnow, nullable=False),
+)
+
+# Junction table for card-topic many-to-many relationship
+card_topics = Table(
+    "card_topics",
+    Base.metadata,
+    Column("card_id", String(36), ForeignKey("cards.id", ondelete="CASCADE"), primary_key=True),
+    Column("topic_id", String(36), ForeignKey("topics.id", ondelete="CASCADE"), primary_key=True),
+    Column("created_at", DateTime, default=datetime.utcnow, nullable=False),
+)
 
 
 class UserModel(Base):
@@ -55,6 +75,7 @@ class DeckModel(Base):
     # Relationships
     user = relationship("UserModel", back_populates="decks")
     cards = relationship("CardModel", back_populates="deck", cascade="all, delete-orphan")
+    topics = relationship("TopicModel", secondary=deck_topics, back_populates="decks")
 
 
 class CardModel(Base):
@@ -73,6 +94,23 @@ class CardModel(Base):
 
     # Relationships
     deck = relationship("DeckModel", back_populates="cards")
+    topics = relationship("TopicModel", secondary=card_topics, back_populates="cards")
+
+
+class TopicModel(Base):
+    """Topic table model."""
+
+    __tablename__ = "topics"
+
+    id = Column(String(36), primary_key=True)
+    name = Column(String(100), unique=True, nullable=False, index=True)
+    description = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationships
+    decks = relationship("DeckModel", secondary=deck_topics, back_populates="topics")
+    cards = relationship("CardModel", secondary=card_topics, back_populates="topics")
 
 
 class DocumentModel(Base):
