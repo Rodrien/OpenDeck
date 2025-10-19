@@ -103,6 +103,15 @@
         align-items: center;
         position: relative;
 
+        .avatar-button {
+            outline: none;
+
+            &:hover,
+            &:focus {
+                outline: none;
+            }
+        }
+
         ::ng-deep {
             .p-avatar {
                 transition: transform 0.2s ease;

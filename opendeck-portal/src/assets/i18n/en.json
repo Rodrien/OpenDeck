@@ -111,5 +111,32 @@
     "select": "Select Language",
     "english": "English",
     "spanish": "Español"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "description": "Customize your OpenDeck experience",
+    "saved": "Preferences saved successfully",
+    "autoSave": "Changes are saved automatically",
+    "reset": "Reset to Defaults",
+    "language": {
+      "title": "Language Settings",
+      "description": "Choose your preferred language for the interface",
+      "select": "Language"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "darkMode": "Dark Mode",
+      "darkModeDescription": "Switch between light and dark theme",
+      "light": "Light",
+      "dark": "Dark",
+      "theme": "Theme Color",
+      "themeDescription": "Select your preferred color scheme",
+      "themeCustomization": "Theme Customization",
+      "themeCustomizationDescription": "Customize colors, presets, and surface palettes",
+      "accentColor": "Accent Color",
+      "accentColorDescription": "Customize the primary accent color used throughout the application",
+      "currentColor": "Current color",
+      "presetColors": "Quick color presets"
+    }
   }
 }

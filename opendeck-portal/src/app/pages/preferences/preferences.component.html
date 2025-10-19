@@ -1,0 +1,132 @@
+<div class="preferences-container min-h-screen bg-surface-50 dark:bg-surface-950 py-8 px-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-surface-900 dark:text-surface-0 mb-2">
+                {{ 'preferences.title' | translate }}
+            </h1>
+            <p class="text-surface-600 dark:text-surface-400">
+                {{ 'preferences.description' | translate }}
+            </p>
+        </div>
+
+        <!-- Success Message -->
+        @if (saveSuccess()) {
+            <div class="mb-6" [@fadeIn]>
+                <p-message severity="success" [text]="'preferences.saved' | translate" styleClass="w-full" />
+            </div>
+        }
+
+        <!-- Language Settings Card -->
+        <p-card styleClass="mb-6">
+            <ng-template pTemplate="header">
+                <div class="p-4 border-bottom-1 surface-border">
+                    <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 m-0">
+                        <i class="pi pi-language mr-2 text-primary"></i>
+                        {{ 'preferences.language.title' | translate }}
+                    </h2>
+                </div>
+            </ng-template>
+
+            <div class="flex flex-col gap-4">
+                <p class="text-surface-600 dark:text-surface-400 m-0">
+                    {{ 'preferences.language.description' | translate }}
+                </p>
+
+                <div class="flex items-center gap-4">
+                    <label for="language-select" class="font-medium text-surface-700 dark:text-surface-200">
+                        {{ 'preferences.language.select' | translate }}
+                    </label>
+                    <p-select
+                        id="language-select"
+                        [options]="languages"
+                        [(ngModel)]="selectedLanguage"
+                        (onChange)="onLanguageChange($event)"
+                        optionLabel="label"
+                        optionValue="code"
+                        [style]="{'min-width': '200px'}"
+                    >
+                        <ng-template let-option pTemplate="item">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">{{ option.flag }}</span>
+                                <span>{{ option.label }}</span>
+                            </div>
+                        </ng-template>
+                        <ng-template let-option pTemplate="selectedItem">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">{{ option.flag }}</span>
+                                <span>{{ option.label }}</span>
+                            </div>
+                        </ng-template>
+                    </p-select>
+                </div>
+            </div>
+        </p-card>
+
+        <!-- Appearance Settings Card -->
+        <p-card styleClass="mb-6">
+            <ng-template pTemplate="header">
+                <div class="p-4 border-bottom-1 surface-border">
+                    <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 m-0">
+                        <i class="pi pi-palette mr-2 text-primary"></i>
+                        {{ 'preferences.appearance.title' | translate }}
+                    </h2>
+                </div>
+            </ng-template>
+
+            <div class="flex flex-col gap-6">
+                <!-- Dark Mode Toggle -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <div>
+                            <label class="font-medium text-surface-700 dark:text-surface-200 block mb-1">
+                                {{ 'preferences.appearance.darkMode' | translate }}
+                            </label>
+                            <p class="text-sm text-surface-600 dark:text-surface-400 m-0">
+                                {{ 'preferences.appearance.darkModeDescription' | translate }}
+                            </p>
+                        </div>
+                        <p-button
+                            [icon]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"
+                            [label]="isDarkMode() ? ('preferences.appearance.dark' | translate) : ('preferences.appearance.light' | translate)"
+                            (onClick)="toggleDarkMode()"
+                            [outlined]="true"
+                        />
+                    </div>
+                </div>
+
+                <p-divider />
+
+                <!-- Theme Configurator -->
+                <div>
+                    <label class="font-medium text-surface-700 dark:text-surface-200 block mb-2">
+                        {{ 'preferences.appearance.themeCustomization' | translate }}
+                    </label>
+                    <p class="text-sm text-surface-600 dark:text-surface-400 mb-4">
+                        {{ 'preferences.appearance.themeCustomizationDescription' | translate }}
+                    </p>
+
+                    <!-- Configurator Component -->
+                    <div class="p-4 bg-surface-100 dark:bg-surface-800 rounded-border configurator-wrapper">
+                        <app-configurator class="!block !relative !w-full !top-0 !right-0 !shadow-none !border-0 !bg-transparent !p-0" />
+                    </div>
+                </div>
+            </div>
+        </p-card>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-between items-center">
+            <p-button
+                [label]="'preferences.reset' | translate"
+                icon="pi pi-refresh"
+                (onClick)="resetPreferences()"
+                severity="secondary"
+                [outlined]="true"
+            />
+
+            <div class="text-sm text-surface-500 dark:text-surface-400">
+                {{ 'preferences.autoSave' | translate }}
+            </div>
+        </div>
+    </div>
+</div>

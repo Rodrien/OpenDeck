@@ -26,6 +26,8 @@ interface MenuChangeEvent {
     providedIn: 'root'
 })
 export class LayoutService {
+    private readonly THEME_STORAGE_KEY = 'opendeck-theme-config';
+
     _config: layoutConfig = {
         preset: 'Aura',
         primary: 'emerald',
@@ -79,6 +81,9 @@ export class LayoutService {
     private initialized = false;
 
     constructor() {
+        // Load saved theme config from localStorage
+        this.loadThemeConfig();
+
         effect(() => {
             const config = this.layoutConfig();
             if (config) {
@@ -95,7 +100,36 @@ export class LayoutService {
             }
 
             this.handleDarkModeTransition(config);
+            // Save theme config whenever it changes
+            this.saveThemeConfig(config);
         });
+    }
+
+    /**
+     * Load theme configuration from localStorage
+     */
+    private loadThemeConfig(): void {
+        try {
+            const savedConfig = localStorage.getItem(this.THEME_STORAGE_KEY);
+            if (savedConfig) {
+                const parsedConfig = JSON.parse(savedConfig) as layoutConfig;
+                this._config = { ...this._config, ...parsedConfig };
+                this.layoutConfig.set(this._config);
+            }
+        } catch (error) {
+            console.error('Error loading theme config from localStorage:', error);
+        }
+    }
+
+    /**
+     * Save theme configuration to localStorage
+     */
+    private saveThemeConfig(config: layoutConfig): void {
+        try {
+            localStorage.setItem(this.THEME_STORAGE_KEY, JSON.stringify(config));
+        } catch (error) {
+            console.error('Error saving theme config to localStorage:', error);
+        }
     }
 
     private handleDarkModeTransition(config: layoutConfig): void {

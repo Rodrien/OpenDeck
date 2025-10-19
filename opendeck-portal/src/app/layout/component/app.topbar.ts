@@ -1,16 +1,12 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, AfterViewInit } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { StyleClassModule } from 'primeng/styleclass';
 import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
 import { Menu } from 'primeng/menu';
-import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
-import { LanguageSelectorComponent } from '../../components/language-selector/language-selector.component';
 
 @Component({
     selector: 'app-topbar',
@@ -18,12 +14,8 @@ import { LanguageSelectorComponent } from '../../components/language-selector/la
     imports: [
         RouterModule,
         CommonModule,
-        StyleClassModule,
         AvatarModule,
-        BadgeModule,
-        Menu,
-        AppConfigurator,
-        LanguageSelectorComponent
+        Menu
     ],
     template: `
         <div class="layout-topbar">
@@ -37,31 +29,15 @@ import { LanguageSelectorComponent } from '../../components/language-selector/la
             </div>
 
             <div class="layout-topbar-actions">
-                <div class="layout-config-menu">
-                    <!-- Language Selector -->
-                    <app-language-selector></app-language-selector>
-
-                    <!-- Dark Mode Toggle -->
-                    <button type="button" class="layout-topbar-action" (click)="toggleDarkMode()">
-                        <i [ngClass]="{ 'pi ': true, 'pi-moon': layoutService.isDarkTheme(), 'pi-sun': !layoutService.isDarkTheme() }"></i>
-                    </button>
-
-                    <!-- Theme Configurator -->
-                    <div class="relative">
-                        <button
-                            class="layout-topbar-action layout-topbar-action-highlight"
-                            pStyleClass="@next"
-                            enterFromClass="hidden"
-                            enterActiveClass="animate-scalein"
-                            leaveToClass="hidden"
-                            leaveActiveClass="animate-fadeout"
-                            [hideOnOutsideClick]="true"
-                        >
-                            <i class="pi pi-palette"></i>
-                        </button>
-                        <app-configurator />
-                    </div>
-                </div>
+                <!-- Dark Mode Toggle -->
+                <button
+                    type="button"
+                    class="layout-topbar-action"
+                    (click)="toggleDarkMode()"
+                    [attr.aria-label]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+                >
+                    <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
+                </button>
 
                 <!-- User Avatar -->
                 <div class="user-avatar-container">
@@ -72,21 +48,16 @@ import { LanguageSelectorComponent } from '../../components/language-selector/la
                         [attr.aria-label]="'User menu'"
                     >
                         <p-avatar
-                            [label]="getUserInitials()"
+                            icon="pi pi-user"
                             styleClass="bg-primary text-white"
                             shape="circle"
                             size="large"
                         ></p-avatar>
                     </button>
-                    <p-menu #userMenu [model]="userMenuItems" [popup]="true" styleClass="user-menu">
+                    <p-menu #userMenu [model]="userMenuItems" [popup]="true" appendTo="body" styleClass="user-menu">
                         <ng-template pTemplate="start">
                             <div class="user-menu-header">
                                 <div class="flex items-center gap-3 p-3 border-bottom-1 surface-border">
-                                    <p-avatar
-                                        [label]="getUserInitials()"
-                                        styleClass="bg-primary text-white"
-                                        shape="circle"
-                                    ></p-avatar>
                                     <div class="flex flex-col">
                                         <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.name || 'User' }}</span>
                                         <span class="text-muted-color text-sm">{{ currentUser()?.email || 'Not logged in' }}</span>
@@ -100,11 +71,12 @@ import { LanguageSelectorComponent } from '../../components/language-selector/la
         </div>
     `
 })
-export class AppTopbar implements OnInit {
-    @ViewChild('userMenu') userMenu!: Menu;
+export class AppTopbar implements OnInit, AfterViewInit {
+    @ViewChild('userMenu', { static: false }) userMenu!: Menu;
     items!: MenuItem[];
     currentUser = signal<User | null>(null);
     userMenuItems: MenuItem[] = [];
+    isDarkMode = signal<boolean>(false);
 
     constructor(
         public layoutService: LayoutService,
@@ -112,7 +84,24 @@ export class AppTopbar implements OnInit {
         private router: Router
     ) {}
 
+    /**
+     * Toggle dark mode
+     */
+    toggleDarkMode(): void {
+        const newDarkMode = !this.isDarkMode();
+        this.isDarkMode.set(newDarkMode);
+
+        // Update layout service (automatically saved to localStorage)
+        this.layoutService.layoutConfig.update((state) => ({
+            ...state,
+            darkTheme: newDarkMode
+        }));
+    }
+
     ngOnInit(): void {
+        // Initialize dark mode from layout service
+        this.isDarkMode.set(this.layoutService.isDarkTheme() ?? false);
+
         // Subscribe to current user changes
         this.authService.currentUser$.subscribe(user => {
             this.currentUser.set(user);
@@ -136,16 +125,15 @@ export class AppTopbar implements OnInit {
         ];
     }
 
-    toggleDarkMode() {
-        this.layoutService.layoutConfig.update((state) => ({
-            ...state,
-            darkTheme: !state.darkTheme
-        }));
+    ngAfterViewInit(): void {
     }
 
     toggleUserMenu(event: Event) {
+        event.stopPropagation();
         if (this.userMenu) {
             this.userMenu.toggle(event);
+        } else {
+            console.error('userMenu is not defined');
         }
     }
 
@@ -158,26 +146,5 @@ export class AppTopbar implements OnInit {
 
     navigateToPreferences() {
         this.router.navigate(['/pages/preferences']);
-    }
-
-    /**
-     * Get user initials for avatar
-     * @returns User initials (e.g., "JD" for John Doe)
-     */
-    getUserInitials(): string {
-        const user = this.currentUser();
-        if (!user) return '?';
-
-        if (user.name) {
-            // Take first two characters of name
-            return user.name.substring(0, 2).toUpperCase();
-        }
-
-        if (user.email) {
-            // Use first letter of email
-            return user.email.charAt(0).toUpperCase();
-        }
-
-        return '?';
     }
 }
