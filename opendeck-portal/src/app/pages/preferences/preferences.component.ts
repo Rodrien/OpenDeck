@@ -10,6 +10,8 @@ import { Button } from 'primeng/button';
 import { Select } from 'primeng/select';
 import { Divider } from 'primeng/divider';
 import { Message } from 'primeng/message';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 // Services
 import { LanguageService, SupportedLanguage, LanguageOption } from '../../services/language.service';
@@ -31,8 +33,10 @@ import { AppConfigurator } from '../../layout/component/app.configurator';
         Select,
         Divider,
         Message,
+        ConfirmDialog,
         AppConfigurator
     ],
+    providers: [ConfirmationService],
     templateUrl: './preferences.component.html',
     styleUrls: ['./preferences.component.scss'],
     animations: [
@@ -53,10 +57,14 @@ export class PreferencesComponent implements OnInit {
     // Available options
     languages: LanguageOption[] = [];
 
+    // Constants
+    private readonly SUCCESS_MESSAGE_DURATION = 3000;
+
     constructor(
         private languageService: LanguageService,
         private layoutService: LayoutService,
-        private translate: TranslateService
+        private translate: TranslateService,
+        private confirmationService: ConfirmationService
     ) {}
 
     ngOnInit(): void {
@@ -71,8 +79,14 @@ export class PreferencesComponent implements OnInit {
         this.languages = this.languageService.availableLanguages;
 
         // Get current language
-        this.languageService.getCurrentLanguage().subscribe(lang => {
-            this.selectedLanguage.set(lang);
+        this.languageService.getCurrentLanguage().subscribe({
+            next: (lang) => {
+                this.selectedLanguage.set(lang);
+            },
+            error: (err) => {
+                console.error('Error loading language:', err);
+                this.selectedLanguage.set('en'); // fallback to English
+            }
         });
 
         // Get current theme state
@@ -101,46 +115,68 @@ export class PreferencesComponent implements OnInit {
             darkTheme: newDarkMode
         }));
 
-        this.savePreferences();
         this.showSaveSuccess();
     }
-
-
-    /**
-     * Save all preferences to localStorage
-     */
-    savePreferences(): void {
-        // Dark mode is saved automatically by LayoutService
-        // Language is already saved by LanguageService
-        // Theme colors are managed by the configurator component and saved by LayoutService
-    }
-
     /**
      * Reset preferences to defaults
      */
     resetPreferences(): void {
-        this.translate.get('preferences.resetConfirm').subscribe((message: string) => {
-            if (confirm(message)) {
-                // Reset to defaults
-                this.selectedLanguage.set('en');
-                this.isDarkMode.set(false);
+        this.translate.get(['preferences.resetConfirm', 'preferences.confirmHeader', 'common.yes', 'common.no'])
+            .subscribe({
+                next: (translations) => {
+                    this.confirmationService.confirm({
+                        message: translations['preferences.resetConfirm'],
+                        header: translations['preferences.confirmHeader'] || 'Confirm',
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: translations['common.yes'] || 'Yes',
+                        rejectLabel: translations['common.no'] || 'No',
+                        accept: () => {
+                            // Reset to defaults
+                            this.selectedLanguage.set('en');
+                            this.isDarkMode.set(false);
 
-                // Apply changes
-                this.languageService.setLanguage('en');
-                this.layoutService.layoutConfig.update((state) => ({
-                    ...state,
-                    darkTheme: false,
-                    preset: 'Aura',
-                    primary: 'emerald',
-                    surface: null,
-                    menuMode: 'static'
-                }));
+                            // Apply changes
+                            this.languageService.setLanguage('en');
+                            this.layoutService.layoutConfig.update((state) => ({
+                                ...state,
+                                darkTheme: false,
+                                preset: 'Aura',
+                                primary: 'emerald',
+                                surface: null,
+                                menuMode: 'static'
+                            }));
 
-                // Note: localStorage is automatically updated by LayoutService
-
-                this.showSaveSuccess();
-            }
-        });
+                            // Note: localStorage is automatically updated by LayoutService
+                            this.showSaveSuccess();
+                        }
+                    });
+                },
+                error: (err) => {
+                    console.error('Error loading translations:', err);
+                    // Fallback to English
+                    this.confirmationService.confirm({
+                        message: 'Are you sure you want to reset all preferences to their default values?',
+                        header: 'Confirm',
+                        icon: 'pi pi-exclamation-triangle',
+                        acceptLabel: 'Yes',
+                        rejectLabel: 'No',
+                        accept: () => {
+                            this.selectedLanguage.set('en');
+                            this.isDarkMode.set(false);
+                            this.languageService.setLanguage('en');
+                            this.layoutService.layoutConfig.update((state) => ({
+                                ...state,
+                                darkTheme: false,
+                                preset: 'Aura',
+                                primary: 'emerald',
+                                surface: null,
+                                menuMode: 'static'
+                            }));
+                            this.showSaveSuccess();
+                        }
+                    });
+                }
+            });
     }
 
     /**
@@ -150,6 +186,6 @@ export class PreferencesComponent implements OnInit {
         this.saveSuccess.set(true);
         setTimeout(() => {
             this.saveSuccess.set(false);
-        }, 3000);
+        }, this.SUCCESS_MESSAGE_DURATION);
     }
 }
