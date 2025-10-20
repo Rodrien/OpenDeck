@@ -136,10 +136,7 @@ export class AppTopbar implements OnInit {
     }
 
     logout() {
-        // Confirm logout
-        if (confirm('Are you sure you want to logout?')) {
-            this.authService.logout();
-        }
+        this.authService.logout();
     }
 
     navigateToPreferences() {
