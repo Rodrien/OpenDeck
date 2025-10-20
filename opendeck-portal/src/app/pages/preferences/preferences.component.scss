@@ -1,0 +1,32 @@
+.preferences-container {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+::ng-deep {
+    .p-card {
+        transition: box-shadow 0.3s ease;
+
+        &:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .p-card-header {
+            background-color: var(--surface-card);
+        }
+
+        .p-card-body {
+            padding: 1.5rem;
+        }
+    }
+}

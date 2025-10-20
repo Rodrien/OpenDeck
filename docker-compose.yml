@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: opendeck-db
+    environment:
+      POSTGRES_DB: opendeck
+      POSTGRES_USER: opendeck_user
+      POSTGRES_PASSWORD: opendeck_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opendeck_user -d opendeck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opendeck-network
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: opendeck-backend
+    environment:
+      - ENV=development
+      - LOG_LEVEL=INFO
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+      - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
+      - DB_BACKEND=postgres
+      - CORS_ORIGINS=http://localhost:4200,http://localhost:80
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/app:/app/app  # Mount for hot reload in development
+      - ./backend/scripts:/app/scripts
+      - ./cards:/app/cards
+      - ./backend/alembic/versions:/app/alembic/versions
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - opendeck-network
+
+  # Angular Frontend
+  frontend:
+    build:
+      context: ./opendeck-portal
+      dockerfile: Dockerfile
+    container_name: opendeck-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    environment:
+      - API_URL=http://backend:8000
+    networks:
+      - opendeck-network
+
+volumes:
+  postgres_data:
+
+networks:
+  opendeck-network:
+    driver: bridge
