@@ -40,8 +40,8 @@
                     <p-select
                         id="language-select"
                         [options]="languages"
-                        [(ngModel)]="selectedLanguage"
-                        (onChange)="onLanguageChange($event)"
+                        [ngModel]="selectedLanguage()"
+                        (ngModelChange)="onLanguageChange($event)"
                         optionLabel="label"
                         optionValue="code"
                         [style]="{'min-width': '200px'}"

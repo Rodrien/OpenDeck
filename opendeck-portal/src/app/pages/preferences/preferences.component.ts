@@ -14,6 +14,7 @@ import { Message } from 'primeng/message';
 // Services
 import { LanguageService, SupportedLanguage, LanguageOption } from '../../services/language.service';
 import { LayoutService } from '../../layout/service/layout.service';
+import { TranslateService } from '@ngx-translate/core';
 
 // Components
 import { AppConfigurator } from '../../layout/component/app.configurator';
@@ -54,7 +55,8 @@ export class PreferencesComponent implements OnInit {
 
     constructor(
         private languageService: LanguageService,
-        private layoutService: LayoutService
+        private layoutService: LayoutService,
+        private translate: TranslateService
     ) {}
 
     ngOnInit(): void {
@@ -80,8 +82,7 @@ export class PreferencesComponent implements OnInit {
     /**
      * Handle language change
      */
-    onLanguageChange(event: any): void {
-        const newLang = event.value as SupportedLanguage;
+    onLanguageChange(newLang: SupportedLanguage): void {
         this.languageService.setLanguage(newLang);
         this.selectedLanguage.set(newLang);
         this.showSaveSuccess();
@@ -118,26 +119,28 @@ export class PreferencesComponent implements OnInit {
      * Reset preferences to defaults
      */
     resetPreferences(): void {
-        if (confirm('Are you sure you want to reset all preferences to default?')) {
-            // Reset to defaults
-            this.selectedLanguage.set('en');
-            this.isDarkMode.set(false);
+        this.translate.get('preferences.resetConfirm').subscribe((message: string) => {
+            if (confirm(message)) {
+                // Reset to defaults
+                this.selectedLanguage.set('en');
+                this.isDarkMode.set(false);
 
-            // Apply changes
-            this.languageService.setLanguage('en');
-            this.layoutService.layoutConfig.update((state) => ({
-                ...state,
-                darkTheme: false,
-                preset: 'Aura',
-                primary: 'emerald',
-                surface: null,
-                menuMode: 'static'
-            }));
+                // Apply changes
+                this.languageService.setLanguage('en');
+                this.layoutService.layoutConfig.update((state) => ({
+                    ...state,
+                    darkTheme: false,
+                    preset: 'Aura',
+                    primary: 'emerald',
+                    surface: null,
+                    menuMode: 'static'
+                }));
 
-            // Note: localStorage is automatically updated by LayoutService
+                // Note: localStorage is automatically updated by LayoutService
 
-            this.showSaveSuccess();
-        }
+                this.showSaveSuccess();
+            }
+        });
     }
 
     /**

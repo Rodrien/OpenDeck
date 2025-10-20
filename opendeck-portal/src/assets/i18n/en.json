@@ -118,6 +118,7 @@
     "saved": "Preferences saved successfully",
     "autoSave": "Changes are saved automatically",
     "reset": "Reset to Defaults",
+    "resetConfirm": "Are you sure you want to reset all preferences to default?",
     "language": {
       "title": "Language Settings",
       "description": "Choose your preferred language for the interface",

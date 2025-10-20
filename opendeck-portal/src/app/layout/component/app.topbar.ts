@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { MenuItem } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -34,6 +34,7 @@ import { User } from '../../models/user.model';
                     type="button"
                     class="layout-topbar-action"
                     (click)="toggleDarkMode()"
+                    [attr.aria-pressed]="isDarkMode()"
                     [attr.aria-label]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
                 >
                     <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
@@ -71,7 +72,7 @@ import { User } from '../../models/user.model';
         </div>
     `
 })
-export class AppTopbar implements OnInit, AfterViewInit {
+export class AppTopbar implements OnInit {
     @ViewChild('userMenu', { static: false }) userMenu!: Menu;
     items!: MenuItem[];
     currentUser = signal<User | null>(null);
@@ -123,9 +124,6 @@ export class AppTopbar implements OnInit, AfterViewInit {
                 command: () => this.logout()
             }
         ];
-    }
-
-    ngAfterViewInit(): void {
     }
 
     toggleUserMenu(event: Event) {

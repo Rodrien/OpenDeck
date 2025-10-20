@@ -118,6 +118,7 @@
     "saved": "Preferencias guardadas exitosamente",
     "autoSave": "Los cambios se guardan automáticamente",
     "reset": "Restablecer valores predeterminados",
+    "resetConfirm": "¿Estás seguro de que quieres restablecer todas las preferencias a los valores predeterminados?",
     "language": {
       "title": "Configuración de idioma",
       "description": "Elige tu idioma preferido para la interfaz",
