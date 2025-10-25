@@ -100,7 +100,8 @@
     "confirm": "Confirmar",
     "yes": "Sí",
     "no": "No",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "preferences": "Preferencias"
   },
   "errors": {
     "notFound": "No encontrado",
