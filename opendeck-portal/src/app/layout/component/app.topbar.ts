@@ -1,12 +1,14 @@
 import { Component, OnInit, signal, ViewChild } from '@angular/core';
-import { MenuItem } from 'primeng/api';
+import { MenuItem, ConfirmationService } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AvatarModule } from 'primeng/avatar';
 import { Menu } from 'primeng/menu';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
     selector: 'app-topbar',
@@ -15,9 +17,12 @@ import { User } from '../../models/user.model';
         RouterModule,
         CommonModule,
         AvatarModule,
-        Menu
+        Menu,
+        ConfirmDialog
     ],
+    providers: [ConfirmationService],
     template: `
+        <p-confirmDialog />
         <div class="layout-topbar">
             <div class="layout-topbar-logo-container">
                 <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()">
@@ -82,7 +87,9 @@ export class AppTopbar implements OnInit {
     constructor(
         public layoutService: LayoutService,
         private authService: AuthService,
-        private router: Router
+        private router: Router,
+        private confirmationService: ConfirmationService,
+        private translate: TranslateService
     ) {}
 
     /**
@@ -136,7 +143,35 @@ export class AppTopbar implements OnInit {
     }
 
     logout() {
-        this.authService.logout();
+        this.translate.get(['auth.logoutConfirm', 'auth.logoutHeader', 'common.yes', 'common.no'])
+            .subscribe({
+                next: (translations) => {
+                    this.confirmationService.confirm({
+                        message: translations['auth.logoutConfirm'],
+                        header: translations['auth.logoutHeader'] || 'Confirm Logout',
+                        icon: 'pi pi-sign-out',
+                        acceptLabel: translations['common.yes'] || 'Yes',
+                        rejectLabel: translations['common.no'] || 'No',
+                        accept: () => {
+                            this.authService.logout();
+                        }
+                    });
+                },
+                error: (err) => {
+                    console.error('Error loading translations:', err);
+                    // Fallback to English if translations fail
+                    this.confirmationService.confirm({
+                        message: 'Are you sure you want to logout?',
+                        header: 'Confirm Logout',
+                        icon: 'pi pi-sign-out',
+                        acceptLabel: 'Yes',
+                        rejectLabel: 'No',
+                        accept: () => {
+                            this.authService.logout();
+                        }
+                    });
+                }
+            });
     }
 
     navigateToPreferences() {

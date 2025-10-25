@@ -2,6 +2,8 @@
   "auth": {
     "login": "Login",
     "logout": "Logout",
+    "logoutConfirm": "Are you sure you want to logout?",
+    "logoutHeader": "Confirm Logout",
     "email": "Email",
     "password": "Password",
     "confirmPassword": "Confirm Password",
