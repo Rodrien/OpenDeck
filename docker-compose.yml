@@ -55,6 +55,14 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - STORAGE_BACKEND=local
       - STORAGE_PATH=/app/storage/documents
+      # AI Provider Configuration (set your API key)
+      - AI_PROVIDER=anthropic
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+      # Alternative: Use OpenAI
+      # - AI_PROVIDER=openai
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - OPENAI_MODEL=gpt-4
     ports:
       - "8000:8000"
     depends_on:
@@ -89,6 +97,14 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - STORAGE_BACKEND=local
       - STORAGE_PATH=/app/storage/documents
+      # AI Provider Configuration (set your API key)
+      - AI_PROVIDER=anthropic
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+      # Alternative: Use OpenAI
+      # - AI_PROVIDER=openai
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - OPENAI_MODEL=gpt-4
     depends_on:
       db:
         condition: service_healthy
