@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, DestroyRef, inject } from '@angular/core';
 import { MenuItem, ConfirmationService } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -8,7 +8,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
@@ -86,6 +86,8 @@ export class AppTopbar implements OnInit {
     userMenuItems: MenuItem[] = [];
     isDarkMode = signal<boolean>(false);
 
+    private destroyRef = inject(DestroyRef);
+
     constructor(
         public layoutService: LayoutService,
         private authService: AuthService,
@@ -119,24 +121,40 @@ export class AppTopbar implements OnInit {
         // Initialize dark mode from layout service
         this.isDarkMode.set(this.layoutService.isDarkTheme() ?? false);
 
-        // Setup user menu items with translations
-        this.translate.get(['common.preferences', 'auth.logout']).subscribe(translations => {
-            this.userMenuItems = [
-                {
-                    label: translations['common.preferences'] || 'Preferences',
-                    icon: 'pi pi-cog',
-                    command: () => this.navigateToPreferences()
-                },
-                {
-                    separator: true
-                },
-                {
-                    label: translations['auth.logout'] || 'Logout',
-                    icon: 'pi pi-sign-out',
-                    command: () => this.logout()
-                }
-            ];
-        });
+        // Initialize menu items
+        this.updateUserMenuItems();
+
+        // Update menu items when language changes
+        this.translate.onLangChange
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.updateUserMenuItems();
+            });
+    }
+
+    /**
+     * Update user menu items with current translations
+     */
+    private updateUserMenuItems(): void {
+        this.translate.get(['common.preferences', 'auth.logout'])
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(translations => {
+                this.userMenuItems = [
+                    {
+                        label: translations['common.preferences'] || 'Preferences',
+                        icon: 'pi pi-cog',
+                        command: () => this.navigateToPreferences()
+                    },
+                    {
+                        separator: true
+                    },
+                    {
+                        label: translations['auth.logout'] || 'Logout',
+                        icon: 'pi pi-sign-out',
+                        command: () => this.logout()
+                    }
+                ];
+            });
     }
 
     toggleUserMenu(event: Event) {
@@ -149,35 +167,34 @@ export class AppTopbar implements OnInit {
     }
 
     async logout() {
+        let translations;
+
         try {
-            const translations = await firstValueFrom(
+            translations = await firstValueFrom(
                 this.translate.get(['auth.logoutConfirm', 'auth.logoutHeader', 'common.yes', 'common.no'])
             );
-
-            this.confirmationService.confirm({
-                message: translations['auth.logoutConfirm'],
-                header: translations['auth.logoutHeader'] || 'Confirm Logout',
-                icon: 'pi pi-sign-out',
-                acceptLabel: translations['common.yes'] || 'Yes',
-                rejectLabel: translations['common.no'] || 'No',
-                accept: () => {
-                    this.authService.logout();
-                }
-            });
         } catch (err) {
             console.error('Error loading translations:', err);
-            // Fallback to English if translations fail
-            this.confirmationService.confirm({
-                message: 'Are you sure you want to logout?',
-                header: 'Confirm Logout',
-                icon: 'pi pi-sign-out',
-                acceptLabel: 'Yes',
-                rejectLabel: 'No',
-                accept: () => {
-                    this.authService.logout();
-                }
-            });
+            // Default English translations
+            translations = {
+                'auth.logoutConfirm': 'Are you sure you want to logout?',
+                'auth.logoutHeader': 'Confirm Logout',
+                'common.yes': 'Yes',
+                'common.no': 'No'
+            };
         }
+
+        // Single confirmation dialog setup
+        this.confirmationService.confirm({
+            message: translations['auth.logoutConfirm'],
+            header: translations['auth.logoutHeader'],
+            icon: 'pi pi-sign-out',
+            acceptLabel: translations['common.yes'],
+            rejectLabel: translations['common.no'],
+            accept: () => {
+                this.authService.logout();
+            }
+        });
     }
 
     navigateToPreferences() {
