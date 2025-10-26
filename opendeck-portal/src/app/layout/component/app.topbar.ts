@@ -1,12 +1,16 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
-import { MenuItem } from 'primeng/api';
+import { Component, OnInit, signal, ViewChild, DestroyRef, inject } from '@angular/core';
+import { MenuItem, ConfirmationService } from 'primeng/api';
 import { RouterModule, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AvatarModule } from 'primeng/avatar';
 import { Menu } from 'primeng/menu';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { LayoutService } from '../service/layout.service';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
+import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-topbar',
@@ -15,9 +19,12 @@ import { User } from '../../models/user.model';
         RouterModule,
         CommonModule,
         AvatarModule,
-        Menu
+        Menu,
+        ConfirmDialog
     ],
+    providers: [ConfirmationService],
     template: `
+        <p-confirmDialog />
         <div class="layout-topbar">
             <div class="layout-topbar-logo-container">
                 <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()">
@@ -79,11 +86,22 @@ export class AppTopbar implements OnInit {
     userMenuItems: MenuItem[] = [];
     isDarkMode = signal<boolean>(false);
 
+    private destroyRef = inject(DestroyRef);
+
     constructor(
         public layoutService: LayoutService,
         private authService: AuthService,
-        private router: Router
-    ) {}
+        private router: Router,
+        private confirmationService: ConfirmationService,
+        private translate: TranslateService
+    ) {
+        // Subscribe to current user changes with automatic cleanup
+        this.authService.currentUser$
+            .pipe(takeUntilDestroyed())
+            .subscribe(user => {
+                this.currentUser.set(user);
+            });
+    }
 
     /**
      * Toggle dark mode
@@ -103,27 +121,40 @@ export class AppTopbar implements OnInit {
         // Initialize dark mode from layout service
         this.isDarkMode.set(this.layoutService.isDarkTheme() ?? false);
 
-        // Subscribe to current user changes
-        this.authService.currentUser$.subscribe(user => {
-            this.currentUser.set(user);
-        });
+        // Initialize menu items
+        this.updateUserMenuItems();
 
-        // Setup user menu items
-        this.userMenuItems = [
-            {
-                label: 'Preferences',
-                icon: 'pi pi-cog',
-                command: () => this.navigateToPreferences()
-            },
-            {
-                separator: true
-            },
-            {
-                label: 'Logout',
-                icon: 'pi pi-sign-out',
-                command: () => this.logout()
-            }
-        ];
+        // Update menu items when language changes
+        this.translate.onLangChange
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.updateUserMenuItems();
+            });
+    }
+
+    /**
+     * Update user menu items with current translations
+     */
+    private updateUserMenuItems(): void {
+        this.translate.get(['common.preferences', 'auth.logout'])
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(translations => {
+                this.userMenuItems = [
+                    {
+                        label: translations['common.preferences'] || 'Preferences',
+                        icon: 'pi pi-cog',
+                        command: () => this.navigateToPreferences()
+                    },
+                    {
+                        separator: true
+                    },
+                    {
+                        label: translations['auth.logout'] || 'Logout',
+                        icon: 'pi pi-sign-out',
+                        command: () => this.logout()
+                    }
+                ];
+            });
     }
 
     toggleUserMenu(event: Event) {
@@ -135,11 +166,35 @@ export class AppTopbar implements OnInit {
         }
     }
 
-    logout() {
-        // Confirm logout
-        if (confirm('Are you sure you want to logout?')) {
-            this.authService.logout();
+    async logout() {
+        let translations;
+
+        try {
+            translations = await firstValueFrom(
+                this.translate.get(['auth.logoutConfirm', 'auth.logoutHeader', 'common.yes', 'common.no'])
+            );
+        } catch (err) {
+            console.error('Error loading translations:', err);
+            // Default English translations
+            translations = {
+                'auth.logoutConfirm': 'Are you sure you want to logout?',
+                'auth.logoutHeader': 'Confirm Logout',
+                'common.yes': 'Yes',
+                'common.no': 'No'
+            };
         }
+
+        // Single confirmation dialog setup
+        this.confirmationService.confirm({
+            message: translations['auth.logoutConfirm'],
+            header: translations['auth.logoutHeader'],
+            icon: 'pi pi-sign-out',
+            acceptLabel: translations['common.yes'],
+            rejectLabel: translations['common.no'],
+            accept: () => {
+                this.authService.logout();
+            }
+        });
     }
 
     navigateToPreferences() {

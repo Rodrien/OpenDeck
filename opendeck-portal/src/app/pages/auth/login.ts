@@ -8,7 +8,6 @@ import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { MessageModule } from 'primeng/message';
 import { TranslateModule } from '@ngx-translate/core';
-import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 
@@ -24,12 +23,10 @@ import { CommonModule } from '@angular/common';
         PasswordModule,
         RouterModule,
         RippleModule,
-        AppFloatingConfigurator,
         MessageModule,
         TranslateModule
     ],
     template: `
-        <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden">
             <div class="flex flex-col items-center justify-center">
                 <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
