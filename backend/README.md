@@ -159,6 +159,15 @@ PUT    /api/v1/cards/{id}            # Update card
 DELETE /api/v1/cards/{id}            # Delete card
 ```
 
+### Documents (Phase 2)
+
+```
+POST   /api/v1/documents/upload           # Upload documents and generate deck
+GET    /api/v1/documents/status           # Get processing status of documents
+GET    /api/v1/documents                  # List user's documents
+GET    /api/v1/documents/{id}             # Get single document details
+```
+
 ### Health
 
 ```
@@ -217,13 +226,15 @@ pytest tests/integration/
 
 ## Environment Variables
 
-See `.env.example` for all configuration options:
+Copy `.env.example` to `.env` and configure the following variables:
+
+### Required Variables
 
 ```bash
 # Application
-ENV=development
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
+ENV=development                    # development, staging, or production
+SECRET_KEY=your-secret-key        # Generate: openssl rand -base64 32
+JWT_SECRET_KEY=your-jwt-secret    # Generate: openssl rand -base64 32
 
 # Database
 DATABASE_URL=postgresql://user:pass@localhost:5432/opendeck
@@ -231,6 +242,52 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/opendeck
 # CORS
 ALLOWED_ORIGINS=http://localhost:4200,http://localhost:3000
 ```
+
+### Phase 2: Document Processing & AI Integration
+
+```bash
+# AI Provider Configuration
+AI_PROVIDER=openai                # openai or anthropic
+OPENAI_API_KEY=sk-...            # Get from: https://platform.openai.com/api-keys
+OPENAI_MODEL=gpt-4               # Recommended model
+ANTHROPIC_API_KEY=sk-ant-...     # Get from: https://console.anthropic.com/
+ANTHROPIC_MODEL=claude-3-sonnet-20240229
+
+# Storage Configuration
+STORAGE_BACKEND=local            # local or s3
+STORAGE_PATH=./documents         # Path for local storage
+MAX_UPLOAD_SIZE_BYTES=10485760   # 10MB max file size
+MAX_FILES_PER_UPLOAD=10          # Max files per upload request
+
+# Background Processing (Celery + Redis)
+REDIS_URL=redis://localhost:6379/0
+CELERY_BROKER_URL=redis://localhost:6379/0
+CELERY_RESULT_BACKEND=redis://localhost:6379/1
+CELERY_WORKER_CONCURRENCY=2      # Number of worker processes
+```
+
+### Optional Configuration
+
+```bash
+# Rate Limiting
+RATE_LIMIT_PER_MINUTE=60         # API requests per minute
+UPLOAD_RATE_LIMIT_PER_HOUR=5     # Upload requests per hour
+
+# Feature Flags
+ENABLE_DOCUMENT_UPLOAD=true      # Enable/disable document upload
+ENABLE_MALWARE_SCANNING=false    # Enable malware scanning
+ENABLE_OCR=false                 # Enable OCR (future)
+
+# AI Configuration
+MAX_FLASHCARDS_PER_DOCUMENT=20   # Max flashcards to generate
+MAX_DOCUMENT_TEXT_LENGTH=15000   # Max characters to process
+
+# Monitoring
+ENABLE_JSON_LOGGING=false        # Structured JSON logs
+DEBUG=false                      # Enable debug mode
+```
+
+See `.env.example` for complete documentation of all configuration options.
 
 ## Architecture Principles
 
@@ -282,14 +339,45 @@ FastAPI's dependency system provides repositories and services to route handlers
    git push origin feature/your-feature
    ```
 
-## Next Steps (Phase 2)
+## Phase 2: Document Upload & AI Flashcard Generation
 
-- [ ] Document upload endpoint
-- [ ] S3/local storage service
-- [ ] Text extraction from PDF/DOCX
-- [ ] OpenAI/Claude integration for flashcard generation
-- [ ] Background processing with Celery
-- [ ] Source attribution implementation
+The following Phase 2 features are now implemented:
+
+- [x] Document upload endpoint with file validation
+- [x] Local storage service (S3 support planned)
+- [x] Text extraction from PDF/DOCX/TXT
+- [x] OpenAI/Claude integration for flashcard generation
+- [x] Background processing with Celery
+- [x] Source attribution implementation
+- [x] Document status tracking and polling
+
+### Using Document Upload
+
+```bash
+# Start backend services including Celery worker
+docker-compose up -d
+
+# Upload documents
+curl -X POST http://localhost:8000/api/v1/documents/upload \
+  -H "Authorization: Bearer <token>" \
+  -F 'files=@document.pdf' \
+  -F 'metadata={"title":"My Deck","description":"Course notes","category":"Science","difficulty":"intermediate"}'
+
+# Check processing status
+curl http://localhost:8000/api/v1/documents/status?document_ids=<id1>,<id2> \
+  -H "Authorization: Bearer <token>"
+```
+
+See frontend integration in `opendeck-portal/src/app/pages/flashcards/deck-upload/`
+
+### Next Steps (Phase 3)
+
+- [ ] AWS S3 storage integration
+- [ ] Enhanced AI features (OCR, image processing)
+- [ ] Malware scanning for uploaded files
+- [ ] Advanced rate limiting
+- [ ] DynamoDB support
+- [ ] Caching layer for AI responses
 
 See `ARCHITECTURE.md` for complete roadmap.
 

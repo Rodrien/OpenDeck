@@ -1,6 +1,8 @@
 """Document Upload and Management API Endpoints"""
 
+import json
 from typing import List
+from uuid import UUID
 from fastapi import (
     APIRouter,
     Depends,
@@ -8,12 +10,13 @@ from fastapi import (
     UploadFile,
     File,
     Form,
+    Query,
     status,
 )
 import structlog
 
 from app.core.models import Deck, Document, DocumentStatus, DifficultyLevel
-from app.schemas.document import DocumentUploadResponse, DocumentResponse
+from app.schemas.document import DocumentUploadResponse, DocumentResponse, DocumentStatusResponse
 from app.api.dependencies import (
     CurrentUser,
     DeckRepoDepends,
@@ -30,9 +33,70 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 
-def validate_upload_files(files: List[UploadFile]) -> None:
+async def validate_file_content_type(file: UploadFile, file_ext: str) -> None:
     """
-    Validate uploaded files against configuration limits.
+    Validate file content matches its extension by checking magic bytes.
+
+    Args:
+        file: The uploaded file
+        file_ext: The file extension (e.g., 'pdf', 'docx')
+
+    Raises:
+        HTTPException: If content type doesn't match extension
+    """
+    # Mapping of allowed extensions to their expected magic bytes/signatures
+    MAGIC_BYTES = {
+        "pdf": [b"%PDF"],  # PDF files start with %PDF
+        "docx": [b"PK\x03\x04"],  # DOCX is a ZIP file (Office Open XML)
+        "pptx": [b"PK\x03\x04"],  # PPTX is also a ZIP file
+        "txt": None,  # Plain text has no reliable magic bytes
+    }
+
+    expected_signatures = MAGIC_BYTES.get(file_ext)
+
+    # Skip validation for plain text files
+    if expected_signatures is None:
+        return
+
+    # Read first 4 bytes to check magic number
+    try:
+        content = await file.read(4)
+        await file.seek(0)  # Reset file pointer
+    except Exception as e:
+        logger.error(
+            "failed_to_read_file_header",
+            filename=file.filename,
+            error=str(e),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to validate file '{file.filename}'",
+        )
+
+    # Check if content matches any expected signature
+    is_valid = False
+    for signature in expected_signatures:
+        if content.startswith(signature):
+            is_valid = True
+            break
+
+    if not is_valid:
+        logger.warning(
+            "file_content_type_mismatch",
+            filename=file.filename,
+            expected_ext=file_ext,
+            magic_bytes=content.hex(),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File '{file.filename}' content does not match extension '.{file_ext}'. "
+            f"The file may be corrupted or have an incorrect extension.",
+        )
+
+
+async def validate_upload_files(files: List[UploadFile]) -> None:
+    """
+    Validate uploaded files against configuration limits and content types.
 
     Args:
         files: List of uploaded files
@@ -65,13 +129,18 @@ def validate_upload_files(files: List[UploadFile]) -> None:
                 detail="All files must have a filename",
             )
 
-        file_ext = file.filename.split(".")[-1].lower()
+        # Extract file extension (handle cases like "file.name.pdf")
+        file_ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+
         if file_ext not in allowed_extensions:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"File type '.{file_ext}' not allowed. "
                 f"Allowed types: {', '.join(allowed_extensions)}",
             )
+
+        # Validate file content matches extension (magic bytes validation)
+        await validate_file_content_type(file, file_ext)
 
         # Check individual file size
         if file.size and file.size > settings.max_file_size_bytes:
@@ -100,10 +169,7 @@ def validate_upload_files(files: List[UploadFile]) -> None:
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_documents(
     files: List[UploadFile] = File(..., description="Documents to upload (max 10)"),
-    title: str = Form(..., min_length=1, max_length=200, description="Deck title"),
-    description: str = Form(default="", max_length=1000, description="Deck description"),
-    category: str = Form(..., min_length=1, max_length=100, description="Deck category/subject"),
-    difficulty: DifficultyLevel = Form(..., description="Deck difficulty level"),
+    metadata: str = Form(..., description="JSON string containing deck metadata (title, description, category, difficulty)"),
     current_user: CurrentUser = Depends(),
     deck_repo: DeckRepoDepends = Depends(),
     document_repo: DocumentRepoDepends = Depends(),
@@ -139,6 +205,53 @@ async def upload_documents(
     - Check processing status using GET /documents/{document_id}/status
     - Flashcards appear in deck once processing completes
     """
+    # Parse metadata JSON
+    try:
+        metadata_dict = json.loads(metadata)
+    except json.JSONDecodeError as e:
+        logger.error(
+            "invalid_metadata_json",
+            user_id=current_user.id,
+            error=str(e),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid metadata JSON: {str(e)}",
+        )
+
+    # Extract and validate metadata fields
+    title = metadata_dict.get("title", "").strip()
+    description = metadata_dict.get("description", "").strip()
+    category = metadata_dict.get("category", "").strip()
+    difficulty_str = metadata_dict.get("difficulty", "").strip()
+
+    if not title or len(title) > 200:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title is required and must be between 1-200 characters",
+        )
+
+    if len(description) > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Description must not exceed 1000 characters",
+        )
+
+    if not category or len(category) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Category is required and must be between 1-100 characters",
+        )
+
+    # Validate difficulty level
+    try:
+        difficulty = DifficultyLevel(difficulty_str)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid difficulty level. Must be one of: {', '.join([d.value for d in DifficultyLevel])}",
+        )
+
     logger.info(
         "document_upload_started",
         user_id=current_user.id,
@@ -148,7 +261,7 @@ async def upload_documents(
     )
 
     # Validate uploaded files
-    validate_upload_files(files)
+    await validate_upload_files(files)
 
     try:
         # Create deck record with PENDING status (implicitly via card_count=0)
@@ -253,6 +366,86 @@ async def upload_documents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process document upload: {str(e)}",
         )
+
+
+@router.get("/status", response_model=List[DocumentStatusResponse])
+async def get_documents_status(
+    document_ids: str = Query(..., description="Comma-separated document IDs"),
+    current_user: CurrentUser = Depends(),
+    document_repo: DocumentRepoDepends = Depends(),
+) -> List[DocumentStatusResponse]:
+    """
+    Get processing status of multiple documents by IDs.
+
+    This endpoint is used by the frontend to poll document processing status.
+
+    Args:
+        document_ids: Comma-separated list of document UUIDs
+        current_user: Authenticated user
+        document_repo: Document repository dependency
+
+    Returns:
+        List of document status information
+
+    Example:
+        GET /documents/status?document_ids=uuid1,uuid2,uuid3
+    """
+    # Split and clean document IDs
+    ids_list = [doc_id.strip() for doc_id in document_ids.split(",") if doc_id.strip()]
+
+    if not ids_list:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one document ID is required",
+        )
+
+    if len(ids_list) > 50:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 50 document IDs allowed per request",
+        )
+
+    # Validate UUIDs
+    valid_ids = []
+    for doc_id in ids_list:
+        try:
+            UUID(doc_id)
+            valid_ids.append(doc_id)
+        except ValueError:
+            logger.warning(
+                "invalid_uuid_in_status_request",
+                user_id=current_user.id,
+                invalid_id=doc_id,
+            )
+            # Skip invalid UUIDs instead of failing the entire request
+            continue
+
+    if not valid_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No valid document IDs provided",
+        )
+
+    # Fetch documents by IDs with authorization check
+    documents = document_repo.get_by_ids(valid_ids, current_user.id)
+
+    logger.info(
+        "documents_status_retrieved",
+        user_id=current_user.id,
+        requested_count=len(valid_ids),
+        found_count=len(documents),
+    )
+
+    return [
+        DocumentStatusResponse(
+            id=doc.id,
+            status=doc.status,
+            deck_id=doc.deck_id,
+            error_message=doc.error_message,
+            processed_at=doc.processed_at,
+        )
+        for doc in documents
+    ]
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)

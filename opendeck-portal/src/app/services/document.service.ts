@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, throwError, timer, Subject } from 'rxjs';
-import { catchError, map, switchMap, takeWhile, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, takeWhile, tap, filter } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import {
   DeckMetadata,
@@ -62,8 +62,8 @@ export class DocumentService {
             return null;
         }
       }),
-      // Filter out null values (progress events)
-      map(response => response as UploadResponse),
+      // Filter out null values (progress events) before casting
+      filter((response): response is UploadResponse => response !== null),
       catchError(this.handleError)
     );
   }

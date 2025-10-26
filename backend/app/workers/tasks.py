@@ -82,17 +82,35 @@ def process_documents_task(
             storage=storage,
         )
 
-        # Process documents synchronously (within task)
-        # Note: The async methods need to be called properly
+        # Process documents - handle async properly
+        # Create new event loop for async operations in Celery task
+        # This avoids conflicts with existing event loops
         import asyncio
 
-        result = asyncio.run(
-            processor.process_documents(
-                deck_id=deck_id,
-                document_ids=document_ids,
-                user_id=user_id,
+        try:
+            # Try to get existing event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, create a new one for this task
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+        except RuntimeError:
+            # No event loop exists, create a new one
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        try:
+            result = loop.run_until_complete(
+                processor.process_documents(
+                    deck_id=deck_id,
+                    document_ids=document_ids,
+                    user_id=user_id,
+                )
             )
-        )
+        finally:
+            # Only close if we created a new loop
+            if not loop.is_running():
+                loop.close()
 
         logger.info(
             "celery_task_completed",

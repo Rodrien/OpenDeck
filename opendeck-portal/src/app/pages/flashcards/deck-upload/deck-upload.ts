@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, EMPTY } from 'rxjs';
+import { takeUntil, tap, switchMap, catchError } from 'rxjs/operators';
 
 // PrimeNG Imports
 import { Card } from 'primeng/card';
@@ -142,7 +142,9 @@ export class DeckUpload implements OnInit, OnDestroy {
 
     // Validate file count
     if (files.length > this.MAX_FILES) {
-      this.uploadError.set(`Maximum ${this.MAX_FILES} files allowed`);
+      this.translate.get('deck.upload.maxFilesError', { count: this.MAX_FILES }).subscribe(msg => {
+        this.uploadError.set(msg);
+      });
       return;
     }
 
@@ -172,7 +174,9 @@ export class DeckUpload implements OnInit, OnDestroy {
     }
 
     if (hasError) {
-      this.uploadError.set('Some files have validation errors. Please check and try again.');
+      this.translate.get('deck.upload.validationError').subscribe(msg => {
+        this.uploadError.set(msg);
+      });
     }
 
     this.selectedFiles.set(uploadedFiles);
@@ -220,50 +224,68 @@ export class DeckUpload implements OnInit, OnDestroy {
         this.uploadProgress.set(progress);
       });
 
-    // Upload documents
+    // Upload documents and chain with polling using RxJS operators
     this.documentService.uploadDocuments(files, metadata)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response) {
-            this.uploadSuccess.set(true);
-            this.generatedDeckId.set(response.deck_id);
-            this.isUploading.set(false);
-
-            // Start polling for processing status
-            this.startPollingStatus(response.document_ids);
-          }
-        },
-        error: (error) => {
-          this.uploadError.set(error.message || 'Upload failed. Please try again.');
+      .pipe(
+        takeUntil(this.destroy$),
+        tap(response => {
+          this.uploadSuccess.set(true);
+          this.generatedDeckId.set(response.deck_id);
+          this.isUploading.set(false);
+        }),
+        switchMap(response =>
+          this.documentService.pollProcessingStatus(response.document_ids)
+        ),
+        catchError(error => {
+          const errorMessage = this.extractErrorMessage(error);
+          this.uploadError.set(errorMessage);
           this.isUploading.set(false);
           this.uploadProgress.set(0);
+          return EMPTY;
+        })
+      )
+      .subscribe({
+        next: (statuses) => {
+          this.processingStatuses.set(statuses);
+          this.isPolling.set(!this.allProcessingComplete());
+        },
+        error: (error) => {
+          const errorMessage = this.extractErrorMessage(error);
+          this.uploadError.set(errorMessage);
+          this.isPolling.set(false);
         }
       });
   }
 
   /**
-   * Start polling document processing status
+   * Extract detailed error message from backend response
+   * @param error - Error object from HTTP request
+   * @returns Formatted error message string
    */
-  private startPollingStatus(documentIds: string[]): void {
-    this.isPolling.set(true);
+  private extractErrorMessage(error: any): string {
+    // Default error message
+    let errorMessage = 'Upload failed. Please try again.';
 
-    this.documentService.pollProcessingStatus(documentIds)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (statuses) => {
-          this.processingStatuses.set(statuses);
+    // Check if error has detailed information from backend
+    if (error.error?.detail) {
+      // Backend provided detailed error (FastAPI format)
+      if (typeof error.error.detail === 'string') {
+        errorMessage = error.error.detail;
+      } else if (Array.isArray(error.error.detail)) {
+        // FastAPI validation errors (array of error objects)
+        errorMessage = error.error.detail
+          .map((e: any) => e.msg || e.message || 'Validation error')
+          .join(', ');
+      }
+    } else if (error.message) {
+      // Use error message from Error object
+      errorMessage = error.message;
+    } else if (error.statusText) {
+      // Use HTTP status text if available
+      errorMessage = `${error.status || 'Error'}: ${error.statusText}`;
+    }
 
-          // Check if all processing is complete
-          if (this.allProcessingComplete()) {
-            this.isPolling.set(false);
-          }
-        },
-        error: (error) => {
-          console.error('Error polling status:', error);
-          this.isPolling.set(false);
-        }
-      });
+    return errorMessage;
   }
 
   /**
