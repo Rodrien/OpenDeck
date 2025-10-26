@@ -2,6 +2,8 @@
   "auth": {
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
+    "logoutConfirm": "¿Estás seguro de que quieres cerrar sesión?",
+    "logoutHeader": "Confirmar cierre de sesión",
     "email": "Correo electrónico",
     "password": "Contraseña",
     "confirmPassword": "Confirmar contraseña",
@@ -98,7 +100,8 @@
     "confirm": "Confirmar",
     "yes": "Sí",
     "no": "No",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "preferences": "Preferencias"
   },
   "errors": {
     "notFound": "No encontrado",
