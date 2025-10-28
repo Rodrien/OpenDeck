@@ -5,6 +5,7 @@ import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
 import { TranslateService } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-menu',
@@ -38,30 +39,31 @@ export class AppMenu {
     /**
      * Update menu items with current translations
      */
-    private updateMenuItems(): void {
-        this.translate.get([
-            'menu.main',
-            'menu.flashcards',
-            'menu.uploadDocuments'
-        ])
-        .subscribe(translations => {
-            this.model = [
-                {
-                    label: translations['menu.main'] || 'Main',
-                    items: [
-                        {
-                            label: translations['menu.flashcards'] || 'Flashcards',
-                            icon: 'pi pi-fw pi-book',
-                            routerLink: ['/pages/flashcards']
-                        },
-                        {
-                            label: translations['menu.uploadDocuments'] || 'Upload Documents',
-                            icon: 'pi pi-fw pi-cloud-upload',
-                            routerLink: ['/pages/flashcards/upload']
-                        }
-                    ]
-                }
-            ];
-        });
+    private async updateMenuItems(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get([
+                'menu.main',
+                'menu.flashcards',
+                'menu.uploadDocuments'
+            ])
+        );
+
+        this.model = [
+            {
+                label: translations['menu.main'] || 'Main',
+                items: [
+                    {
+                        label: translations['menu.flashcards'] || 'Flashcards',
+                        icon: 'pi pi-fw pi-book',
+                        routerLink: ['/pages/flashcards']
+                    },
+                    {
+                        label: translations['menu.uploadDocuments'] || 'Upload Documents',
+                        icon: 'pi pi-fw pi-cloud-upload',
+                        routerLink: ['/pages/flashcards/upload']
+                    }
+                ]
+            }
+        ];
     }
 }

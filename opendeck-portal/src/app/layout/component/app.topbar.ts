@@ -150,62 +150,68 @@ export class AppTopbar implements OnInit {
     /**
      * Update translations for aria-labels and user display
      */
-    private updateTranslations(): void {
-        this.translate.get([
-            'topbar.switchToLightMode',
-            'topbar.switchToDarkMode',
-            'topbar.userMenu',
-            'topbar.user',
-            'topbar.notLoggedIn'
-        ])
-        .subscribe((translations: TranslationMap) => {
-            // Update dark mode aria label based on current state
-            this.updateDarkModeLabel();
+    private async updateTranslations(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get([
+                'topbar.switchToLightMode',
+                'topbar.switchToDarkMode',
+                'topbar.userMenu',
+                'topbar.user',
+                'topbar.notLoggedIn'
+            ])
+        );
 
-            // Update user menu aria label
-            this.userMenuAriaLabel.set(translations['topbar.userMenu'] || 'User menu');
+        // Update dark mode aria label based on current state
+        const label = this.isDarkMode()
+            ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
+            : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
+        this.darkModeAriaLabel.set(label);
 
-            // Update user display defaults
-            this.userDisplayName.set(translations['topbar.user'] || 'User');
-            this.userEmailDisplay.set(translations['topbar.notLoggedIn'] || 'Not logged in');
-        });
+        // Update user menu aria label
+        this.userMenuAriaLabel.set(translations['topbar.userMenu'] || 'User menu');
+
+        // Update user display defaults
+        this.userDisplayName.set(translations['topbar.user'] || 'User');
+        this.userEmailDisplay.set(translations['topbar.notLoggedIn'] || 'Not logged in');
     }
 
     /**
      * Update dark mode aria label based on current state
      */
-    private updateDarkModeLabel(): void {
-        this.translate.get(['topbar.switchToLightMode', 'topbar.switchToDarkMode'])
-            .subscribe((translations: TranslationMap) => {
-                const label = this.isDarkMode()
-                    ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
-                    : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
-                this.darkModeAriaLabel.set(label);
-            });
+    private async updateDarkModeLabel(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get(['topbar.switchToLightMode', 'topbar.switchToDarkMode'])
+        );
+
+        const label = this.isDarkMode()
+            ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
+            : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
+        this.darkModeAriaLabel.set(label);
     }
 
     /**
      * Update user menu items with current translations
      */
-    private updateUserMenuItems(): void {
-        this.translate.get(['common.preferences', 'auth.logout'])
-            .subscribe((translations: TranslationMap) => {
-                this.userMenuItems = [
-                    {
-                        label: translations['common.preferences'] || 'Preferences',
-                        icon: 'pi pi-cog',
-                        command: () => this.navigateToPreferences()
-                    },
-                    {
-                        separator: true
-                    },
-                    {
-                        label: translations['auth.logout'] || 'Logout',
-                        icon: 'pi pi-sign-out',
-                        command: () => this.logout()
-                    }
-                ];
-            });
+    private async updateUserMenuItems(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get(['common.preferences', 'auth.logout'])
+        );
+
+        this.userMenuItems = [
+            {
+                label: translations['common.preferences'] || 'Preferences',
+                icon: 'pi pi-cog',
+                command: () => this.navigateToPreferences()
+            },
+            {
+                separator: true
+            },
+            {
+                label: translations['auth.logout'] || 'Logout',
+                icon: 'pi pi-sign-out',
+                command: () => this.logout()
+            }
+        ];
     }
 
     toggleUserMenu(event: Event) {
