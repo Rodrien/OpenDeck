@@ -2,15 +2,27 @@
     <div class="max-w-5xl mx-auto">
         <!-- Header Section -->
         <div class="header-section mb-6">
-            <p-button
-                [label]="'deck.backToDecks' | translate"
-                icon="pi pi-chevron-left"
-                [text]="true"
-                severity="secondary"
-                class="mb-4"
-                (onClick)="backToDecks()"
-                [attr.aria-label]="'Navigate back to deck listing'"
-            />
+            <div class="flex justify-between items-start mb-4">
+                <p-button
+                    [label]="'deck.backToDecks' | translate"
+                    icon="pi pi-chevron-left"
+                    [text]="true"
+                    severity="secondary"
+                    (onClick)="backToDecks()"
+                    [attr.aria-label]="'Navigate back to deck listing'"
+                />
+
+                @if (!loading() && cards().length > 0) {
+                    <p-button
+                        [label]="'flashcard.resetProgress' | translate"
+                        icon="pi pi-refresh"
+                        [text]="true"
+                        severity="secondary"
+                        (onClick)="resetProgress()"
+                        [attr.aria-label]="'Reset progress and start from beginning'"
+                    />
+                }
+            </div>
 
             @if (!loading()) {
                 <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 mb-2">{{ deckTitle() }}</h1>
@@ -19,6 +31,25 @@
                 }
             }
         </div>
+
+        <!-- Resume Progress Message -->
+        @if (resumedFromProgress() && !loading()) {
+            <div class="mb-6">
+                <p-message
+                    severity="info"
+                    [closable]="true"
+                    styleClass="w-full"
+                    (onClose)="resumedFromProgress.set(false)"
+                >
+                    <ng-template pTemplate="content">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-bookmark text-lg"></i>
+                            <span>{{ 'flashcard.resumedFromProgress' | translate: {current: currentIndex() + 1, total: cards().length} }}</span>
+                        </div>
+                    </ng-template>
+                </p-message>
+            </div>
+        }
 
         <!-- Loading State -->
         @if (loading()) {

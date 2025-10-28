@@ -53,6 +53,7 @@ services:
       - CORS_ORIGINS=http://localhost:4200,http://localhost:80
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - STORAGE_BACKEND=local
       - STORAGE_PATH=/app/storage/documents
       # AI Provider Configuration (set your API key)
@@ -95,6 +96,7 @@ services:
       - DB_BACKEND=postgres
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - STORAGE_BACKEND=local
       - STORAGE_PATH=/app/storage/documents
       # AI Provider Configuration (set your API key)

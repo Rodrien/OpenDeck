@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
@@ -16,6 +16,7 @@ import { Message } from 'primeng/message';
 // Services
 import { DeckService } from '../../services/deck.service';
 import { CardService } from '../../services/card.service';
+import { DeckProgressService } from '../../services/deck-progress.service';
 
 // Models
 import { Card as ApiCard } from '../../models/card.model';
@@ -54,8 +55,9 @@ import { CardDirection } from './models/flashcard-data.interface';
         ])
     ]
 })
-export class FlashcardViewerComponent implements OnInit {
+export class FlashcardViewerComponent implements OnInit, OnDestroy {
     // Reactive state using signals
+    deckId = signal<string>('');
     deckTitle = signal<string>('');
     cards = signal<ApiCard[]>([]);
     currentIndex = signal<number>(0);
@@ -63,6 +65,7 @@ export class FlashcardViewerComponent implements OnInit {
     animationTrigger = signal<number>(0);
     loading = signal<boolean>(false);
     error = signal<string | null>(null);
+    resumedFromProgress = signal<boolean>(false);
 
     // Computed values
     currentCard = computed(() => this.cards()[this.currentIndex()]);
@@ -83,7 +86,8 @@ export class FlashcardViewerComponent implements OnInit {
         private router: Router,
         private deckService: DeckService,
         private cardService: CardService,
-        private translate: TranslateService
+        private translate: TranslateService,
+        private progressService: DeckProgressService
     ) {}
 
     ngOnInit(): void {
@@ -91,11 +95,17 @@ export class FlashcardViewerComponent implements OnInit {
         const deckId = this.route.snapshot.paramMap.get('deckId');
 
         if (deckId) {
+            this.deckId.set(deckId);
             this.loadDeckAndCards(deckId);
         } else {
             // No deck ID provided, navigate back to listing
             this.router.navigate(['/pages/flashcards']);
         }
+    }
+
+    ngOnDestroy(): void {
+        // Save progress before component is destroyed
+        this.saveProgress();
     }
 
     /**
@@ -119,14 +129,60 @@ export class FlashcardViewerComponent implements OnInit {
                 // If no cards, show error
                 if (result.cards.items.length === 0) {
                     this.error.set(this.translate.instant('flashcard.noCards'));
+                } else {
+                    // Restore progress if available
+                    this.restoreProgress(deckId, result.cards.items.length);
                 }
             },
             error: (err) => {
                 this.error.set(this.translate.instant('errors.loadFailed'));
                 this.loading.set(false);
                 console.error('Error loading deck and cards:', err);
+
+                // Clear progress for failed deck
+                this.progressService.clearProgress(deckId);
             }
         });
+    }
+
+    /**
+     * Restore progress from localStorage if available
+     */
+    private restoreProgress(deckId: string, totalCards: number): void {
+        const savedProgress = this.progressService.getProgress(deckId);
+
+        if (savedProgress) {
+            // Validate saved index is within bounds
+            let restoredIndex = savedProgress.currentCardIndex;
+
+            // Clamp index if deck size changed
+            if (restoredIndex >= totalCards) {
+                restoredIndex = totalCards - 1;
+            }
+
+            // Only restore if not at the beginning
+            if (restoredIndex > 0) {
+                this.currentIndex.set(restoredIndex);
+                this.resumedFromProgress.set(true);
+            }
+        }
+    }
+
+    /**
+     * Save current progress to localStorage
+     */
+    private saveProgress(): void {
+        const deckId = this.deckId();
+        const cards = this.cards();
+
+        if (deckId && cards.length > 0) {
+            this.progressService.saveProgress(
+                deckId,
+                this.currentIndex(),
+                cards.length,
+                this.deckTitle()
+            );
+        }
     }
 
     /**
@@ -137,6 +193,7 @@ export class FlashcardViewerComponent implements OnInit {
             this.currentIndex.update(i => i + 1);
             this.showAnswer.set(false);
             this.animationTrigger.update(v => v + 1);
+            this.saveProgress();
         }
     }
 
@@ -148,6 +205,20 @@ export class FlashcardViewerComponent implements OnInit {
             this.currentIndex.update(i => i - 1);
             this.showAnswer.set(false);
             this.animationTrigger.update(v => v - 1);
+            this.saveProgress();
+        }
+    }
+
+    /**
+     * Reset progress and start from the beginning
+     */
+    resetProgress(): void {
+        const deckId = this.deckId();
+        if (deckId) {
+            this.progressService.clearProgress(deckId);
+            this.currentIndex.set(0);
+            this.showAnswer.set(false);
+            this.resumedFromProgress.set(false);
         }
     }
 

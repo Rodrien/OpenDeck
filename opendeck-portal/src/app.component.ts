@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { DeckProgressService } from './app/services/deck-progress.service';
 
 @Component({
     selector: 'app-root',
@@ -9,7 +10,10 @@ import { TranslateService } from '@ngx-translate/core';
     template: `<router-outlet></router-outlet>`
 })
 export class AppComponent implements OnInit {
-    constructor(private translate: TranslateService) {
+    constructor(
+        private translate: TranslateService,
+        private deckProgressService: DeckProgressService
+    ) {
         // Set default language
         this.translate.setDefaultLang('en');
 
@@ -23,6 +27,7 @@ export class AppComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // Additional initialization if needed
+        // Clean up old deck progress on app initialization
+        this.deckProgressService.cleanupOldProgress();
     }
 }
