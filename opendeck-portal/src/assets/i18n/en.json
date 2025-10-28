@@ -38,7 +38,9 @@
     "viewSource": "View Source",
     "sourceReference": "Source Reference",
     "sourceNotAvailable": "Source not available",
-    "toggleAnswer": "Show/Hide Answer"
+    "toggleAnswer": "Show/Hide Answer",
+    "resetProgress": "Reset Progress",
+    "resumedFromProgress": "Continuing from where you left off (Card {{current}} of {{total}})"
   },
   "deck": {
     "title": "Title",

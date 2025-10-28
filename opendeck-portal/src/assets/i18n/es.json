@@ -38,7 +38,9 @@
     "viewSource": "Ver fuente",
     "sourceReference": "Referencia de origen",
     "sourceNotAvailable": "Fuente no disponible",
-    "toggleAnswer": "Mostrar/Ocultar respuesta"
+    "toggleAnswer": "Mostrar/Ocultar respuesta",
+    "resetProgress": "Reiniciar progreso",
+    "resumedFromProgress": "Continuando desde donde lo dejaste (Tarjeta {{current}} de {{total}})"
   },
   "deck": {
     "title": "Título",
