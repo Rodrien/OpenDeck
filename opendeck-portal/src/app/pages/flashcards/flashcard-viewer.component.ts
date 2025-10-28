@@ -76,6 +76,9 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     cardsCache = signal<Map<number, ApiCard[]>>(new Map());
     loadingPage = signal<boolean>(false);
 
+    // Navigation queue to handle rapid navigation during page loads
+    private navigationQueue: ('next' | 'prev')[] = [];
+
     // Computed values for pagination
     totalPages = computed(() => Math.ceil(this.totalCards() / this.pageSize()));
     globalCardIndex = computed(() => this.currentPage() * this.pageSize() + this.currentIndex());
@@ -304,13 +307,15 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     private saveProgress(): void {
         const deckId = this.deckId();
         const totalCards = this.totalCards();
+        const currentCard = this.currentCard();
 
         if (deckId && totalCards > 0) {
             this.progressService.saveProgress(
                 deckId,
                 this.globalCardIndex(),
                 totalCards,
-                this.deckTitle()
+                this.deckTitle(),
+                currentCard?.id
             );
         }
     }
@@ -320,7 +325,13 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
      * Handles page transitions when reaching end of current page
      */
     nextCard(): void {
-        if (this.isLastCard() || this.loadingPage()) {
+        if (this.isLastCard()) {
+            return;
+        }
+
+        // If a page is loading, queue the navigation
+        if (this.loadingPage()) {
+            this.navigationQueue.push('next');
             return;
         }
 
@@ -344,9 +355,13 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
 
                     // Prefetch adjacent pages
                     this.prefetchAdjacentPages(this.deckId());
+
+                    // Process queued navigation
+                    this.processNavigationQueue();
                 },
                 error: (err) => {
                     this.loadingPage.set(false);
+                    this.navigationQueue = []; // Clear queue on error
                     this.error.set(this.translate.instant('errors.loadFailed'));
                     console.error('Error loading next page:', err);
                 }
@@ -365,7 +380,13 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
      * Handles page transitions when reaching start of current page
      */
     previousCard(): void {
-        if (this.isFirstCard() || this.loadingPage()) {
+        if (this.isFirstCard()) {
+            return;
+        }
+
+        // If a page is loading, queue the navigation
+        if (this.loadingPage()) {
+            this.navigationQueue.push('prev');
             return;
         }
 
@@ -390,9 +411,13 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
 
                     // Prefetch adjacent pages
                     this.prefetchAdjacentPages(this.deckId());
+
+                    // Process queued navigation
+                    this.processNavigationQueue();
                 },
                 error: (err) => {
                     this.loadingPage.set(false);
+                    this.navigationQueue = []; // Clear queue on error
                     this.error.set(this.translate.instant('errors.loadFailed'));
                     console.error('Error loading previous page:', err);
                 }
@@ -403,6 +428,27 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
             this.showAnswer.set(false);
             this.animationTrigger.update(v => v - 1);
             this.saveProgress();
+        }
+    }
+
+    /**
+     * Process queued navigation actions after page load completes
+     * Processes one navigation at a time to prevent overwhelming the system
+     */
+    private processNavigationQueue(): void {
+        if (this.navigationQueue.length === 0) {
+            return;
+        }
+
+        // Take only the last action from the queue (user's final intended direction)
+        const action = this.navigationQueue[this.navigationQueue.length - 1];
+        this.navigationQueue = [];
+
+        // Execute the queued action
+        if (action === 'next') {
+            this.nextCard();
+        } else {
+            this.previousCard();
         }
     }
 
