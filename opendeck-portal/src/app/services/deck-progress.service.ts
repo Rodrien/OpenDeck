@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 export interface DeckProgress {
   deckId: string;
   currentCardIndex: number;
+  currentCardId?: string; // Card ID for better restoration accuracy
   totalCards: number;
   timestamp: number;
   deckTitle?: string;
@@ -28,13 +29,15 @@ export class DeckProgressService {
     deckId: string,
     cardIndex: number,
     totalCards: number,
-    deckTitle?: string
+    deckTitle?: string,
+    cardId?: string
   ): void {
     try {
       const progressMap = this.loadAllProgress();
       const progress: DeckProgress = {
         deckId,
         currentCardIndex: cardIndex,
+        currentCardId: cardId,
         totalCards,
         timestamp: Date.now(),
         deckTitle
@@ -53,6 +56,7 @@ export class DeckProgressService {
         progressMap[deckId] = {
           deckId,
           currentCardIndex: cardIndex,
+          currentCardId: cardId,
           totalCards,
           timestamp: Date.now(),
           deckTitle

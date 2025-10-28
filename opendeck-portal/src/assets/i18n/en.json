@@ -40,7 +40,9 @@
     "sourceNotAvailable": "Source not available",
     "toggleAnswer": "Show/Hide Answer",
     "resetProgress": "Reset Progress",
-    "resumedFromProgress": "Continuing from where you left off (Card {{current}} of {{total}})"
+    "resumedFromProgress": "Continuing from where you left off (Card {{current}} of {{total}})",
+    "loadingPage": "Loading cards...",
+    "page": "Page"
   },
   "deck": {
     "title": "Title",
