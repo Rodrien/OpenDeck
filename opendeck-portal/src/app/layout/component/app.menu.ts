@@ -24,15 +24,15 @@ export class AppMenu {
 
     constructor(private translate: TranslateService) {}
 
-    ngOnInit() {
+    async ngOnInit() {
         // Initialize menu items with translations
-        this.updateMenuItems();
+        await this.updateMenuItems();
 
         // Update menu items when language changes
         this.translate.onLangChange
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-                this.updateMenuItems();
+            .subscribe(async () => {
+                await this.updateMenuItems();
             });
     }
 
