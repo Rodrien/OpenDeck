@@ -14,7 +14,7 @@ from app.workers.celery_app import celery_app
 from app.services.document_processor import DocumentProcessorService
 from app.services.storage_service import get_storage_service
 from app.db.base import SessionLocal
-from app.core.models import ProcessingStatus
+from app.core.models import DocumentStatus
 
 logger = structlog.get_logger()
 
@@ -135,7 +135,7 @@ def process_documents_task(
         for doc_id in document_ids:
             try:
                 doc = document_repo.get(UUID(doc_id))
-                if doc and doc.status == ProcessingStatus.PROCESSING:
+                if doc and doc.status == DocumentStatus.PROCESSING:
                     doc.mark_failed("Processing timeout exceeded (10 minutes)")
                     document_repo.update(doc)
             except Exception as e:
@@ -232,7 +232,7 @@ def cleanup_orphaned_files_task(self) -> Dict[str, Any]:
         from app.db.models import Document as DocumentDB
 
         failed_docs = db.query(DocumentDB).filter(
-            DocumentDB.status == ProcessingStatus.FAILED.value,
+            DocumentDB.status == DocumentStatus.FAILED.value,
             DocumentDB.created_at < cutoff_date
         ).all()
 

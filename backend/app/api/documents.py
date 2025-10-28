@@ -1,7 +1,7 @@
 """Document Upload and Management API Endpoints"""
 
 import json
-from typing import List
+from typing import Annotated, List
 from uuid import UUID
 from fastapi import (
     APIRouter,
@@ -176,11 +176,11 @@ async def validate_upload_files(files: List[UploadFile]) -> None:
 @limiter.limit("5/hour")  # P0: Rate limiting - 5 uploads per hour per IP
 async def upload_documents(
     request: Request,  # Required for slowapi rate limiting
-    files: List[UploadFile] = File(..., description="Documents to upload (max 10)"),
-    metadata: str = Form(..., description="JSON string containing deck metadata (title, description, category, difficulty)"),
-    current_user: CurrentUser = Depends(),
-    deck_repo: DeckRepoDepends = Depends(),
-    document_repo: DocumentRepoDepends = Depends(),
+    current_user: CurrentUser,
+    deck_repo: DeckRepoDepends,
+    document_repo: DocumentRepoDepends,
+    files: Annotated[List[UploadFile], File(description="Documents to upload (max 10)")],
+    metadata: Annotated[str, Form(description="JSON string containing deck metadata (title, description, category, difficulty)")],
     db: Session = Depends(get_db),
     storage: StorageService = Depends(get_storage_service),
 ) -> DocumentUploadResponse:
@@ -430,9 +430,9 @@ async def upload_documents(
 
 @router.get("/status", response_model=List[DocumentStatusResponse])
 async def get_documents_status(
-    document_ids: str = Query(..., description="Comma-separated document IDs"),
-    current_user: CurrentUser = Depends(),
-    document_repo: DocumentRepoDepends = Depends(),
+    current_user: CurrentUser,
+    document_repo: DocumentRepoDepends,
+    document_ids: Annotated[str, Query(description="Comma-separated document IDs")],
 ) -> List[DocumentStatusResponse]:
     """
     Get processing status of multiple documents by IDs.
@@ -511,8 +511,8 @@ async def get_documents_status(
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,
-    current_user: CurrentUser = Depends(),
-    document_repo: DocumentRepoDepends = Depends(),
+    current_user: CurrentUser,
+    document_repo: DocumentRepoDepends,
 ) -> DocumentResponse:
     """
     Get document details by ID.
@@ -541,8 +541,8 @@ async def get_document(
 
 @router.get("", response_model=List[DocumentResponse])
 async def list_documents(
-    current_user: CurrentUser = Depends(),
-    document_repo: DocumentRepoDepends = Depends(),
+    current_user: CurrentUser,
+    document_repo: DocumentRepoDepends,
     limit: int = 100,
     offset: int = 0,
 ) -> List[DocumentResponse]:
