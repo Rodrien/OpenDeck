@@ -349,6 +349,25 @@ class PostgresDocumentRepo:
         )
         return self._to_domain(model) if model else None
 
+    def get_by_ids(self, doc_ids: List[str], user_id: str) -> List[Document]:
+        """
+        Get multiple documents by IDs with authorization check.
+
+        Args:
+            doc_ids: List of document IDs
+            user_id: User ID for authorization
+
+        Returns:
+            List of documents that exist and belong to the user
+        """
+        models = (
+            self.session.query(DocumentModel)
+            .filter(DocumentModel.id.in_(doc_ids))
+            .filter_by(user_id=user_id)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
     def list(self, user_id: str, limit: int = 100, offset: int = 0) -> List[Document]:
         """List documents for a user."""
         models = (

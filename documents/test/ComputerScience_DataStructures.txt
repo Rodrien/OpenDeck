@@ -1,0 +1,241 @@
+Computer Science 101 - Data Structures
+Course: Introduction to Computer Science
+Topic: Fundamental Data Structures
+Difficulty: Beginner
+
+===== Introduction to Data Structures =====
+
+A data structure is a specialized format for organizing, processing, retrieving, and storing data. Choosing the right data structure for a particular task is crucial for writing efficient code.
+
+===== Arrays =====
+
+Definition:
+An array is a collection of elements, each identified by an index or key. Arrays store elements in contiguous memory locations.
+
+Key Properties:
+- Fixed size (in most languages)
+- Elements of the same data type
+- Random access: O(1) time complexity
+- Index starts at 0 in most languages
+
+Advantages:
+- Fast access to elements using index
+- Memory efficient for fixed-size collections
+- Cache-friendly due to contiguous memory
+
+Disadvantages:
+- Fixed size (cannot grow dynamically in basic arrays)
+- Insertion and deletion are expensive O(n)
+- Wasteful if array is not fully utilized
+
+Example Use Cases:
+- Storing a list of student grades
+- Image pixel data
+- Lookup tables
+
+===== Linked Lists =====
+
+Definition:
+A linked list is a linear data structure where elements (nodes) are stored in non-contiguous memory locations. Each node contains data and a reference (link) to the next node.
+
+Types:
+1. Singly Linked List: Each node points to the next node
+2. Doubly Linked List: Each node points to both next and previous nodes
+3. Circular Linked List: Last node points back to the first node
+
+Key Properties:
+- Dynamic size (can grow or shrink)
+- Sequential access: O(n) time complexity
+- Efficient insertion/deletion: O(1) if position is known
+
+Advantages:
+- Dynamic size allocation
+- Efficient insertion/deletion at beginning: O(1)
+- No wasted memory
+
+Disadvantages:
+- No random access (must traverse from head)
+- Extra memory for storing pointers
+- Not cache-friendly
+
+===== Stacks =====
+
+Definition:
+A stack is a linear data structure that follows the LIFO (Last-In-First-Out) principle. The last element added is the first one to be removed.
+
+Core Operations:
+- Push: Add element to top - O(1)
+- Pop: Remove element from top - O(1)
+- Peek/Top: View top element without removing - O(1)
+- IsEmpty: Check if stack is empty - O(1)
+
+Real-World Applications:
+- Function call stack in programming
+- Undo mechanism in text editors
+- Browser back button
+- Expression evaluation and syntax parsing
+- Depth-First Search (DFS) algorithm
+
+===== Queues =====
+
+Definition:
+A queue is a linear data structure that follows the FIFO (First-In-First-Out) principle. The first element added is the first one to be removed.
+
+Core Operations:
+- Enqueue: Add element to rear - O(1)
+- Dequeue: Remove element from front - O(1)
+- Front: View front element - O(1)
+- IsEmpty: Check if queue is empty - O(1)
+
+Types:
+- Simple Queue: Basic FIFO structure
+- Circular Queue: Last position connects to first position
+- Priority Queue: Elements have priorities
+- Double-Ended Queue (Deque): Insert/delete from both ends
+
+Real-World Applications:
+- CPU scheduling
+- Printer job queue
+- Breadth-First Search (BFS) algorithm
+- Handling requests in web servers
+
+===== Hash Tables =====
+
+Definition:
+A hash table (or hash map) is a data structure that maps keys to values using a hash function. It provides very fast insertion, deletion, and lookup operations.
+
+Key Concepts:
+- Hash Function: Converts key to array index
+- Collision: When two keys hash to same index
+- Load Factor: Ratio of entries to table size
+
+Collision Resolution Methods:
+1. Chaining: Store multiple elements at same index using linked lists
+2. Open Addressing: Find next available slot (linear probing, quadratic probing)
+
+Time Complexity:
+- Average case: O(1) for insert, delete, search
+- Worst case: O(n) when many collisions occur
+
+Applications:
+- Database indexing
+- Caching (memoization)
+- Symbol tables in compilers
+- Counting frequency of elements
+
+===== Trees =====
+
+Definition:
+A tree is a hierarchical data structure consisting of nodes connected by edges. Each tree has a root node and zero or more child nodes.
+
+Terminology:
+- Root: Top node with no parent
+- Parent: Node with children
+- Child: Node descended from another node
+- Leaf: Node with no children
+- Height: Length of longest path from root to leaf
+- Depth: Length of path from root to a node
+
+Binary Trees:
+Each node has at most two children (left and right).
+
+Binary Search Tree (BST):
+- Left subtree contains values less than parent
+- Right subtree contains values greater than parent
+- No duplicate values
+
+BST Operations:
+- Search: O(log n) average, O(n) worst
+- Insert: O(log n) average, O(n) worst
+- Delete: O(log n) average, O(n) worst
+
+Applications:
+- File systems
+- Expression parsing
+- Database indexes (B-trees)
+- Autocomplete features
+
+===== Graphs =====
+
+Definition:
+A graph is a non-linear data structure consisting of vertices (nodes) and edges (connections between nodes).
+
+Types:
+- Directed Graph (Digraph): Edges have direction
+- Undirected Graph: Edges have no direction
+- Weighted Graph: Edges have weights/costs
+- Unweighted Graph: All edges are equal
+
+Graph Representation:
+1. Adjacency Matrix: 2D array where matrix[i][j] = 1 if edge exists
+   - Space: O(V²)
+   - Edge lookup: O(1)
+
+2. Adjacency List: Array of lists, each list contains neighbors
+   - Space: O(V + E)
+   - More space-efficient for sparse graphs
+
+Common Graph Algorithms:
+- Depth-First Search (DFS)
+- Breadth-First Search (BFS)
+- Dijkstra's Shortest Path
+- Minimum Spanning Tree (Prim's, Kruskal's)
+
+Applications:
+- Social networks
+- Maps and navigation (GPS)
+- Network routing
+- Recommendation systems
+
+===== Choosing the Right Data Structure =====
+
+Consider These Factors:
+1. Access Pattern: Random or sequential?
+2. Size: Fixed or dynamic?
+3. Operations: What operations are most frequent?
+4. Memory Constraints: How much space is available?
+5. Performance Requirements: What time complexity is needed?
+
+General Guidelines:
+- Use arrays when size is known and random access is needed
+- Use linked lists for frequent insertions/deletions
+- Use stacks for LIFO operations
+- Use queues for FIFO operations
+- Use hash tables for fast lookups
+- Use trees for hierarchical data
+- Use graphs for network/relationship data
+
+===== Time Complexity Summary =====
+
+Array:
+- Access: O(1)
+- Search: O(n)
+- Insert: O(n)
+- Delete: O(n)
+
+Linked List:
+- Access: O(n)
+- Search: O(n)
+- Insert: O(1)
+- Delete: O(1)
+
+Stack/Queue:
+- Push/Enqueue: O(1)
+- Pop/Dequeue: O(1)
+- Peek: O(1)
+
+Hash Table:
+- Insert: O(1) average
+- Delete: O(1) average
+- Search: O(1) average
+
+Binary Search Tree:
+- Insert: O(log n) average
+- Delete: O(log n) average
+- Search: O(log n) average
+
+===== Conclusion =====
+
+Understanding data structures is fundamental to computer science and software engineering. The choice of data structure can significantly impact the performance and efficiency of your programs. Practice implementing these structures and solving problems using them to build strong foundational skills.
+
+===== END OF DOCUMENT =====

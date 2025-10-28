@@ -1,0 +1,335 @@
+<div class="deck-upload-container">
+  <!-- Header -->
+  <div class="upload-header">
+    <h1 class="upload-title">
+      <i class="pi pi-cloud-upload"></i>
+      {{ 'deck.upload.pageTitle' | translate }}
+    </h1>
+    <p class="upload-subtitle">
+      {{ 'deck.upload.pageSubtitle' | translate }}
+    </p>
+  </div>
+
+  <!-- Main Upload Form - Only show if not uploading and not successful -->
+  <div class="upload-content" *ngIf="!uploadSuccess() && !isUploading()">
+    <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()">
+      <div class="grid">
+        <!-- Left Column - File Upload -->
+        <div class="col-12 lg:col-6">
+          <p-card [header]="'deck.upload.documentsCard' | translate" [style]="{'height': '100%'}">
+            <div class="file-upload-section">
+              <p-fileUpload
+                #fileUpload
+                name="files"
+                [multiple]="true"
+                [accept]="ACCEPTED_FILE_TYPES"
+                [maxFileSize]="MAX_FILE_SIZE"
+                [showUploadButton]="false"
+                [showCancelButton]="false"
+                [auto]="false"
+                [chooseLabel]="'deck.upload.chooseFiles' | translate"
+                chooseIcon="pi pi-file"
+                (onSelect)="onFileSelect($event)"
+                [disabled]="isUploading()"
+              >
+                <ng-template pTemplate="content" let-files>
+                  <div class="file-upload-info" *ngIf="selectedFiles().length === 0">
+                    <i class="pi pi-cloud-upload upload-icon"></i>
+                    <p class="upload-text">{{ 'deck.upload.dragAndDrop' | translate }}</p>
+                    <p class="upload-hint">
+                      {{ 'deck.upload.supportedFormats' | translate }}<br>
+                      {{ 'deck.upload.fileLimits' | translate: {
+                        maxFiles: MAX_FILES,
+                        maxFileSize: MAX_FILE_SIZE / (1024 * 1024),
+                        maxTotalSize: MAX_TOTAL_SIZE / (1024 * 1024)
+                      } }}
+                    </p>
+                  </div>
+
+                  <div class="selected-files" *ngIf="selectedFiles().length > 0">
+                    <div class="file-item" *ngFor="let file of selectedFiles(); let i = index">
+                      <div class="file-info">
+                        <i class="pi pi-file file-icon"></i>
+                        <div class="file-details">
+                          <span class="file-name">{{ file.file.name }}</span>
+                          <span class="file-size">{{ file.size }}</span>
+                        </div>
+                      </div>
+                      <div class="file-actions">
+                        <p-chip
+                          *ngIf="file.error"
+                          [label]="'deck.upload.fileError' | translate"
+                          icon="pi pi-exclamation-triangle"
+                          styleClass="p-chip-danger"
+                        />
+                        <p-button
+                          icon="pi pi-times"
+                          [text]="true"
+                          [rounded]="true"
+                          severity="danger"
+                          (onClick)="removeFile(i, fileUpload)"
+                          [disabled]="isUploading()"
+                        />
+                      </div>
+                    </div>
+
+                    <p-divider />
+
+                    <div class="files-summary">
+                      <span class="summary-item">
+                        <i class="pi pi-file"></i>
+                        {{ 'deck.upload.fileCount' | translate: { count: selectedFiles().length } }}
+                      </span>
+                      <span class="summary-item">
+                        <i class="pi pi-database"></i>
+                        {{ 'deck.upload.totalSize' | translate: { size: totalSize() } }}
+                      </span>
+                    </div>
+                  </div>
+                </ng-template>
+              </p-fileUpload>
+
+              <!-- Upload Error Message -->
+              <p-message
+                *ngIf="uploadError()"
+                severity="error"
+                [text]="uploadError()!"
+                styleClass="mt-3"
+              />
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Right Column - Deck Metadata -->
+        <div class="col-12 lg:col-6">
+          <p-card [header]="'deck.upload.deckInfoCard' | translate" [style]="{'height': '100%'}">
+            <div class="metadata-form">
+              <!-- Title -->
+              <div class="field">
+                <label for="title" class="form-label required">
+                  <i class="pi pi-bookmark"></i>
+                  {{ 'deck.upload.titleLabel' | translate }}
+                </label>
+                <input
+                  pInputText
+                  id="title"
+                  formControlName="title"
+                  [placeholder]="'deck.upload.titlePlaceholder' | translate"
+                  class="w-full"
+                />
+                <small
+                  class="form-error"
+                  *ngIf="uploadForm.get('title')?.invalid && uploadForm.get('title')?.touched"
+                >
+                  {{ 'deck.upload.titleRequired' | translate }}
+                </small>
+              </div>
+
+              <!-- Description -->
+              <div class="field">
+                <label for="description" class="form-label">
+                  <i class="pi pi-align-left"></i>
+                  {{ 'deck.upload.descriptionLabel' | translate }}
+                </label>
+                <textarea
+                  pTextarea
+                  id="description"
+                  formControlName="description"
+                  [placeholder]="'deck.upload.descriptionPlaceholder' | translate"
+                  rows="3"
+                  class="w-full"
+                ></textarea>
+                <small class="form-hint">
+                  {{ 'deck.upload.characterCount' | translate: {
+                    current: uploadForm.get('description')?.value?.length || 0,
+                    max: 500
+                  } }}
+                </small>
+              </div>
+
+              <!-- Category -->
+              <div class="field">
+                <label for="category" class="form-label required">
+                  <i class="pi pi-tags"></i>
+                  {{ 'deck.upload.categoryLabel' | translate }}
+                </label>
+                <p-select
+                  id="category"
+                  formControlName="category"
+                  [options]="categoryOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'deck.upload.categoryPlaceholder' | translate"
+                  class="w-full"
+                >
+                  <ng-template let-option pTemplate="item">
+                    <div class="option-item">
+                      <i [class]="'pi ' + option.icon"></i>
+                      <span>{{ option.label }}</span>
+                    </div>
+                  </ng-template>
+                </p-select>
+                <small
+                  class="form-error"
+                  *ngIf="uploadForm.get('category')?.invalid && uploadForm.get('category')?.touched"
+                >
+                  {{ 'deck.upload.categoryRequired' | translate }}
+                </small>
+              </div>
+
+              <!-- Difficulty -->
+              <div class="field">
+                <label for="difficulty" class="form-label required">
+                  <i class="pi pi-star"></i>
+                  {{ 'deck.upload.difficultyLabel' | translate }}
+                </label>
+                <p-select
+                  id="difficulty"
+                  formControlName="difficulty"
+                  [options]="difficultyOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  [placeholder]="'deck.upload.difficultyPlaceholder' | translate"
+                  class="w-full"
+                >
+                  <ng-template let-option pTemplate="item">
+                    <div class="option-item">
+                      <i [class]="'pi ' + option.icon"></i>
+                      <span>{{ option.label }}</span>
+                    </div>
+                  </ng-template>
+                </p-select>
+                <small
+                  class="form-error"
+                  *ngIf="uploadForm.get('difficulty')?.invalid && uploadForm.get('difficulty')?.touched"
+                >
+                  {{ 'deck.upload.difficultyRequired' | translate }}
+                </small>
+              </div>
+            </div>
+          </p-card>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="submit-section">
+        <p-button
+          type="button"
+          [label]="'common.cancel' | translate"
+          icon="pi pi-times"
+          severity="secondary"
+          [text]="true"
+          (onClick)="backToDecks()"
+        />
+        <p-button
+          type="submit"
+          [label]="'deck.upload.generateButton' | translate"
+          icon="pi pi-sparkles"
+          [disabled]="!isFormValid()"
+          [loading]="isUploading()"
+        />
+      </div>
+    </form>
+  </div>
+
+  <!-- Upload Progress -->
+  <div class="upload-progress-container" *ngIf="isUploading()">
+    <p-card>
+      <div class="progress-content">
+        <div class="progress-header">
+          <i class="pi pi-cloud-upload progress-icon"></i>
+          <h2>{{ 'deck.upload.uploadingTitle' | translate }}</h2>
+        </div>
+        <p-progressBar [value]="uploadProgress()" [showValue]="true" />
+        <p class="progress-text">
+          {{ 'deck.upload.uploadingMessage' | translate }}
+        </p>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Processing Status -->
+  <div class="processing-container" *ngIf="uploadSuccess() && !isUploading()">
+    <p-card>
+      <div class="success-content">
+        <!-- Success Header -->
+        <div class="success-header">
+          <i class="pi pi-check-circle success-icon"></i>
+          <h2>{{ 'deck.upload.uploadSuccessTitle' | translate }}</h2>
+          <p>{{ 'deck.upload.uploadSuccessMessage' | translate }}</p>
+        </div>
+
+        <!-- Document Processing Status -->
+        <div class="processing-status" *ngIf="processingStatuses().length > 0">
+          <h3 class="status-title">
+            <i class="pi pi-file"></i>
+            {{ 'deck.upload.processingStatusTitle' | translate }}
+          </h3>
+
+          <div class="status-list">
+            <div class="status-item" *ngFor="let status of processingStatuses()">
+              <div class="status-info">
+                <i [class]="'pi ' + getStatusIcon(status.status)" [ngClass]="{'spinning': status.status === 'processing'}"></i>
+                <div class="status-details">
+                  <span class="status-filename">{{ status.filename }}</span>
+                  <div class="status-meta">
+                    <p-chip
+                      [label]="status.status"
+                      [styleClass]="'status-badge status-' + status.status"
+                    />
+                    <span *ngIf="status.cards_generated" class="cards-count">
+                      <i class="pi pi-file"></i>
+                      {{ 'deck.upload.cardsGenerated' | translate: { count: status.cards_generated } }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <p-progressBar
+                *ngIf="status.status === 'processing'"
+                [value]="status.progress"
+                [showValue]="false"
+                styleClass="status-progress"
+              />
+              <small *ngIf="status.error_message" class="status-error">
+                {{ status.error_message }}
+              </small>
+            </div>
+          </div>
+
+          <!-- Processing Spinner -->
+          <div class="processing-spinner" *ngIf="isPolling()">
+            <p-progressSpinner
+              [style]="{'width': '50px', 'height': '50px'}"
+              strokeWidth="4"
+            />
+            <p>{{ 'deck.upload.processingMessage' | translate }}</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="success-actions" *ngIf="allProcessingComplete()">
+          <p-button
+            [label]="'deck.upload.viewDeck' | translate"
+            icon="pi pi-eye"
+            severity="success"
+            (onClick)="viewDeck()"
+          />
+          <p-button
+            [label]="'deck.upload.uploadAnother' | translate"
+            icon="pi pi-plus"
+            severity="secondary"
+            [text]="true"
+            (onClick)="uploadAnother()"
+          />
+          <p-button
+            [label]="'deck.backToDecks' | translate"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            [text]="true"
+            (onClick)="backToDecks()"
+          />
+        </div>
+      </div>
+    </p-card>
+  </div>
+</div>

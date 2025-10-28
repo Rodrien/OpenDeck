@@ -27,6 +27,11 @@ export class AppMenu {
                         label: 'Flashcards',
                         icon: 'pi pi-fw pi-book',
                         routerLink: ['/pages/flashcards']
+                    },
+                    {
+                        label: 'Upload Documents',
+                        icon: 'pi pi-fw pi-cloud-upload',
+                        routerLink: ['/pages/flashcards/upload']
                     }
                 ]
             }

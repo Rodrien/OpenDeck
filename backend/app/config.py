@@ -62,20 +62,36 @@ class Settings(BaseSettings):
     # Rate Limiting
     rate_limit_per_minute: int = 60
 
-    # AI Services (Phase 2)
+    # AI Services
+    ai_provider: Literal["openai", "anthropic"] = "openai"
     openai_api_key: str | None = None
     openai_model: str = "gpt-4"
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-3-sonnet-20240229"
+    ai_max_retries: int = 3
+    ai_timeout_seconds: int = 60
 
-    # Storage (Phase 2)
+    # Storage Configuration
+    storage_backend: Literal["local", "s3"] = "local"
     storage_path: str = "/tmp/opendeck/documents"
+    max_file_size_mb: int = 10
+    max_total_upload_size_mb: int = 50
+    max_files_per_upload: int = 10
+    allowed_file_types: str = "pdf,docx,pptx,txt"
+
+    # S3 Configuration (when storage_backend=s3)
     s3_bucket: str | None = None
     s3_region: str = "us-east-1"
+    s3_presigned_url_expiration: int = 3600  # 1 hour
 
-    # Background Processing (Phase 2)
+    # Background Processing
     redis_url: str = "redis://localhost:6379/0"
     celery_broker_url: str = "redis://localhost:6379/0"
+    celery_result_backend: str = "redis://localhost:6379/0"
+    celery_task_soft_time_limit: int = 600  # 10 minutes
+    celery_task_time_limit: int = 900  # 15 minutes
+
+    # AWS SQS (alternative to Redis for production)
     sqs_queue_url: str | None = None
 
     @field_validator("allowed_origins", mode="before")
@@ -100,6 +116,21 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         """Check if running in production mode."""
         return self.env == "production"
+
+    @property
+    def allowed_file_types_list(self) -> list[str]:
+        """Get allowed file types as a list."""
+        return [ft.strip() for ft in self.allowed_file_types.split(",")]
+
+    @property
+    def max_file_size_bytes(self) -> int:
+        """Get max file size in bytes."""
+        return self.max_file_size_mb * 1024 * 1024
+
+    @property
+    def max_total_upload_size_bytes(self) -> int:
+        """Get max total upload size in bytes."""
+        return self.max_total_upload_size_mb * 1024 * 1024
 
 
 # Global settings instance
