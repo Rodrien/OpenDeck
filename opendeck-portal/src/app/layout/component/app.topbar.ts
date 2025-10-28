@@ -12,6 +12,10 @@ import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
+interface TranslationMap {
+    [key: string]: string;
+}
+
 @Component({
     selector: 'app-topbar',
     standalone: true,
@@ -42,7 +46,7 @@ import { firstValueFrom } from 'rxjs';
                     class="layout-topbar-action"
                     (click)="toggleDarkMode()"
                     [attr.aria-pressed]="isDarkMode()"
-                    [attr.aria-label]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+                    [attr.aria-label]="darkModeAriaLabel()"
                 >
                     <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
                 </button>
@@ -53,7 +57,7 @@ import { firstValueFrom } from 'rxjs';
                         type="button"
                         class="avatar-button p-0 border-none bg-transparent cursor-pointer"
                         (click)="toggleUserMenu($event)"
-                        [attr.aria-label]="'User menu'"
+                        [attr.aria-label]="userMenuAriaLabel()"
                     >
                         <p-avatar
                             icon="pi pi-user"
@@ -67,8 +71,8 @@ import { firstValueFrom } from 'rxjs';
                             <div class="user-menu-header">
                                 <div class="flex items-center gap-3 p-3 border-bottom-1 surface-border">
                                     <div class="flex flex-col">
-                                        <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.name || 'User' }}</span>
-                                        <span class="text-muted-color text-sm">{{ currentUser()?.email || 'Not logged in' }}</span>
+                                        <span class="font-semibold text-surface-900 dark:text-surface-0">{{ currentUser()?.name || userDisplayName() }}</span>
+                                        <span class="text-muted-color text-sm">{{ currentUser()?.email || userEmailDisplay() }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -85,6 +89,10 @@ export class AppTopbar implements OnInit {
     currentUser = signal<User | null>(null);
     userMenuItems: MenuItem[] = [];
     isDarkMode = signal<boolean>(false);
+    darkModeAriaLabel = signal<string>('');
+    userMenuAriaLabel = signal<string>('');
+    userDisplayName = signal<string>('User');
+    userEmailDisplay = signal<string>('Not logged in');
 
     private destroyRef = inject(DestroyRef);
 
@@ -115,46 +123,95 @@ export class AppTopbar implements OnInit {
             ...state,
             darkTheme: newDarkMode
         }));
+
+        // Update aria label to reflect new state
+        this.updateDarkModeLabel();
     }
 
     ngOnInit(): void {
         // Initialize dark mode from layout service
         this.isDarkMode.set(this.layoutService.isDarkTheme() ?? false);
 
+        // Initialize translations
+        this.updateTranslations();
+
         // Initialize menu items
         this.updateUserMenuItems();
 
-        // Update menu items when language changes
+        // Update menu items and translations when language changes
         this.translate.onLangChange
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
+                this.updateTranslations();
                 this.updateUserMenuItems();
             });
     }
 
     /**
+     * Update translations for aria-labels and user display
+     */
+    private async updateTranslations(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get([
+                'topbar.switchToLightMode',
+                'topbar.switchToDarkMode',
+                'topbar.userMenu',
+                'topbar.user',
+                'topbar.notLoggedIn'
+            ])
+        );
+
+        // Update dark mode aria label based on current state
+        const label = this.isDarkMode()
+            ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
+            : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
+        this.darkModeAriaLabel.set(label);
+
+        // Update user menu aria label
+        this.userMenuAriaLabel.set(translations['topbar.userMenu'] || 'User menu');
+
+        // Update user display defaults
+        this.userDisplayName.set(translations['topbar.user'] || 'User');
+        this.userEmailDisplay.set(translations['topbar.notLoggedIn'] || 'Not logged in');
+    }
+
+    /**
+     * Update dark mode aria label based on current state
+     */
+    private async updateDarkModeLabel(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get(['topbar.switchToLightMode', 'topbar.switchToDarkMode'])
+        );
+
+        const label = this.isDarkMode()
+            ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
+            : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
+        this.darkModeAriaLabel.set(label);
+    }
+
+    /**
      * Update user menu items with current translations
      */
-    private updateUserMenuItems(): void {
-        this.translate.get(['common.preferences', 'auth.logout'])
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(translations => {
-                this.userMenuItems = [
-                    {
-                        label: translations['common.preferences'] || 'Preferences',
-                        icon: 'pi pi-cog',
-                        command: () => this.navigateToPreferences()
-                    },
-                    {
-                        separator: true
-                    },
-                    {
-                        label: translations['auth.logout'] || 'Logout',
-                        icon: 'pi pi-sign-out',
-                        command: () => this.logout()
-                    }
-                ];
-            });
+    private async updateUserMenuItems(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get(['common.preferences', 'auth.logout'])
+        );
+
+        this.userMenuItems = [
+            {
+                label: translations['common.preferences'] || 'Preferences',
+                icon: 'pi pi-cog',
+                command: () => this.navigateToPreferences()
+            },
+            {
+                separator: true
+            },
+            {
+                label: translations['auth.logout'] || 'Logout',
+                icon: 'pi pi-sign-out',
+                command: () => this.logout()
+            }
+        ];
     }
 
     toggleUserMenu(event: Event) {

@@ -1,8 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
+import { TranslateService } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
     selector: 'app-menu',
@@ -17,19 +20,45 @@ import { AppMenuitem } from './app.menuitem';
 })
 export class AppMenu {
     model: MenuItem[] = [];
+    private destroyRef = inject(DestroyRef);
 
-    ngOnInit() {
+    constructor(private translate: TranslateService) {}
+
+    async ngOnInit() {
+        // Initialize menu items with translations
+        await this.updateMenuItems();
+
+        // Update menu items when language changes
+        this.translate.onLangChange
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(async () => {
+                await this.updateMenuItems();
+            });
+    }
+
+    /**
+     * Update menu items with current translations
+     */
+    private async updateMenuItems(): Promise<void> {
+        const translations = await firstValueFrom(
+            this.translate.get([
+                'menu.main',
+                'menu.flashcards',
+                'menu.uploadDocuments'
+            ])
+        );
+
         this.model = [
             {
-                label: 'Main',
+                label: translations['menu.main'] || 'Main',
                 items: [
                     {
-                        label: 'Flashcards',
+                        label: translations['menu.flashcards'] || 'Flashcards',
                         icon: 'pi pi-fw pi-book',
                         routerLink: ['/pages/flashcards']
                     },
                     {
-                        label: 'Upload Documents',
+                        label: translations['menu.uploadDocuments'] || 'Upload Documents',
                         icon: 'pi pi-fw pi-cloud-upload',
                         routerLink: ['/pages/flashcards/upload']
                     }

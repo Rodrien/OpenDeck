@@ -121,9 +121,17 @@
   "menu": {
     "main": "Principal",
     "flashcards": "Tarjetas",
+    "uploadDocuments": "Subir documentos",
     "preferences": "Preferencias",
     "language": "Idioma",
     "logout": "Cerrar sesión"
+  },
+  "topbar": {
+    "switchToLightMode": "Cambiar a modo claro",
+    "switchToDarkMode": "Cambiar a modo oscuro",
+    "userMenu": "Menú de usuario",
+    "user": "Usuario",
+    "notLoggedIn": "No has iniciado sesión"
   },
   "common": {
     "save": "Guardar",
