@@ -12,7 +12,7 @@
                     [attr.aria-label]="'Navigate back to deck listing'"
                 />
 
-                @if (!loading() && cards().length > 0) {
+                @if (!loadingInitial() && totalCards() > 0) {
                     <p-button
                         [label]="'flashcard.resetProgress' | translate"
                         icon="pi pi-refresh"
@@ -24,16 +24,16 @@
                 }
             </div>
 
-            @if (!loading()) {
+            @if (!loadingInitial()) {
                 <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 mb-2">{{ deckTitle() }}</h1>
-                @if (cards().length > 0) {
+                @if (totalCards() > 0) {
                     <p class="text-surface-600 dark:text-surface-400 text-lg">{{ cardCountText() }}</p>
                 }
             }
         </div>
 
         <!-- Resume Progress Message -->
-        @if (resumedFromProgress() && !loading()) {
+        @if (resumedFromProgress() && !loadingInitial()) {
             <div class="mb-6">
                 <p-message
                     severity="info"
@@ -44,7 +44,21 @@
                     <ng-template pTemplate="content">
                         <div class="flex items-center gap-2">
                             <i class="pi pi-bookmark text-lg"></i>
-                            <span>{{ 'flashcard.resumedFromProgress' | translate: {current: currentIndex() + 1, total: cards().length} }}</span>
+                            <span>{{ 'flashcard.resumedFromProgress' | translate: {current: globalCardIndex() + 1, total: totalCards()} }}</span>
+                        </div>
+                    </ng-template>
+                </p-message>
+            </div>
+        }
+
+        <!-- Page Loading Message -->
+        @if (loadingPage() && !loadingInitial()) {
+            <div class="mb-4">
+                <p-message severity="info" styleClass="w-full">
+                    <ng-template pTemplate="content">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-spin pi-spinner text-lg"></i>
+                            <span>{{ 'flashcard.loadingPage' | translate }}</span>
                         </div>
                     </ng-template>
                 </p-message>
@@ -52,7 +66,7 @@
         }
 
         <!-- Loading State -->
-        @if (loading()) {
+        @if (loadingInitial()) {
             <div class="flex flex-col items-center justify-center py-16">
                 <p-progressSpinner
                     styleClass="w-16 h-16"
@@ -64,7 +78,7 @@
         }
 
         <!-- Error State -->
-        @if (error() && !loading()) {
+        @if (error() && !loadingInitial()) {
             <div class="mb-6">
                 <p-message
                     severity="error"
@@ -75,7 +89,7 @@
         }
 
         <!-- Content (only show when not loading and no error) -->
-        @if (!loading() && !error() && cards().length > 0) {
+        @if (!loadingInitial() && !error() && cards().length > 0) {
 
         <!-- Progress Bar -->
         <div class="mb-8">
@@ -175,7 +189,7 @@
                 [label]="'flashcard.previous' | translate"
                 icon="pi pi-chevron-left"
                 (onClick)="previousCard()"
-                [disabled]="isFirstCard()"
+                [disabled]="isFirstCard() || loadingPage()"
                 severity="secondary"
                 [outlined]="true"
                 class="nav-btn"
@@ -184,7 +198,10 @@
 
             <!-- Card Counter -->
             <div class="card-counter text-surface-600 dark:text-surface-300 text-base font-medium">
-                {{ currentIndex() + 1 }} / {{ cards().length }}
+                {{ globalCardIndex() + 1 }} / {{ totalCards() }}
+                <span class="text-sm text-surface-400 dark:text-surface-500 ml-2">
+                    ({{ 'flashcard.page' | translate }} {{ currentPage() + 1 }}/{{ totalPages() }})
+                </span>
             </div>
 
             <!-- Next Button -->
@@ -193,7 +210,7 @@
                 icon="pi pi-chevron-right"
                 iconPos="right"
                 (onClick)="nextCard()"
-                [disabled]="isLastCard()"
+                [disabled]="isLastCard() || loadingPage()"
                 severity="secondary"
                 [outlined]="true"
                 class="nav-btn"

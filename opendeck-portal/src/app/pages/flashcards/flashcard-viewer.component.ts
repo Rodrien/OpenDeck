@@ -2,7 +2,8 @@ import { Component, HostListener, OnInit, OnDestroy, signal, computed, effect } 
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // PrimeNG Imports
@@ -63,21 +64,33 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     currentIndex = signal<number>(0);
     showAnswer = signal<boolean>(false);
     animationTrigger = signal<number>(0);
-    loading = signal<boolean>(false);
+    loadingInitial = signal<boolean>(false);
     error = signal<string | null>(null);
     resumedFromProgress = signal<boolean>(false);
+
+    // Pagination state
+    pageSize = signal<number>(10);
+    currentPage = signal<number>(0);
+    totalCards = signal<number>(0);
+    loadedPages = signal<Set<number>>(new Set());
+    cardsCache = signal<Map<number, ApiCard[]>>(new Map());
+    loadingPage = signal<boolean>(false);
+
+    // Computed values for pagination
+    totalPages = computed(() => Math.ceil(this.totalCards() / this.pageSize()));
+    globalCardIndex = computed(() => this.currentPage() * this.pageSize() + this.currentIndex());
 
     // Computed values
     currentCard = computed(() => this.cards()[this.currentIndex()]);
     progress = computed(() => {
-        const total = this.cards().length;
-        return total > 0 ? ((this.currentIndex() + 1) / total) * 100 : 0;
+        const total = this.totalCards();
+        return total > 0 ? ((this.globalCardIndex() + 1) / total) * 100 : 0;
     });
-    isFirstCard = computed(() => this.currentIndex() === 0);
-    isLastCard = computed(() => this.currentIndex() === this.cards().length - 1);
+    isFirstCard = computed(() => this.globalCardIndex() === 0);
+    isLastCard = computed(() => this.globalCardIndex() === this.totalCards() - 1);
     cardCountText = computed(() => {
-        const current = this.currentIndex() + 1;
-        const total = this.cards().length;
+        const current = this.globalCardIndex() + 1;
+        const total = this.totalCards();
         return this.translate.instant('flashcard.progress', { current, total });
     });
 
@@ -109,34 +122,67 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Load deck metadata and cards from the API
-     * Uses forkJoin to load both deck and cards in parallel
+     * Load deck metadata and cards from the API using pagination
+     * First loads deck to get total card count, then loads appropriate page
      */
     private loadDeckAndCards(deckId: string): void {
-        this.loading.set(true);
+        this.loadingInitial.set(true);
         this.error.set(null);
 
-        // Load deck metadata and cards in parallel
+        // First, load deck metadata and initial page info to get total count
         forkJoin({
             deck: this.deckService.getById(deckId),
-            cards: this.cardService.getCardsForDeck(deckId, 100) // Backend max limit is 100
+            initialPage: this.cardService.getCardsPage(deckId, 0, this.pageSize())
         }).subscribe({
             next: (result) => {
                 this.deckTitle.set(result.deck.title);
-                this.cards.set(result.cards.items);
-                this.loading.set(false);
+                this.totalCards.set(result.initialPage.total);
 
                 // If no cards, show error
-                if (result.cards.items.length === 0) {
+                if (result.initialPage.total === 0) {
                     this.error.set(this.translate.instant('flashcard.noCards'));
-                } else {
-                    // Restore progress if available
-                    this.restoreProgress(deckId, result.cards.items.length);
+                    this.loadingInitial.set(false);
+                    return;
                 }
+
+                // Check for saved progress
+                const savedProgress = this.progressService.getProgress(deckId);
+                let targetPage = 0;
+                let targetIndex = 0;
+
+                if (savedProgress && savedProgress.currentCardIndex > 0) {
+                    // Calculate which page contains the saved card
+                    const savedCardIndex = Math.min(savedProgress.currentCardIndex, result.initialPage.total - 1);
+                    targetPage = Math.floor(savedCardIndex / this.pageSize());
+                    targetIndex = savedCardIndex % this.pageSize();
+                }
+
+                // Load the target page (either page 0 or the page with saved progress)
+                this.loadPage(targetPage, deckId).subscribe({
+                    next: () => {
+                        this.currentPage.set(targetPage);
+                        this.currentIndex.set(targetIndex);
+                        this.updateCurrentCards();
+                        this.loadingInitial.set(false);
+
+                        // Set resumed flag if we loaded a non-zero position
+                        if (savedProgress && savedProgress.currentCardIndex > 0) {
+                            this.resumedFromProgress.set(true);
+                        }
+
+                        // Prefetch adjacent pages in background
+                        this.prefetchAdjacentPages(deckId);
+                    },
+                    error: (err) => {
+                        this.error.set(this.translate.instant('errors.loadFailed'));
+                        this.loadingInitial.set(false);
+                        console.error('Error loading page:', err);
+                    }
+                });
             },
             error: (err) => {
                 this.error.set(this.translate.instant('errors.loadFailed'));
-                this.loading.set(false);
+                this.loadingInitial.set(false);
                 console.error('Error loading deck and cards:', err);
 
                 // Clear progress for failed deck
@@ -146,25 +192,109 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Restore progress from localStorage if available
+     * Load a specific page of cards and add to cache
+     * @param page - Page number to load
+     * @param deckId - Deck ID
+     * @returns Observable that completes when page is loaded
      */
-    private restoreProgress(deckId: string, totalCards: number): void {
-        const savedProgress = this.progressService.getProgress(deckId);
+    private loadPage(page: number, deckId: string): Observable<void> {
+        // Check if page is already loaded
+        if (this.loadedPages().has(page)) {
+            return of(void 0);
+        }
 
-        if (savedProgress) {
-            // Validate saved index is within bounds
-            let restoredIndex = savedProgress.currentCardIndex;
+        return this.cardService.getCardsPage(deckId, page, this.pageSize()).pipe(
+            map(response => {
+                // Add cards to cache
+                const cache = new Map(this.cardsCache());
+                cache.set(page, response.items);
+                this.cardsCache.set(cache);
 
-            // Clamp index if deck size changed
-            if (restoredIndex >= totalCards) {
-                restoredIndex = totalCards - 1;
-            }
+                // Mark page as loaded
+                const loaded = new Set(this.loadedPages());
+                loaded.add(page);
+                this.loadedPages.set(loaded);
 
-            // Only restore if not at the beginning
-            if (restoredIndex > 0) {
-                this.currentIndex.set(restoredIndex);
-                this.resumedFromProgress.set(true);
-            }
+                // Evict old pages if cache is too large (LRU)
+                this.evictOldPages();
+
+                return void 0;
+            }),
+            catchError(err => {
+                console.error(`Error loading page ${page}:`, err);
+                throw err;
+            })
+        );
+    }
+
+    /**
+     * Update the current cards signal with cards from the current page
+     */
+    private updateCurrentCards(): void {
+        const cache = this.cardsCache();
+        const page = this.currentPage();
+        const pageCards = cache.get(page) || [];
+        this.cards.set(pageCards);
+    }
+
+    /**
+     * Prefetch adjacent pages in the background for smooth navigation
+     * @param deckId - Deck ID
+     */
+    private prefetchAdjacentPages(deckId: string): void {
+        const currentPage = this.currentPage();
+        const totalPages = this.totalPages();
+        const pagesToPrefetch: number[] = [];
+
+        // Prefetch next page
+        if (currentPage + 1 < totalPages && !this.loadedPages().has(currentPage + 1)) {
+            pagesToPrefetch.push(currentPage + 1);
+        }
+
+        // Prefetch previous page
+        if (currentPage - 1 >= 0 && !this.loadedPages().has(currentPage - 1)) {
+            pagesToPrefetch.push(currentPage - 1);
+        }
+
+        // Load all pages in parallel
+        if (pagesToPrefetch.length > 0) {
+            const prefetchObservables = pagesToPrefetch.map(page =>
+                this.loadPage(page, deckId).pipe(catchError(() => of(void 0)))
+            );
+            forkJoin(prefetchObservables).subscribe();
+        }
+    }
+
+    /**
+     * Evict old pages from cache to limit memory usage (LRU)
+     * Keeps max 5 pages in cache, prioritizing pages near current page
+     */
+    private evictOldPages(): void {
+        const maxCachePages = 5;
+        const cache = this.cardsCache();
+        const loaded = this.loadedPages();
+
+        if (loaded.size > maxCachePages) {
+            const currentPage = this.currentPage();
+            const pages = Array.from(loaded).sort((a, b) => {
+                // Sort by distance from current page (furthest first)
+                const distA = Math.abs(a - currentPage);
+                const distB = Math.abs(b - currentPage);
+                return distB - distA;
+            });
+
+            // Remove pages furthest from current page
+            const pagesToRemove = pages.slice(0, pages.length - maxCachePages);
+            const newCache = new Map(cache);
+            const newLoaded = new Set(loaded);
+
+            pagesToRemove.forEach(page => {
+                newCache.delete(page);
+                newLoaded.delete(page);
+            });
+
+            this.cardsCache.set(newCache);
+            this.loadedPages.set(newLoaded);
         }
     }
 
@@ -173,13 +303,13 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
      */
     private saveProgress(): void {
         const deckId = this.deckId();
-        const cards = this.cards();
+        const totalCards = this.totalCards();
 
-        if (deckId && cards.length > 0) {
+        if (deckId && totalCards > 0) {
             this.progressService.saveProgress(
                 deckId,
-                this.currentIndex(),
-                cards.length,
+                this.globalCardIndex(),
+                totalCards,
                 this.deckTitle()
             );
         }
@@ -187,9 +317,42 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
 
     /**
      * Navigate to the next flashcard
+     * Handles page transitions when reaching end of current page
      */
     nextCard(): void {
-        if (!this.isLastCard()) {
+        if (this.isLastCard() || this.loadingPage()) {
+            return;
+        }
+
+        const currentPageSize = this.cards().length;
+        const isLastCardInPage = this.currentIndex() === currentPageSize - 1;
+
+        if (isLastCardInPage) {
+            // Need to load next page
+            const nextPage = this.currentPage() + 1;
+            this.loadingPage.set(true);
+
+            this.loadPage(nextPage, this.deckId()).subscribe({
+                next: () => {
+                    this.currentPage.set(nextPage);
+                    this.currentIndex.set(0);
+                    this.updateCurrentCards();
+                    this.showAnswer.set(false);
+                    this.animationTrigger.update(v => v + 1);
+                    this.loadingPage.set(false);
+                    this.saveProgress();
+
+                    // Prefetch adjacent pages
+                    this.prefetchAdjacentPages(this.deckId());
+                },
+                error: (err) => {
+                    this.loadingPage.set(false);
+                    this.error.set(this.translate.instant('errors.loadFailed'));
+                    console.error('Error loading next page:', err);
+                }
+            });
+        } else {
+            // Stay on current page, just move to next card
             this.currentIndex.update(i => i + 1);
             this.showAnswer.set(false);
             this.animationTrigger.update(v => v + 1);
@@ -199,9 +362,43 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
 
     /**
      * Navigate to the previous flashcard
+     * Handles page transitions when reaching start of current page
      */
     previousCard(): void {
-        if (!this.isFirstCard()) {
+        if (this.isFirstCard() || this.loadingPage()) {
+            return;
+        }
+
+        const isFirstCardInPage = this.currentIndex() === 0;
+
+        if (isFirstCardInPage) {
+            // Need to load previous page
+            const prevPage = this.currentPage() - 1;
+            this.loadingPage.set(true);
+
+            this.loadPage(prevPage, this.deckId()).subscribe({
+                next: () => {
+                    this.currentPage.set(prevPage);
+                    // Get the cards from the previous page and set index to last card
+                    const prevPageCards = this.cardsCache().get(prevPage) || [];
+                    this.currentIndex.set(prevPageCards.length - 1);
+                    this.updateCurrentCards();
+                    this.showAnswer.set(false);
+                    this.animationTrigger.update(v => v - 1);
+                    this.loadingPage.set(false);
+                    this.saveProgress();
+
+                    // Prefetch adjacent pages
+                    this.prefetchAdjacentPages(this.deckId());
+                },
+                error: (err) => {
+                    this.loadingPage.set(false);
+                    this.error.set(this.translate.instant('errors.loadFailed'));
+                    console.error('Error loading previous page:', err);
+                }
+            });
+        } else {
+            // Stay on current page, just move to previous card
             this.currentIndex.update(i => i - 1);
             this.showAnswer.set(false);
             this.animationTrigger.update(v => v - 1);
@@ -216,9 +413,30 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
         const deckId = this.deckId();
         if (deckId) {
             this.progressService.clearProgress(deckId);
-            this.currentIndex.set(0);
-            this.showAnswer.set(false);
-            this.resumedFromProgress.set(false);
+
+            // If not on page 0, load it
+            if (this.currentPage() !== 0) {
+                this.loadingPage.set(true);
+                this.loadPage(0, deckId).subscribe({
+                    next: () => {
+                        this.currentPage.set(0);
+                        this.currentIndex.set(0);
+                        this.updateCurrentCards();
+                        this.showAnswer.set(false);
+                        this.resumedFromProgress.set(false);
+                        this.loadingPage.set(false);
+                    },
+                    error: (err) => {
+                        this.loadingPage.set(false);
+                        console.error('Error loading first page:', err);
+                    }
+                });
+            } else {
+                // Already on page 0, just reset index
+                this.currentIndex.set(0);
+                this.showAnswer.set(false);
+                this.resumedFromProgress.set(false);
+            }
         }
     }
 

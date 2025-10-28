@@ -90,6 +90,18 @@ export class CardService {
   }
 
   /**
+   * Get a specific page of cards for a deck
+   * @param deckId - Deck ID (UUID string)
+   * @param page - Page number (zero-indexed)
+   * @param pageSize - Number of cards per page (default: 10)
+   * @returns Observable of Paginated Card response
+   */
+  getCardsPage(deckId: string, page: number, pageSize: number = 10): Observable<PaginatedResponse<Card>> {
+    const offset = page * pageSize;
+    return this.getCardsForDeck(deckId, pageSize, offset);
+  }
+
+  /**
    * Create new card
    * @param card - Create Card DTO
    * @returns Observable of created Card
