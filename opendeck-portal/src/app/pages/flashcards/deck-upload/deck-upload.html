@@ -13,142 +13,59 @@
   <!-- Main Upload Form - Only show if not uploading and not successful -->
   <div class="upload-content" *ngIf="!uploadSuccess() && !isUploading()">
     <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()">
-      <div class="grid">
-        <!-- Left Column - File Upload -->
-        <div class="col-12 lg:col-6">
-          <p-card [header]="'deck.upload.documentsCard' | translate" [style]="{'height': '100%'}">
-            <div class="file-upload-section">
-              <p-fileUpload
-                #fileUpload
-                name="files"
-                [multiple]="true"
-                [accept]="ACCEPTED_FILE_TYPES"
-                [maxFileSize]="MAX_FILE_SIZE"
-                [showUploadButton]="false"
-                [showCancelButton]="false"
-                [auto]="false"
-                [chooseLabel]="'deck.upload.chooseFiles' | translate"
-                chooseIcon="pi pi-file"
-                (onSelect)="onFileSelect($event)"
-                [disabled]="isUploading()"
-              >
-                <ng-template pTemplate="content" let-files>
-                  <div class="file-upload-info" *ngIf="selectedFiles().length === 0">
-                    <i class="pi pi-cloud-upload upload-icon"></i>
-                    <p class="upload-text">{{ 'deck.upload.dragAndDrop' | translate }}</p>
-                    <p class="upload-hint">
-                      {{ 'deck.upload.supportedFormats' | translate }}<br>
-                      {{ 'deck.upload.fileLimits' | translate: {
-                        maxFiles: MAX_FILES,
-                        maxFileSize: MAX_FILE_SIZE / (1024 * 1024),
-                        maxTotalSize: MAX_TOTAL_SIZE / (1024 * 1024)
-                      } }}
-                    </p>
-                  </div>
-
-                  <div class="selected-files" *ngIf="selectedFiles().length > 0">
-                    <div class="file-item" *ngFor="let file of selectedFiles(); let i = index">
-                      <div class="file-info">
-                        <i class="pi pi-file file-icon"></i>
-                        <div class="file-details">
-                          <span class="file-name">{{ file.file.name }}</span>
-                          <span class="file-size">{{ file.size }}</span>
-                        </div>
-                      </div>
-                      <div class="file-actions">
-                        <p-chip
-                          *ngIf="file.error"
-                          [label]="'deck.upload.fileError' | translate"
-                          icon="pi pi-exclamation-triangle"
-                          styleClass="p-chip-danger"
-                        />
-                        <p-button
-                          icon="pi pi-times"
-                          [text]="true"
-                          [rounded]="true"
-                          severity="danger"
-                          (onClick)="removeFile(i, fileUpload)"
-                          [disabled]="isUploading()"
-                        />
-                      </div>
-                    </div>
-
-                    <p-divider />
-
-                    <div class="files-summary">
-                      <span class="summary-item">
-                        <i class="pi pi-file"></i>
-                        {{ 'deck.upload.fileCount' | translate: { count: selectedFiles().length } }}
-                      </span>
-                      <span class="summary-item">
-                        <i class="pi pi-database"></i>
-                        {{ 'deck.upload.totalSize' | translate: { size: totalSize() } }}
-                      </span>
-                    </div>
-                  </div>
-                </ng-template>
-              </p-fileUpload>
-
-              <!-- Upload Error Message -->
-              <p-message
-                *ngIf="uploadError()"
-                severity="error"
-                [text]="uploadError()!"
-                styleClass="mt-3"
+      <!-- Single Column Layout -->
+      <div class="form-container">
+        <!-- Deck Information Section (Top) -->
+        <p-card [header]="'deck.upload.deckInfoCard' | translate" styleClass="metadata-card">
+          <div class="metadata-form">
+            <!-- Title -->
+            <div class="field">
+              <label for="title" class="form-label required">
+                <i class="pi pi-bookmark"></i>
+                {{ 'deck.upload.titleLabel' | translate }}
+              </label>
+              <input
+                pInputText
+                id="title"
+                formControlName="title"
+                [placeholder]="'deck.upload.titlePlaceholder' | translate"
+                class="w-full"
               />
+              <small
+                class="form-error"
+                *ngIf="uploadForm.get('title')?.invalid && uploadForm.get('title')?.touched"
+              >
+                {{ 'deck.upload.titleRequired' | translate }}
+              </small>
             </div>
-          </p-card>
-        </div>
 
-        <!-- Right Column - Deck Metadata -->
-        <div class="col-12 lg:col-6">
-          <p-card [header]="'deck.upload.deckInfoCard' | translate" [style]="{'height': '100%'}">
-            <div class="metadata-form">
-              <!-- Title -->
-              <div class="field">
-                <label for="title" class="form-label required">
-                  <i class="pi pi-bookmark"></i>
-                  {{ 'deck.upload.titleLabel' | translate }}
-                </label>
-                <input
-                  pInputText
-                  id="title"
-                  formControlName="title"
-                  [placeholder]="'deck.upload.titlePlaceholder' | translate"
-                  class="w-full"
-                />
-                <small
-                  class="form-error"
-                  *ngIf="uploadForm.get('title')?.invalid && uploadForm.get('title')?.touched"
-                >
-                  {{ 'deck.upload.titleRequired' | translate }}
-                </small>
-              </div>
+            <!-- Description -->
+            <div class="field">
+              <label for="description" class="form-label">
+                <i class="pi pi-align-left"></i>
+                {{ 'deck.upload.descriptionLabel' | translate }}
+              </label>
+              <textarea
+                pTextarea
+                id="description"
+                formControlName="description"
+                [placeholder]="'deck.upload.descriptionPlaceholder' | translate"
+                rows="3"
+                class="w-full"
+                [autoResize]="false"
+              ></textarea>
+              <small class="form-hint">
+                {{ 'deck.upload.characterCount' | translate: {
+                  current: uploadForm.get('description')?.value?.length || 0,
+                  max: 500
+                } }}
+              </small>
+            </div>
 
-              <!-- Description -->
-              <div class="field">
-                <label for="description" class="form-label">
-                  <i class="pi pi-align-left"></i>
-                  {{ 'deck.upload.descriptionLabel' | translate }}
-                </label>
-                <textarea
-                  pTextarea
-                  id="description"
-                  formControlName="description"
-                  [placeholder]="'deck.upload.descriptionPlaceholder' | translate"
-                  rows="3"
-                  class="w-full"
-                ></textarea>
-                <small class="form-hint">
-                  {{ 'deck.upload.characterCount' | translate: {
-                    current: uploadForm.get('description')?.value?.length || 0,
-                    max: 500
-                  } }}
-                </small>
-              </div>
-
+            <!-- Category & Difficulty in a Row (Responsive) -->
+            <div class="field-row">
               <!-- Category -->
-              <div class="field">
+              <div class="field flex-1">
                 <label for="category" class="form-label required">
                   <i class="pi pi-tags"></i>
                   {{ 'deck.upload.categoryLabel' | translate }}
@@ -160,7 +77,7 @@
                   optionLabel="label"
                   optionValue="value"
                   [placeholder]="'deck.upload.categoryPlaceholder' | translate"
-                  class="w-full"
+                  styleClass="w-full"
                 >
                   <ng-template let-option pTemplate="item">
                     <div class="option-item">
@@ -178,7 +95,7 @@
               </div>
 
               <!-- Difficulty -->
-              <div class="field">
+              <div class="field flex-1">
                 <label for="difficulty" class="form-label required">
                   <i class="pi pi-star"></i>
                   {{ 'deck.upload.difficultyLabel' | translate }}
@@ -190,7 +107,7 @@
                   optionLabel="label"
                   optionValue="value"
                   [placeholder]="'deck.upload.difficultyPlaceholder' | translate"
-                  class="w-full"
+                  styleClass="w-full"
                 >
                   <ng-template let-option pTemplate="item">
                     <div class="option-item">
@@ -207,8 +124,93 @@
                 </small>
               </div>
             </div>
-          </p-card>
-        </div>
+          </div>
+        </p-card>
+
+        <!-- Document Upload Section (Bottom) -->
+        <p-card [header]="'deck.upload.documentsCard' | translate" styleClass="upload-card">
+          <div class="file-upload-section">
+            <p-fileUpload
+              #fileUpload
+              name="files"
+              [multiple]="true"
+              [accept]="ACCEPTED_FILE_TYPES"
+              [maxFileSize]="MAX_FILE_SIZE"
+              [showUploadButton]="false"
+              [showCancelButton]="false"
+              [auto]="false"
+              [chooseLabel]="'deck.upload.chooseFiles' | translate"
+              chooseIcon="pi pi-file"
+              (onSelect)="onFileSelect($event)"
+              [disabled]="isUploading()"
+              styleClass="custom-file-upload"
+            >
+              <ng-template pTemplate="content" let-files>
+                <div class="file-upload-info" *ngIf="selectedFiles().length === 0">
+                  <i class="pi pi-cloud-upload upload-icon"></i>
+                  <p class="upload-text">{{ 'deck.upload.dragAndDrop' | translate }}</p>
+                  <p class="upload-hint">
+                    {{ 'deck.upload.supportedFormats' | translate }}<br>
+                    {{ 'deck.upload.fileLimits' | translate: {
+                      maxFiles: MAX_FILES,
+                      maxFileSize: MAX_FILE_SIZE / (1024 * 1024),
+                      maxTotalSize: MAX_TOTAL_SIZE / (1024 * 1024)
+                    } }}
+                  </p>
+                </div>
+
+                <div class="selected-files" *ngIf="selectedFiles().length > 0">
+                  <div class="file-item" *ngFor="let file of selectedFiles(); let i = index">
+                    <div class="file-info">
+                      <i class="pi pi-file file-icon"></i>
+                      <div class="file-details">
+                        <span class="file-name">{{ file.file.name }}</span>
+                        <span class="file-size">{{ file.size }}</span>
+                      </div>
+                    </div>
+                    <div class="file-actions">
+                      <p-chip
+                        *ngIf="file.error"
+                        [label]="'deck.upload.fileError' | translate"
+                        icon="pi pi-exclamation-triangle"
+                        styleClass="p-chip-danger"
+                      />
+                      <p-button
+                        icon="pi pi-times"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="danger"
+                        (onClick)="removeFile(i, fileUpload)"
+                        [disabled]="isUploading()"
+                      />
+                    </div>
+                  </div>
+
+                  <p-divider />
+
+                  <div class="files-summary">
+                    <span class="summary-item">
+                      <i class="pi pi-file"></i>
+                      {{ 'deck.upload.fileCount' | translate: { count: selectedFiles().length } }}
+                    </span>
+                    <span class="summary-item">
+                      <i class="pi pi-database"></i>
+                      {{ 'deck.upload.totalSize' | translate: { size: totalSize() } }}
+                    </span>
+                  </div>
+                </div>
+              </ng-template>
+            </p-fileUpload>
+
+            <!-- Upload Error Message -->
+            <p-message
+              *ngIf="uploadError()"
+              severity="error"
+              [text]="uploadError()!"
+              styleClass="mt-3"
+            />
+          </div>
+        </p-card>
       </div>
 
       <!-- Submit Button -->

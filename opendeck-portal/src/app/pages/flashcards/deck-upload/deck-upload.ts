@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subject, EMPTY } from 'rxjs';
 import { takeUntil, tap, switchMap, catchError } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 // PrimeNG Imports
 import { Card } from 'primeng/card';
@@ -75,6 +76,9 @@ export class DeckUpload implements OnInit, OnDestroy {
   isPolling = signal<boolean>(false);
   generatedDeckId = signal<string | null>(null);
 
+  // Form validity signal (reactive)
+  formValid = signal<boolean>(false);
+
   // Options for dropdowns
   categoryOptions = CATEGORY_OPTIONS;
   difficultyOptions = DIFFICULTY_OPTIONS;
@@ -93,7 +97,7 @@ export class DeckUpload implements OnInit, OnDestroy {
   });
 
   isFormValid = computed(() => {
-    return this.uploadForm?.valid && this.selectedFiles().length > 0 && !this.isUploading();
+    return this.formValid() && this.selectedFiles().length > 0 && !this.isUploading();
   });
 
   allProcessingComplete = computed(() => {
@@ -135,6 +139,16 @@ export class DeckUpload implements OnInit, OnDestroy {
       category: [null, [Validators.required]],
       difficulty: [null, [Validators.required]]
     });
+
+    // Subscribe to form status changes to update the formValid signal
+    this.uploadForm.statusChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.formValid.set(this.uploadForm.valid);
+      });
+
+    // Set initial validity
+    this.formValid.set(this.uploadForm.valid);
   }
 
   /**
