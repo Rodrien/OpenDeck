@@ -42,3 +42,27 @@ class DocumentStatusResponse(BaseModel):
     deck_id: str | None = None
     error_message: str | None = None
     processed_at: datetime | None = None
+
+
+class DocumentUploadResponse(BaseModel):
+    """Schema for document upload response."""
+
+    deck_id: str = Field(..., description="ID of the deck")
+    document_ids: list[str] = Field(..., description="IDs of uploaded documents")
+    task_id: str = Field(..., description="Celery task ID for tracking processing status")
+    status: str = Field(default="queued", description="Processing status")
+    message: str = Field(default="Documents uploaded successfully. Processing started.")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "deck_id": "123e4567-e89b-12d3-a456-426614174000",
+                "document_ids": [
+                    "223e4567-e89b-12d3-a456-426614174001",
+                    "323e4567-e89b-12d3-a456-426614174002",
+                ],
+                "task_id": "424e4567-e89b-12d3-a456-426614174003",
+                "status": "queued",
+                "message": "Documents uploaded successfully. Processing started.",
+            }
+        }

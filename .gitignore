@@ -3,3 +3,35 @@ opendeck-frontend/.angular
 
 opendeck-frontend/node_modules
 opendeck-frontend/dist
+
+# Backend
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.env
+backend/documents/
+!backend/documents/test/
+
+# Uploaded documents (exclude all except test fixtures)
+documents/
+!documents/test/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
