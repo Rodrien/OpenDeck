@@ -12,6 +12,10 @@ import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
+interface TranslationMap {
+    [key: string]: string;
+}
+
 @Component({
     selector: 'app-topbar',
     standalone: true,
@@ -154,10 +158,9 @@ export class AppTopbar implements OnInit {
             'topbar.user',
             'topbar.notLoggedIn'
         ])
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(translations => {
+        .subscribe((translations: TranslationMap) => {
             // Update dark mode aria label based on current state
-            this.updateDarkModeLabel(translations);
+            this.updateDarkModeLabel();
 
             // Update user menu aria label
             this.userMenuAriaLabel.set(translations['topbar.userMenu'] || 'User menu');
@@ -171,22 +174,14 @@ export class AppTopbar implements OnInit {
     /**
      * Update dark mode aria label based on current state
      */
-    private updateDarkModeLabel(translations?: any): void {
-        if (!translations) {
-            this.translate.get(['topbar.switchToLightMode', 'topbar.switchToDarkMode'])
-                .pipe(takeUntilDestroyed(this.destroyRef))
-                .subscribe(trans => {
-                    const label = this.isDarkMode()
-                        ? (trans['topbar.switchToLightMode'] || 'Switch to light mode')
-                        : (trans['topbar.switchToDarkMode'] || 'Switch to dark mode');
-                    this.darkModeAriaLabel.set(label);
-                });
-        } else {
-            const label = this.isDarkMode()
-                ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
-                : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
-            this.darkModeAriaLabel.set(label);
-        }
+    private updateDarkModeLabel(): void {
+        this.translate.get(['topbar.switchToLightMode', 'topbar.switchToDarkMode'])
+            .subscribe((translations: TranslationMap) => {
+                const label = this.isDarkMode()
+                    ? (translations['topbar.switchToLightMode'] || 'Switch to light mode')
+                    : (translations['topbar.switchToDarkMode'] || 'Switch to dark mode');
+                this.darkModeAriaLabel.set(label);
+            });
     }
 
     /**
@@ -194,8 +189,7 @@ export class AppTopbar implements OnInit {
      */
     private updateUserMenuItems(): void {
         this.translate.get(['common.preferences', 'auth.logout'])
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(translations => {
+            .subscribe((translations: TranslationMap) => {
                 this.userMenuItems = [
                     {
                         label: translations['common.preferences'] || 'Preferences',

@@ -44,7 +44,6 @@ export class AppMenu {
             'menu.flashcards',
             'menu.uploadDocuments'
         ])
-        .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe(translations => {
             this.model = [
                 {
