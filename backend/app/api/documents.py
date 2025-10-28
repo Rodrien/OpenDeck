@@ -11,9 +11,12 @@ from fastapi import (
     File,
     Form,
     Query,
+    Request,
     status,
 )
 import structlog
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.core.models import Deck, Document, DocumentStatus, DifficultyLevel
 from app.schemas.document import DocumentUploadResponse, DocumentResponse, DocumentStatusResponse
@@ -29,6 +32,9 @@ from app.config import settings
 from sqlalchemy.orm import Session
 
 logger = structlog.get_logger()
+
+# P0: Rate limiter instance
+limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
@@ -167,7 +173,9 @@ async def validate_upload_files(files: List[UploadFile]) -> None:
 
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/hour")  # P0: Rate limiting - 5 uploads per hour per IP
 async def upload_documents(
+    request: Request,  # Required for slowapi rate limiting
     files: List[UploadFile] = File(..., description="Documents to upload (max 10)"),
     metadata: str = Form(..., description="JSON string containing deck metadata (title, description, category, difficulty)"),
     current_user: CurrentUser = Depends(),
@@ -263,6 +271,11 @@ async def upload_documents(
     # Validate uploaded files
     await validate_upload_files(files)
 
+    # P0: Transaction management for rollback on failure
+    created_deck = None
+    document_ids = []
+    uploaded_file_paths = []
+
     try:
         # Create deck record with PENDING status (implicitly via card_count=0)
         deck = Deck(
@@ -276,6 +289,8 @@ async def upload_documents(
         )
 
         created_deck = deck_repo.create(deck)
+        db.commit()  # Commit deck creation
+
         logger.info(
             "deck_created",
             deck_id=created_deck.id,
@@ -284,8 +299,6 @@ async def upload_documents(
         )
 
         # Save files to storage and create document records
-        document_ids = []
-
         for file in files:
             try:
                 # Upload file to storage
@@ -294,6 +307,7 @@ async def upload_documents(
                     user_id=current_user.id,
                     deck_id=created_deck.id,
                 )
+                uploaded_file_paths.append(file_path)
 
                 # Create document record
                 document = Document(
@@ -323,12 +337,14 @@ async def upload_documents(
                     error=str(e),
                     error_type=type(e).__name__,
                 )
-                # Continue with other files but log the error
-                # Consider whether to fail entire upload or continue
+                # Fail entire upload if any file fails
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"Failed to upload file '{file.filename}': {str(e)}",
                 )
+
+        # Commit all document records
+        db.commit()
 
         # Queue background processing task
         task = process_documents_task.delay(
@@ -353,9 +369,53 @@ async def upload_documents(
         )
 
     except HTTPException:
-        # Re-raise HTTP exceptions
+        # P0: Rollback on failure
+        db.rollback()
+
+        # Clean up uploaded files from storage
+        for file_path in uploaded_file_paths:
+            try:
+                await storage.delete_file(file_path)
+                logger.info("cleanup_uploaded_file", file_path=file_path)
+            except Exception as cleanup_error:
+                logger.warning(
+                    "cleanup_file_failed",
+                    file_path=file_path,
+                    error=str(cleanup_error)
+                )
+
+        # Delete the deck if it was created
+        if created_deck:
+            try:
+                deck_repo.delete(created_deck.id)
+                db.commit()
+                logger.info("cleanup_orphaned_deck", deck_id=created_deck.id)
+            except Exception as deck_cleanup_error:
+                logger.warning(
+                    "cleanup_deck_failed",
+                    deck_id=created_deck.id,
+                    error=str(deck_cleanup_error)
+                )
+
+        # Re-raise the HTTP exception
         raise
+
     except Exception as e:
+        # P0: Rollback on unexpected errors
+        db.rollback()
+
+        # Clean up uploaded files
+        for file_path in uploaded_file_paths:
+            try:
+                await storage.delete_file(file_path)
+                logger.info("cleanup_uploaded_file", file_path=file_path)
+            except Exception as cleanup_error:
+                logger.warning(
+                    "cleanup_file_failed",
+                    file_path=file_path,
+                    error=str(cleanup_error)
+                )
+
         logger.error(
             "document_upload_failed",
             user_id=current_user.id,

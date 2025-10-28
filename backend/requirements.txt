@@ -13,6 +13,8 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 bcrypt<5.0  # passlib 1.7.4 is incompatible with bcrypt 5.x
 python-dotenv==1.0.0
+slowapi==0.1.9  # P0: Rate limiting
+werkzeug==3.0.1  # P1: Secure filename sanitization
 
 # Validation & Serialization
 pydantic==2.5.3

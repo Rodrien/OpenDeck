@@ -110,7 +110,8 @@ class LocalStorageService(StorageService):
 
     def _sanitize_filename(self, filename: str) -> str:
         """
-        Sanitize filename to prevent path traversal and other security issues.
+        P1: Sanitize filename to prevent path traversal and other security issues.
+        Uses werkzeug.secure_filename for robust sanitization.
 
         Args:
             filename: Original filename
@@ -118,14 +119,20 @@ class LocalStorageService(StorageService):
         Returns:
             Sanitized filename
         """
-        # Remove path separators and other dangerous characters
-        filename = os.path.basename(filename)
-        filename = re.sub(r'[^\w\s.-]', '', filename)
-        filename = filename.replace('..', '')
+        from werkzeug.utils import secure_filename
+        from uuid import uuid4
+
+        # Use secure_filename from werkzeug (industry-standard sanitization)
+        safe_name = secure_filename(filename)
+
+        # If secure_filename returns empty (all special chars), use UUID
+        if not safe_name:
+            ext = os.path.splitext(filename)[1] if '.' in filename else ''
+            safe_name = f"file_{uuid4().hex[:8]}{ext}"
 
         # Add timestamp to avoid collisions
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        name, ext = os.path.splitext(filename)
+        name, ext = os.path.splitext(safe_name)
         return f"{timestamp}_{name}{ext}"
 
     def _get_full_path(self, path: str) -> Path:
@@ -276,13 +283,23 @@ class S3StorageService(StorageService):
         )
 
     def _sanitize_filename(self, filename: str) -> str:
-        """Sanitize filename for S3 key."""
-        filename = os.path.basename(filename)
-        filename = re.sub(r'[^\w\s.-]', '', filename)
-        filename = filename.replace('..', '')
+        """
+        P1: Sanitize filename for S3 key.
+        Uses werkzeug.secure_filename for robust sanitization.
+        """
+        from werkzeug.utils import secure_filename
+        from uuid import uuid4
+
+        # Use secure_filename from werkzeug (industry-standard sanitization)
+        safe_name = secure_filename(filename)
+
+        # If secure_filename returns empty (all special chars), use UUID
+        if not safe_name:
+            ext = os.path.splitext(filename)[1] if '.' in filename else ''
+            safe_name = f"file_{uuid4().hex[:8]}{ext}"
 
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-        name, ext = os.path.splitext(filename)
+        name, ext = os.path.splitext(safe_name)
         return f"{timestamp}_{name}{ext}"
 
     def _get_s3_key(self, user_id: str, deck_id: str, filename: str) -> str:

@@ -98,6 +98,26 @@ class DocumentProcessorService:
                     failed_documents += 1
                     continue
 
+                # P1: Idempotency check - skip if already processed or processing
+                if document.status == DocumentStatus.COMPLETED:
+                    logger.warning(
+                        "document_already_completed",
+                        document_id=doc_id,
+                        filename=document.filename,
+                        message="Skipping already completed document (idempotency check)",
+                    )
+                    successful_documents += 1  # Count as successful since it's done
+                    continue
+
+                if document.status == DocumentStatus.PROCESSING:
+                    logger.warning(
+                        "document_already_processing",
+                        document_id=doc_id,
+                        filename=document.filename,
+                        message="Document already being processed (idempotency check)",
+                    )
+                    continue
+
                 # Update status to PROCESSING
                 document.mark_processing()
                 self.document_repo.update(document)

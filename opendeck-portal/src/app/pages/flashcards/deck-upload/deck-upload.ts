@@ -104,6 +104,8 @@ export class DeckUpload implements OnInit, OnDestroy {
 
   // Cleanup
   private destroy$ = new Subject<void>();
+  // P1: Separate subject to cancel ongoing upload when new upload starts
+  private cancelUpload$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -117,6 +119,8 @@ export class DeckUpload implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.cancelUpload$.next();
+    this.cancelUpload$.complete();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -217,9 +221,13 @@ export class DeckUpload implements OnInit, OnDestroy {
 
     const files = this.selectedFiles().map(f => f.file);
 
+    // P1: Cancel any ongoing upload before starting a new one (prevent memory leaks)
+    this.cancelUpload$.next();
+
     // Subscribe to upload progress
+    // Use merge(destroy$, cancelUpload$) to ensure cleanup on both events
     this.documentService.getUploadProgress()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(takeUntil(this.cancelUpload$), takeUntil(this.destroy$))
       .subscribe(progress => {
         this.uploadProgress.set(progress);
       });
@@ -227,6 +235,7 @@ export class DeckUpload implements OnInit, OnDestroy {
     // Upload documents and chain with polling using RxJS operators
     this.documentService.uploadDocuments(files, metadata)
       .pipe(
+        takeUntil(this.cancelUpload$),
         takeUntil(this.destroy$),
         tap(response => {
           this.uploadSuccess.set(true);
@@ -234,7 +243,10 @@ export class DeckUpload implements OnInit, OnDestroy {
           this.isUploading.set(false);
         }),
         switchMap(response =>
-          this.documentService.pollProcessingStatus(response.document_ids)
+          this.documentService.pollProcessingStatus(response.document_ids).pipe(
+            takeUntil(this.cancelUpload$),
+            takeUntil(this.destroy$)
+          )
         ),
         catchError(error => {
           const errorMessage = this.extractErrorMessage(error);

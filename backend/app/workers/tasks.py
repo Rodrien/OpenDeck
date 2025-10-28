@@ -4,18 +4,28 @@ Celery Background Tasks
 Defines asynchronous tasks for document processing and flashcard generation.
 """
 
-from typing import List
+from typing import List, Dict, Any
 import structlog
+import asyncio
+from celery.exceptions import SoftTimeLimitExceeded
+from uuid import UUID
 
 from app.workers.celery_app import celery_app
 from app.services.document_processor import DocumentProcessorService
 from app.services.storage_service import get_storage_service
 from app.db.base import SessionLocal
+from app.core.models import ProcessingStatus
 
 logger = structlog.get_logger()
 
 
-@celery_app.task(bind=True, max_retries=3, name="app.workers.tasks.process_documents_task")
+@celery_app.task(
+    bind=True,
+    max_retries=3,
+    name="app.workers.tasks.process_documents_task",
+    soft_time_limit=600,  # 10 minutes soft limit (P1: graceful timeout)
+    time_limit=660,       # 11 minutes hard limit
+)
 def process_documents_task(
     self,
     deck_id: str,
@@ -82,35 +92,15 @@ def process_documents_task(
             storage=storage,
         )
 
-        # Process documents - handle async properly
-        # Create new event loop for async operations in Celery task
-        # This avoids conflicts with existing event loops
-        import asyncio
-
-        try:
-            # Try to get existing event loop
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, create a new one for this task
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-        except RuntimeError:
-            # No event loop exists, create a new one
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        try:
-            result = loop.run_until_complete(
-                processor.process_documents(
-                    deck_id=deck_id,
-                    document_ids=document_ids,
-                    user_id=user_id,
-                )
+        # Process documents - use asyncio.run() (P0: simplified event loop handling)
+        # This is the recommended approach for running async code in Celery tasks
+        result = asyncio.run(
+            processor.process_documents(
+                deck_id=deck_id,
+                document_ids=document_ids,
+                user_id=user_id,
             )
-        finally:
-            # Only close if we created a new loop
-            if not loop.is_running():
-                loop.close()
+        )
 
         logger.info(
             "celery_task_completed",
@@ -128,6 +118,38 @@ def process_documents_task(
             "successful_documents": result.successful_documents,
             "failed_documents": result.failed_documents,
         }
+
+    except SoftTimeLimitExceeded:
+        # P1: Gracefully handle timeout
+        logger.error(
+            "celery_task_timeout",
+            task_id=self.request.id,
+            deck_id=deck_id,
+            message="Task timeout - marking documents as failed",
+        )
+
+        # Mark all documents as failed due to timeout
+        from app.db.postgres_repo import PostgresDocumentRepo
+
+        document_repo = PostgresDocumentRepo(db)
+        for doc_id in document_ids:
+            try:
+                doc = document_repo.get(UUID(doc_id))
+                if doc and doc.status == ProcessingStatus.PROCESSING:
+                    doc.mark_failed("Processing timeout exceeded (10 minutes)")
+                    document_repo.update(doc)
+            except Exception as e:
+                logger.warning(
+                    "failed_to_update_document_on_timeout",
+                    document_id=doc_id,
+                    error=str(e),
+                )
+
+        db.commit()
+
+        # Retry with backoff
+        countdown = 60 * (2 ** self.request.retries)
+        raise self.retry(exc=SoftTimeLimitExceeded(), countdown=countdown)
 
     except Exception as exc:
         logger.error(
@@ -166,41 +188,123 @@ def process_documents_task(
         db.close()
 
 
-@celery_app.task(name="app.workers.tasks.cleanup_temp_files_task")
-def cleanup_temp_files_task() -> dict:
+@celery_app.task(
+    bind=True,
+    max_retries=3,
+    name="app.workers.tasks.cleanup_orphaned_files_task"
+)
+def cleanup_orphaned_files_task(self) -> Dict[str, Any]:
     """
-    Periodic task to clean up temporary files and failed uploads.
+    P1: Periodic task to clean up orphaned files from failed uploads.
 
     This task runs on a schedule (e.g., daily) to:
-    1. Remove orphaned temporary files
-    2. Clean up failed document uploads
-    3. Delete old processing logs
+    1. Find documents with status=FAILED older than retention period
+    2. Delete associated files from storage
+    3. Update document records
 
     Returns:
-        Dict with cleanup statistics
+        Dict with cleanup statistics:
+        {
+            "status": "completed" | "failed",
+            "files_deleted": int,
+            "errors": int
+        }
     """
-    logger.info("cleanup_task_started")
+    from datetime import datetime, timedelta
+    from app.db.postgres_repo import PostgresDocumentRepo
+
+    logger.info("cleanup_task_started", task_id=self.request.id)
+
+    db = SessionLocal()
+    cleaned_count = 0
+    error_count = 0
+    retention_days = 7  # Keep failed files for 7 days
 
     try:
-        # TODO: Implement cleanup logic
-        # - Find documents with status=FAILED older than 7 days
-        # - Delete associated files from storage
-        # - Remove database records
+        storage = get_storage_service()
+        document_repo = PostgresDocumentRepo(db)
 
-        logger.info("cleanup_task_completed", files_deleted=0)
+        # Calculate cutoff date
+        cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
+
+        # Find failed documents older than retention period
+        # Query directly since we may not have a find_by_status method
+        from app.db.models import Document as DocumentDB
+
+        failed_docs = db.query(DocumentDB).filter(
+            DocumentDB.status == ProcessingStatus.FAILED.value,
+            DocumentDB.created_at < cutoff_date
+        ).all()
+
+        logger.info(
+            "cleanup_found_documents",
+            count=len(failed_docs),
+            cutoff_date=cutoff_date.isoformat()
+        )
+
+        # Process each failed document
+        for db_doc in failed_docs:
+            try:
+                # Delete file from storage
+                asyncio.run(storage.delete_file(db_doc.storage_path))
+
+                # Mark in database (could soft delete or mark as cleaned)
+                db_doc.status = "CLEANED"
+                cleaned_count += 1
+
+                logger.info(
+                    "cleanup_file_deleted",
+                    document_id=str(db_doc.id),
+                    filename=db_doc.filename
+                )
+
+            except FileNotFoundError:
+                # File already deleted, just update status
+                db_doc.status = "CLEANED"
+                cleaned_count += 1
+                logger.warning(
+                    "cleanup_file_not_found",
+                    document_id=str(db_doc.id),
+                    storage_path=db_doc.storage_path
+                )
+
+            except Exception as e:
+                error_count += 1
+                logger.error(
+                    "cleanup_file_error",
+                    document_id=str(db_doc.id),
+                    error=str(e),
+                    error_type=type(e).__name__
+                )
+
+        # Commit all changes
+        db.commit()
+
+        logger.info(
+            "cleanup_task_completed",
+            task_id=self.request.id,
+            files_deleted=cleaned_count,
+            errors=error_count
+        )
 
         return {
             "status": "completed",
-            "files_deleted": 0,
+            "files_deleted": cleaned_count,
+            "errors": error_count
         }
 
     except Exception as e:
+        db.rollback()
         logger.error(
             "cleanup_task_failed",
+            task_id=self.request.id,
             error=str(e),
             error_type=type(e).__name__,
         )
-        return {
-            "status": "failed",
-            "error": str(e),
-        }
+
+        # Retry with backoff
+        countdown = 300  # 5 minutes
+        raise self.retry(exc=e, countdown=countdown)
+
+    finally:
+        db.close()
