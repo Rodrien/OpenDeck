@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MenuItem } from 'primeng/api';
 import { AppMenuitem } from './app.menuitem';
+import { TranslateService } from '@ngx-translate/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
     selector: 'app-menu',
@@ -17,24 +19,50 @@ import { AppMenuitem } from './app.menuitem';
 })
 export class AppMenu {
     model: MenuItem[] = [];
+    private destroyRef = inject(DestroyRef);
+
+    constructor(private translate: TranslateService) {}
 
     ngOnInit() {
-        this.model = [
-            {
-                label: 'Main',
-                items: [
-                    {
-                        label: 'Flashcards',
-                        icon: 'pi pi-fw pi-book',
-                        routerLink: ['/pages/flashcards']
-                    },
-                    {
-                        label: 'Upload Documents',
-                        icon: 'pi pi-fw pi-cloud-upload',
-                        routerLink: ['/pages/flashcards/upload']
-                    }
-                ]
-            }
-        ];
+        // Initialize menu items with translations
+        this.updateMenuItems();
+
+        // Update menu items when language changes
+        this.translate.onLangChange
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.updateMenuItems();
+            });
+    }
+
+    /**
+     * Update menu items with current translations
+     */
+    private updateMenuItems(): void {
+        this.translate.get([
+            'menu.main',
+            'menu.flashcards',
+            'menu.uploadDocuments'
+        ])
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(translations => {
+            this.model = [
+                {
+                    label: translations['menu.main'] || 'Main',
+                    items: [
+                        {
+                            label: translations['menu.flashcards'] || 'Flashcards',
+                            icon: 'pi pi-fw pi-book',
+                            routerLink: ['/pages/flashcards']
+                        },
+                        {
+                            label: translations['menu.uploadDocuments'] || 'Upload Documents',
+                            icon: 'pi pi-fw pi-cloud-upload',
+                            routerLink: ['/pages/flashcards/upload']
+                        }
+                    ]
+                }
+            ];
+        });
     }
 }
