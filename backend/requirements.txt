@@ -27,7 +27,7 @@ redis==5.0.1
 
 # AI Integration
 openai==1.6.1
-anthropic==0.8.1
+anthropic==0.39.0  # Updated for messages API support
 
 # Document Processing
 PyPDF2==3.0.1
