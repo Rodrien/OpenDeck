@@ -60,6 +60,15 @@ OpenDeck/
 │   │   ├── db/                # Database layer (SQLAlchemy)
 │   │   ├── schemas/           # Pydantic request/response schemas
 │   │   └── services/          # Business logic services
+│   │       ├── ai/            # AI provider implementations
+│   │       │   ├── base_provider.py    # Common interface
+│   │       │   ├── openai_provider.py  # OpenAI implementation
+│   │       │   ├── anthropic_provider.py # Anthropic implementation
+│   │       │   ├── ollama_provider.py   # Ollama implementation
+│   │       │   ├── factory.py          # Provider factory
+│   │       │   └── prompts.py          # Shared prompt templates
+│   │       ├── document_processor.py   # Document processing pipeline
+│   │       └── document_extractor.py   # Text extraction
 │   ├── tests/                 # Backend tests
 │   ├── docker-compose.yml     # Docker setup
 │   └── README.md             # Backend documentation
@@ -250,7 +259,36 @@ SECRET_KEY=your-secret-key
 JWT_SECRET_KEY=your-jwt-secret
 DATABASE_URL=postgresql://user:pass@localhost:5432/opendeck
 ALLOWED_ORIGINS=http://localhost:4200
+
+# AI Provider Configuration
+AI_PROVIDER=ollama  # Options: openai, anthropic, ollama
+
+# OpenAI (cloud, paid)
+OPENAI_API_KEY=sk-your-key
+OPENAI_MODEL=gpt-4
+
+# Anthropic (cloud, paid)
+ANTHROPIC_API_KEY=sk-ant-your-key
+ANTHROPIC_MODEL=claude-3-sonnet-20240229
+
+# Ollama (local, free)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama2
 ```
+
+### Using Ollama (Local AI)
+
+1. **Install Ollama**: Download from https://ollama.com/download
+2. **Pull a model**: `ollama pull llama2` (or mistral, phi, etc.)
+3. **Start server**: `ollama serve` (runs on http://localhost:11434)
+4. **Configure**: Set `AI_PROVIDER=ollama` in `.env`
+5. **Process documents**: The system will use your local model
+
+**Advantages of Ollama**:
+- No API costs
+- Privacy (data stays local)
+- Works offline
+- Multiple models available
 
 ### Frontend (environment.ts)
 ```typescript
@@ -283,11 +321,16 @@ ng test --code-coverage         # With coverage
 - Text extraction from PDF/DOCX
 - Metadata extraction and indexing
 
-### AI Integration
-- OpenAI/Claude integration for flashcard generation
+### AI Integration ✅ Phase 2 - In Progress
+- **Multi-provider Architecture**: Pluggable AI provider system
+  - OpenAI (GPT-4, GPT-3.5-Turbo) - Cloud API
+  - Anthropic (Claude 3 Opus, Sonnet, Haiku) - Cloud API
+  - Ollama (llama2, mistral, phi, etc.) - Local models
+- Factory pattern for provider selection via configuration
+- Automatic document chunking for large documents
 - Natural language processing for concept identification
 - Question-answer pair generation from source material
-- Background processing with Celery
+- Background processing with Celery (planned)
 
 ### Enhanced Features
 - Study statistics and progress tracking
