@@ -15,7 +15,9 @@ from sqlalchemy import (
     Text,
     Enum as SQLEnum,
     Table,
+    Boolean,
 )
+from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 from app.core.models import DifficultyLevel, DocumentStatus
@@ -131,3 +133,39 @@ class DocumentModel(Base):
 
     # Relationships
     user = relationship("UserModel", back_populates="documents")
+
+
+class UserFCMTokenModel(Base):
+    """User FCM Token table model."""
+
+    __tablename__ = "user_fcm_tokens"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    fcm_token = Column(Text, unique=True, nullable=False)
+    device_type = Column(String(20), nullable=False)
+    device_name = Column(String(255), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    last_used_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class NotificationModel(Base):
+    """Notification table model."""
+
+    __tablename__ = "notifications"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    type = Column(String(20), nullable=False)
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    action_url = Column(String(512), nullable=True)
+    metadata = Column(JSON, nullable=True)
+    image_url = Column(String(512), nullable=True)
+    read = Column(Boolean, default=False, nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    read_at = Column(DateTime, nullable=True)
+    fcm_message_id = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

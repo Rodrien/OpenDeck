@@ -11,6 +11,7 @@ import { User } from '../../models/user.model';
 import { TranslateService, LangChangeEvent } from '@ngx-translate/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
+import { NotificationBellComponent } from '../../components/notification-bell/notification-bell.component';
 
 interface TranslationMap {
     [key: string]: string;
@@ -24,7 +25,8 @@ interface TranslationMap {
         CommonModule,
         AvatarModule,
         Menu,
-        ConfirmDialog
+        ConfirmDialog,
+        NotificationBellComponent
     ],
     providers: [ConfirmationService],
     template: `
@@ -50,6 +52,9 @@ interface TranslationMap {
                 >
                     <i [class]="isDarkMode() ? 'pi pi-moon' : 'pi pi-sun'"></i>
                 </button>
+
+                <!-- Notification Bell -->
+                <app-notification-bell></app-notification-bell>
 
                 <!-- User Avatar -->
                 <div class="user-avatar-container">
@@ -248,8 +253,8 @@ export class AppTopbar implements OnInit {
             icon: 'pi pi-sign-out',
             acceptLabel: translations['common.yes'],
             rejectLabel: translations['common.no'],
-            accept: () => {
-                this.authService.logout();
+            accept: async () => {
+                await this.authService.logout();
             }
         });
     }

@@ -8,7 +8,7 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 
 from __future__ import annotations
 from typing import Protocol, Optional, List
-from app.core.models import User, Deck, Card, Document, Topic
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification
 
 
 class UserRepository(Protocol):
@@ -356,5 +356,215 @@ class TopicRepository(Protocol):
         Args:
             card_id: Card identifier
             topic_id: Topic identifier
+        """
+        ...
+
+
+class UserFCMTokenRepository(Protocol):
+    """Abstract interface for FCM token data access."""
+
+    def get(self, token_id: str) -> Optional[UserFCMToken]:
+        """
+        Get FCM token by ID.
+
+        Args:
+            token_id: Token identifier
+
+        Returns:
+            UserFCMToken if found, None otherwise
+        """
+        ...
+
+    def get_by_token(self, fcm_token: str) -> Optional[UserFCMToken]:
+        """
+        Get FCM token by token string.
+
+        Args:
+            fcm_token: FCM token string
+
+        Returns:
+            UserFCMToken if found, None otherwise
+        """
+        ...
+
+    def get_by_user(self, user_id: str) -> List[UserFCMToken]:
+        """
+        Get all FCM tokens for a user.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            List of user's FCM tokens
+        """
+        ...
+
+    def get_active_tokens(self, user_id: str) -> List[UserFCMToken]:
+        """
+        Get all active FCM tokens for a user.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            List of active FCM tokens
+        """
+        ...
+
+    def create(self, token: UserFCMToken) -> UserFCMToken:
+        """
+        Create a new FCM token.
+
+        Args:
+            token: Token to create
+
+        Returns:
+            Created token with ID
+        """
+        ...
+
+    def update(self, token: UserFCMToken) -> UserFCMToken:
+        """
+        Update existing FCM token.
+
+        Args:
+            token: Token with updated data
+
+        Returns:
+            Updated token
+        """
+        ...
+
+    def deactivate_token(self, token_id: str) -> None:
+        """
+        Deactivate a single FCM token.
+
+        Args:
+            token_id: Token to deactivate
+        """
+        ...
+
+    def deactivate_tokens(self, fcm_tokens: List[str]) -> None:
+        """
+        Deactivate multiple FCM tokens by token string.
+
+        Used to clean up invalid tokens after FCM send failures.
+
+        Args:
+            fcm_tokens: List of FCM token strings to deactivate
+        """
+        ...
+
+    def delete(self, token_id: str) -> None:
+        """
+        Delete FCM token by ID.
+
+        Args:
+            token_id: Token to delete
+        """
+        ...
+
+
+class NotificationRepository(Protocol):
+    """Abstract interface for notification data access."""
+
+    def get(self, notification_id: str) -> Optional[Notification]:
+        """
+        Get notification by ID.
+
+        Args:
+            notification_id: Notification identifier
+
+        Returns:
+            Notification if found, None otherwise
+        """
+        ...
+
+    def get_by_user(
+        self,
+        user_id: str,
+        unread_only: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Notification]:
+        """
+        Get notifications for a user.
+
+        Args:
+            user_id: User identifier
+            unread_only: If True, only return unread notifications
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of notifications
+        """
+        ...
+
+    def create(
+        self,
+        user_id: str,
+        type: str,
+        title: str,
+        message: str,
+        action_url: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        image_url: Optional[str] = None,
+        fcm_message_id: Optional[str] = None,
+    ) -> Notification:
+        """
+        Create a new notification.
+
+        Args:
+            user_id: User identifier
+            type: Notification type (info, success, warning, error)
+            title: Notification title
+            message: Notification message
+            action_url: Optional URL to navigate to
+            metadata: Optional metadata dictionary
+            image_url: Optional image URL
+            fcm_message_id: Optional FCM message ID
+
+        Returns:
+            Created notification
+        """
+        ...
+
+    def mark_as_read(self, notification_id: str) -> None:
+        """
+        Mark a notification as read.
+
+        Args:
+            notification_id: Notification to mark as read
+        """
+        ...
+
+    def mark_all_as_read(self, user_id: str) -> None:
+        """
+        Mark all notifications as read for a user.
+
+        Args:
+            user_id: User identifier
+        """
+        ...
+
+    def count_unread(self, user_id: str) -> int:
+        """
+        Count unread notifications for a user.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            Number of unread notifications
+        """
+        ...
+
+    def delete(self, notification_id: str) -> None:
+        """
+        Delete a notification.
+
+        Args:
+            notification_id: Notification to delete
         """
         ...

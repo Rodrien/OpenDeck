@@ -55,3 +55,6 @@ structlog==24.1.0
 
 # Retry logic for AI services
 tenacity==8.2.3
+
+# Firebase Cloud Messaging
+firebase-admin==6.4.0
