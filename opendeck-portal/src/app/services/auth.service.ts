@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
@@ -11,6 +11,7 @@ import {
   AuthTokenResponse,
   AuthState
 } from '../models/user.model';
+import { FCMService } from './fcm.service';
 
 /**
  * Authentication Service
@@ -35,6 +36,9 @@ export class AuthService {
 
   // Public observable for current user
   public currentUser$ = this.currentUserSubject.asObservable();
+
+  // Inject FCM service
+  private fcmService = inject(FCMService);
 
   constructor(
     private http: HttpClient,
@@ -78,7 +82,7 @@ export class AuthService {
 
     return this.http.post<AuthTokenResponse>(`${this.apiUrl}/login`, loginData)
       .pipe(
-        tap(response => this.handleAuthSuccess(response)),
+        tap(async response => await this.handleAuthSuccess(response)),
         catchError(this.handleError)
       );
   }
@@ -95,7 +99,7 @@ export class AuthService {
 
     return this.http.post<AuthTokenResponse>(`${this.apiUrl}/register`, registerData)
       .pipe(
-        tap(response => this.handleAuthSuccess(response)),
+        tap(async response => await this.handleAuthSuccess(response)),
         catchError(this.handleError)
       );
   }
@@ -105,11 +109,18 @@ export class AuthService {
    * Stores token and user data
    * @param response - Auth token response
    */
-  private handleAuthSuccess(response: AuthTokenResponse): void {
+  private async handleAuthSuccess(response: AuthTokenResponse): Promise<void> {
     this.setToken(response.access_token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
     this.isAuthenticatedSignal.set(true);
     this.currentUserSubject.next(response.user);
+
+    // Initialize FCM after successful login
+    try {
+      await this.fcmService.initialize();
+    } catch (error) {
+      console.error('Failed to initialize FCM:', error);
+    }
   }
 
   /**
@@ -142,7 +153,14 @@ export class AuthService {
    * Logout and clear authentication
    * Redirects to login page
    */
-  logout(): void {
+  async logout(): Promise<void> {
+    // Unregister FCM token before logout
+    try {
+      await this.fcmService.unregisterToken();
+    } catch (error) {
+      console.error('Failed to unregister FCM token:', error);
+    }
+
     this.clearAuthData();
     this.router.navigate(['/auth/login']);
   }

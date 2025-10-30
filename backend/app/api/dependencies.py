@@ -16,8 +16,12 @@ from app.db.postgres_repo import (
     PostgresCardRepo,
     PostgresDocumentRepo,
     PostgresTopicRepo,
+    PostgresUserFCMTokenRepo,
+    PostgresNotificationRepo,
 )
 from app.services.auth_service import AuthService
+from app.services.fcm_service import FCMService
+from app.services.notification_service import NotificationService
 from app.core.models import User
 
 # HTTP Bearer token scheme
@@ -49,11 +53,37 @@ def get_topic_repo(db: Session = Depends(get_db)) -> PostgresTopicRepo:
     return PostgresTopicRepo(db)
 
 
+def get_fcm_token_repo(db: Session = Depends(get_db)) -> PostgresUserFCMTokenRepo:
+    """Get FCM token repository instance."""
+    return PostgresUserFCMTokenRepo(db)
+
+
+def get_notification_repo(db: Session = Depends(get_db)) -> PostgresNotificationRepo:
+    """Get notification repository instance."""
+    return PostgresNotificationRepo(db)
+
+
 def get_auth_service(
     user_repo: PostgresUserRepo = Depends(get_user_repo),
 ) -> AuthService:
     """Get authentication service instance."""
     return AuthService(user_repo)
+
+
+def get_fcm_service(
+    token_repo: PostgresUserFCMTokenRepo = Depends(get_fcm_token_repo),
+    notification_repo: PostgresNotificationRepo = Depends(get_notification_repo),
+) -> FCMService:
+    """Get FCM service instance."""
+    return FCMService(token_repo, notification_repo)
+
+
+def get_notification_service(
+    notification_repo: PostgresNotificationRepo = Depends(get_notification_repo),
+    fcm_service: FCMService = Depends(get_fcm_service),
+) -> NotificationService:
+    """Get notification service instance."""
+    return NotificationService(notification_repo, fcm_service)
 
 
 async def get_current_user(
@@ -120,4 +150,8 @@ DeckRepoDepends = Annotated[PostgresDeckRepo, Depends(get_deck_repo)]
 CardRepoDepends = Annotated[PostgresCardRepo, Depends(get_card_repo)]
 DocumentRepoDepends = Annotated[PostgresDocumentRepo, Depends(get_document_repo)]
 TopicRepoDepends = Annotated[PostgresTopicRepo, Depends(get_topic_repo)]
+FCMTokenRepoDepends = Annotated[PostgresUserFCMTokenRepo, Depends(get_fcm_token_repo)]
+NotificationRepoDepends = Annotated[PostgresNotificationRepo, Depends(get_notification_repo)]
 AuthServiceDepends = Annotated[AuthService, Depends(get_auth_service)]
+FCMServiceDepends = Annotated[FCMService, Depends(get_fcm_service)]
+NotificationServiceDepends = Annotated[NotificationService, Depends(get_notification_service)]

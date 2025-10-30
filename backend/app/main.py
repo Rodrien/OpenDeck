@@ -15,9 +15,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api import health, auth, decks, cards, topics, documents
+from app.api import health, auth, decks, cards, topics, documents, fcm_tokens, notifications
 from app.db.base import engine
 from app.db.models import Base
+from app.core.firebase import initialize_firebase
 
 # Configure structured logging
 structlog.configure(
@@ -47,6 +48,10 @@ async def lifespan(app: FastAPI):
     if settings.is_development:
         logger.info("creating_database_tables")
         Base.metadata.create_all(bind=engine)
+
+    # Initialize Firebase Admin SDK
+    logger.info("initializing_firebase")
+    initialize_firebase()
 
     yield
 
@@ -85,6 +90,8 @@ app.include_router(decks.router, prefix=settings.api_v1_prefix)
 app.include_router(cards.router, prefix=settings.api_v1_prefix)
 app.include_router(topics.router, prefix=settings.api_v1_prefix)
 app.include_router(documents.router, prefix=settings.api_v1_prefix)
+app.include_router(fcm_tokens.router, prefix=settings.api_v1_prefix)
+app.include_router(notifications.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")
