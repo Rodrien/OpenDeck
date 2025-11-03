@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ScrollPanelModule } from 'primeng/scrollpanel';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NotificationService } from '../../services/notification.service';
 import { Notification } from '../../models/notification.model';
 
@@ -206,7 +206,8 @@ export class NotificationPanelComponent implements OnInit {
 
   constructor(
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private translate: TranslateService
   ) {}
 
   async ngOnInit() {
@@ -269,14 +270,14 @@ export class NotificationPanelComponent implements OnInit {
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
 
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1) return this.translate.instant('notifications.time.justNow');
+    if (diffMins < 60) return this.translate.instant('notifications.time.minutesAgo', { count: diffMins });
 
     const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffHours < 24) return this.translate.instant('notifications.time.hoursAgo', { count: diffHours });
 
     const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 7) return this.translate.instant('notifications.time.daysAgo', { count: diffDays });
 
     return date.toLocaleDateString();
   }

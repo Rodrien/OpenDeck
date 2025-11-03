@@ -6,7 +6,7 @@ retrieving notification history, and managing read/unread status.
 """
 
 import logging
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from app.core.models import Notification
 from app.core.interfaces import NotificationRepository
 from app.services.fcm_service import FCMService
@@ -44,9 +44,9 @@ class NotificationService:
         title: str,
         message: str,
         action_url: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         image_url: Optional[str] = None,
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """
         Send push notification via FCM and save to history.
 

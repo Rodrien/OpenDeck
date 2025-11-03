@@ -7,7 +7,7 @@ These functions provide synchronous wrappers around the async notification servi
 
 import asyncio
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from sqlalchemy.orm import Session
 
 from app.db.base import SessionLocal
@@ -41,7 +41,7 @@ def notify_user_sync(
     title: str,
     message: str,
     action_url: Optional[str] = None,
-    metadata: Optional[Dict] = None,
+    metadata: Optional[Dict[str, Any]] = None,
     image_url: Optional[str] = None,
 ) -> None:
     """
@@ -107,7 +107,7 @@ def notify_success(
     title: str,
     message: str,
     action_url: Optional[str] = None,
-    metadata: Optional[Dict] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Helper for sending success notifications.
@@ -141,7 +141,7 @@ def notify_error(
     user_id: str,
     title: str,
     message: str,
-    error_details: Optional[Dict] = None,
+    error_details: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Helper for sending error notifications.
@@ -174,7 +174,7 @@ def notify_info(
     title: str,
     message: str,
     action_url: Optional[str] = None,
-    metadata: Optional[Dict] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Helper for sending info notifications.
@@ -209,7 +209,7 @@ def notify_warning(
     title: str,
     message: str,
     action_url: Optional[str] = None,
-    metadata: Optional[Dict] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Helper for sending warning notifications.

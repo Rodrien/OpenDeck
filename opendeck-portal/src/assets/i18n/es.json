@@ -206,6 +206,12 @@
       "success": "Éxito",
       "warning": "Advertencia",
       "error": "Error"
+    },
+    "time": {
+      "justNow": "Ahora mismo",
+      "minutesAgo": "Hace {{count}}m",
+      "hoursAgo": "Hace {{count}}h",
+      "daysAgo": "Hace {{count}}d"
     }
   }
 }

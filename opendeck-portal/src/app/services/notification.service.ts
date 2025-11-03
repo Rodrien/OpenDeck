@@ -132,4 +132,11 @@ export class NotificationService {
   getUnreadCountSignal() {
     return this.unreadCount.asReadonly();
   }
+
+  /**
+   * Increment unread count (called when new notification arrives via FCM)
+   */
+  incrementUnreadCount(): void {
+    this.unreadCount.update(count => count + 1);
+  }
 }

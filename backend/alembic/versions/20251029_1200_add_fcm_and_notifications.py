@@ -43,6 +43,13 @@ def upgrade() -> None:
         postgresql_where=sa.text('is_active = true')
     )
 
+    # Add composite unique constraint to prevent duplicate token registrations per user
+    op.create_unique_constraint(
+        'uq_user_fcm_tokens_user_id_fcm_token',
+        'user_fcm_tokens',
+        ['user_id', 'fcm_token']
+    )
+
     # Add check constraint for device_type
     op.create_check_constraint(
         'ck_user_fcm_tokens_device_type',
@@ -90,7 +97,8 @@ def downgrade() -> None:
     op.drop_index('idx_notifications_user_id', table_name='notifications')
     op.drop_table('notifications')
 
-    # Drop user_fcm_tokens table and its indexes
+    # Drop user_fcm_tokens table, its indexes, and constraints
+    op.drop_constraint('uq_user_fcm_tokens_user_id_fcm_token', 'user_fcm_tokens', type_='unique')
     op.drop_index('idx_user_fcm_tokens_active', table_name='user_fcm_tokens')
     op.drop_index('idx_user_fcm_tokens_user_id', table_name='user_fcm_tokens')
     op.drop_table('user_fcm_tokens')

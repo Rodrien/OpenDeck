@@ -9,6 +9,7 @@ import { BadgeModule } from 'primeng/badge';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationPanelComponent } from '../notification-panel/notification-panel.component';
+import { FirebaseService } from '../../services/firebase.service';
 
 @Component({
   selector: 'app-notification-bell',
@@ -87,22 +88,27 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
   @ViewChild('op') overlayPanel!: OverlayPanel;
 
   unreadCount = signal<number>(0);
-  private refreshIntervalId?: number;
 
-  constructor(private notificationService: NotificationService) {}
+  constructor(
+    private notificationService: NotificationService,
+    private firebaseService: FirebaseService
+  ) {}
 
   async ngOnInit() {
     await this.loadUnreadCount();
 
-    // Refresh count every 30 seconds as backup
-    this.refreshIntervalId = setInterval(() => this.loadUnreadCount(), 30000) as unknown as number;
+    // Listen for real-time FCM messages instead of polling
+    this.firebaseService.onMessage((payload) => {
+      console.log('Notification received in foreground:', payload);
+
+      // Increment unread count when new notification arrives
+      this.notificationService.incrementUnreadCount();
+      this.unreadCount.set(this.notificationService.getUnreadCountSignal()());
+    });
   }
 
   ngOnDestroy() {
-    // Clear the interval to prevent memory leak
-    if (this.refreshIntervalId) {
-      clearInterval(this.refreshIntervalId);
-    }
+    // No cleanup needed - FCM listener is managed by FirebaseService
   }
 
   async loadUnreadCount() {

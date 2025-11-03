@@ -51,7 +51,17 @@ async def lifespan(app: FastAPI):
 
     # Initialize Firebase Admin SDK
     logger.info("initializing_firebase")
-    initialize_firebase()
+    firebase_app = initialize_firebase()
+
+    # Validate Firebase initialization
+    if firebase_app is None:
+        logger.warning(
+            "firebase_not_initialized",
+            message="Firebase Admin SDK not initialized. Push notifications will be disabled. "
+                   "Set FIREBASE_CREDENTIALS_PATH to enable notifications."
+        )
+    else:
+        logger.info("firebase_initialized", status="success")
 
     yield
 

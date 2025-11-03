@@ -110,27 +110,43 @@ class FCMService:
             for token in fcm_tokens
         ]
 
-        # Send batch (max 500 messages per batch)
-        try:
-            response = messaging.send_all(messages)
+        # Firebase limits batch sends to 500 messages - implement chunking
+        BATCH_SIZE = 500
+        total_success = 0
+        total_failure = 0
+        all_invalid_tokens = []
 
-            # Identify invalid tokens for cleanup
-            invalid_tokens = [
-                fcm_tokens[i]
-                for i, resp in enumerate(response.responses)
-                if not resp.success and self._is_invalid_token_error(resp.exception)
-            ]
+        try:
+            # Process messages in batches of 500
+            for i in range(0, len(messages), BATCH_SIZE):
+                batch = messages[i:i + BATCH_SIZE]
+                batch_tokens = fcm_tokens[i:i + BATCH_SIZE]
+
+                logger.debug(f"Sending batch {i // BATCH_SIZE + 1}: {len(batch)} messages")
+                response = messaging.send_all(batch)
+
+                # Accumulate results from this batch
+                total_success += response.success_count
+                total_failure += response.failure_count
+
+                # Identify invalid tokens in this batch for cleanup
+                batch_invalid_tokens = [
+                    batch_tokens[j]
+                    for j, resp in enumerate(response.responses)
+                    if not resp.success and self._is_invalid_token_error(resp.exception)
+                ]
+                all_invalid_tokens.extend(batch_invalid_tokens)
 
             logger.info(
-                f"FCM batch sent: {response.success_count} success, "
-                f"{response.failure_count} failure, "
-                f"{len(invalid_tokens)} invalid tokens"
+                f"FCM batches sent: {total_success} success, "
+                f"{total_failure} failure, "
+                f"{len(all_invalid_tokens)} invalid tokens across {(len(messages) + BATCH_SIZE - 1) // BATCH_SIZE} batches"
             )
 
             return {
-                "success_count": response.success_count,
-                "failure_count": response.failure_count,
-                "invalid_tokens": invalid_tokens,
+                "success_count": total_success,
+                "failure_count": total_failure,
+                "invalid_tokens": all_invalid_tokens,
             }
 
         except Exception as e:
@@ -148,7 +164,7 @@ class FCMService:
         body: str,
         notification_type: str = "info",
         action_url: Optional[str] = None,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
@@ -218,7 +234,7 @@ class FCMService:
         title: str,
         message: str,
         action_url: Optional[str],
-        metadata: Optional[Dict],
+        metadata: Optional[Dict[str, Any]],
         image_url: Optional[str],
     ) -> None:
         """
