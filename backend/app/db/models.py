@@ -162,7 +162,7 @@ class NotificationModel(Base):
     title = Column(String(255), nullable=False)
     message = Column(Text, nullable=False)
     action_url = Column(String(512), nullable=True)
-    metadata = Column(JSON, nullable=True)
+    notification_metadata = Column('metadata', JSON, nullable=True)  # Using 'notification_metadata' to avoid SQLAlchemy reserved name
     image_url = Column(String(512), nullable=True)
     read = Column(Boolean, default=False, nullable=False)
     sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
