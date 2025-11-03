@@ -167,12 +167,12 @@ class FCMService:
             Dictionary with send results including success/failure counts
         """
         # Get user's active FCM tokens
-        tokens = self.token_repo.get_active_tokens(user_id)
+        tokens = await self.token_repo.get_active_tokens(user_id)
 
         if not tokens:
             logger.info(f"No active FCM tokens for user {user_id}")
             # Still save to notification history even without tokens
-            self._save_notification_history(
+            await self._save_notification_history(
                 user_id=user_id,
                 notification_type=notification_type,
                 title=title,
@@ -195,11 +195,11 @@ class FCMService:
 
         # Deactivate invalid tokens
         if result["invalid_tokens"]:
-            self.token_repo.deactivate_tokens(result["invalid_tokens"])
+            await self.token_repo.deactivate_tokens(result["invalid_tokens"])
             logger.info(f"Deactivated {len(result['invalid_tokens'])} invalid tokens")
 
         # Save to notification history
-        self._save_notification_history(
+        await self._save_notification_history(
             user_id=user_id,
             notification_type=notification_type,
             title=title,
@@ -211,7 +211,7 @@ class FCMService:
 
         return result
 
-    def _save_notification_history(
+    async def _save_notification_history(
         self,
         user_id: str,
         notification_type: str,
@@ -234,7 +234,7 @@ class FCMService:
             image_url: Optional image URL
         """
         try:
-            self.notification_repo.create(
+            await self.notification_repo.create(
                 user_id=user_id,
                 type=notification_type,
                 title=title,

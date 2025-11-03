@@ -23,8 +23,8 @@ def upgrade() -> None:
     # Create user_fcm_tokens table
     op.create_table(
         'user_fcm_tokens',
-        sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('user_id', sa.String(36), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('id', UUID(as_uuid=True), primary_key=True),
+        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('fcm_token', sa.Text, unique=True, nullable=False),
         sa.Column('device_type', sa.String(20), nullable=False),
         sa.Column('device_name', sa.String(255), nullable=True),
@@ -53,8 +53,8 @@ def upgrade() -> None:
     # Create notifications table
     op.create_table(
         'notifications',
-        sa.Column('id', sa.String(36), primary_key=True),
-        sa.Column('user_id', sa.String(36), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('id', UUID(as_uuid=True), primary_key=True),
+        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('type', sa.String(20), nullable=False),
         sa.Column('title', sa.String(255), nullable=False),
         sa.Column('message', sa.Text, nullable=False),

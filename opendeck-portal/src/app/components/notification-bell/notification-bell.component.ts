@@ -3,7 +3,7 @@
  * Displays notification icon with unread count badge
  */
 
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeModule } from 'primeng/badge';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
@@ -83,10 +83,11 @@ import { NotificationPanelComponent } from '../notification-panel/notification-p
     }
   `]
 })
-export class NotificationBellComponent implements OnInit {
+export class NotificationBellComponent implements OnInit, OnDestroy {
   @ViewChild('op') overlayPanel!: OverlayPanel;
 
   unreadCount = signal<number>(0);
+  private refreshIntervalId?: number;
 
   constructor(private notificationService: NotificationService) {}
 
@@ -94,7 +95,14 @@ export class NotificationBellComponent implements OnInit {
     await this.loadUnreadCount();
 
     // Refresh count every 30 seconds as backup
-    setInterval(() => this.loadUnreadCount(), 30000);
+    this.refreshIntervalId = setInterval(() => this.loadUnreadCount(), 30000) as unknown as number;
+  }
+
+  ngOnDestroy() {
+    // Clear the interval to prevent memory leak
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+    }
   }
 
   async loadUnreadCount() {

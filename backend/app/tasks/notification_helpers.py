@@ -89,10 +89,13 @@ def notify_user_sync(
             )
         )
 
+        # Commit the transaction to persist notification history
+        db.commit()
         logger.info(f"Notification sent to user {user_id}: {title}")
 
     except Exception as e:
         logger.error(f"Failed to send notification to user {user_id}: {e}", exc_info=True)
+        db.rollback()
         raise
 
     finally:
