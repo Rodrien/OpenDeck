@@ -15,9 +15,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api import health, auth, decks, cards, topics, documents
+from app.api import health, auth, decks, cards, topics, documents, fcm_tokens, notifications
 from app.db.base import engine
 from app.db.models import Base
+from app.core.firebase import initialize_firebase
 
 # Configure structured logging
 structlog.configure(
@@ -47,6 +48,20 @@ async def lifespan(app: FastAPI):
     if settings.is_development:
         logger.info("creating_database_tables")
         Base.metadata.create_all(bind=engine)
+
+    # Initialize Firebase Admin SDK
+    logger.info("initializing_firebase")
+    firebase_app = initialize_firebase()
+
+    # Validate Firebase initialization
+    if firebase_app is None:
+        logger.warning(
+            "firebase_not_initialized",
+            message="Firebase Admin SDK not initialized. Push notifications will be disabled. "
+                   "Set FIREBASE_CREDENTIALS_PATH to enable notifications."
+        )
+    else:
+        logger.info("firebase_initialized", status="success")
 
     yield
 
@@ -85,6 +100,8 @@ app.include_router(decks.router, prefix=settings.api_v1_prefix)
 app.include_router(cards.router, prefix=settings.api_v1_prefix)
 app.include_router(topics.router, prefix=settings.api_v1_prefix)
 app.include_router(documents.router, prefix=settings.api_v1_prefix)
+app.include_router(fcm_tokens.router, prefix=settings.api_v1_prefix)
+app.include_router(notifications.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")

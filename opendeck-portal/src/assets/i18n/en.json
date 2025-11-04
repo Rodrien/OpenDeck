@@ -192,5 +192,26 @@
       "currentColor": "Current color",
       "presetColors": "Quick color presets"
     }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "noNotifications": "No new notifications",
+    "viewAll": "View all notifications",
+    "permissionDenied": "Please enable notifications in your browser settings",
+    "permissionRequest": "Enable notifications to receive real-time updates",
+    "enableNotifications": "Enable Notifications",
+    "types": {
+      "info": "Info",
+      "success": "Success",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "time": {
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
   }
 }

@@ -105,6 +105,9 @@ class Settings(BaseSettings):
     # AWS SQS (alternative to Redis for production)
     sqs_queue_url: str | None = None
 
+    # Firebase Cloud Messaging
+    firebase_credentials_path: str | None = None  # Path to Firebase service account JSON file
+
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def parse_origins(cls, v: str | list[str]) -> str:

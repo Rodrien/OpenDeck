@@ -12,9 +12,27 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.core.models import User, Deck, Card, Document, Topic
-from app.core.interfaces import UserRepository, DeckRepository, CardRepository, DocumentRepository, TopicRepository
-from app.db.models import UserModel, DeckModel, CardModel, DocumentModel, TopicModel, deck_topics, card_topics
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification
+from app.core.interfaces import (
+    UserRepository,
+    DeckRepository,
+    CardRepository,
+    DocumentRepository,
+    TopicRepository,
+    UserFCMTokenRepository,
+    NotificationRepository,
+)
+from app.db.models import (
+    UserModel,
+    DeckModel,
+    CardModel,
+    DocumentModel,
+    TopicModel,
+    UserFCMTokenModel,
+    NotificationModel,
+    deck_topics,
+    card_topics,
+)
 
 
 def _generate_id() -> str:
@@ -598,4 +616,246 @@ class PostgresTopicRepo:
             description=model.description,
             created_at=model.created_at,
             updated_at=model.updated_at,
+        )
+
+
+class PostgresUserFCMTokenRepo:
+    """PostgreSQL implementation of UserFCMTokenRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, token_id: str) -> Optional[UserFCMToken]:
+        """Get FCM token by ID."""
+        model = self.session.query(UserFCMTokenModel).filter_by(id=token_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_token(self, fcm_token: str) -> Optional[UserFCMToken]:
+        """Get FCM token by token string."""
+        model = self.session.query(UserFCMTokenModel).filter_by(fcm_token=fcm_token).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_user(self, user_id: str) -> List[UserFCMToken]:
+        """Get all FCM tokens for a user."""
+        models = (
+            self.session.query(UserFCMTokenModel)
+            .filter_by(user_id=user_id)
+            .order_by(UserFCMTokenModel.created_at.desc())
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def get_active_tokens(self, user_id: str) -> List[UserFCMToken]:
+        """Get all active FCM tokens for a user."""
+        models = (
+            self.session.query(UserFCMTokenModel)
+            .filter_by(user_id=user_id, is_active=True)
+            .order_by(UserFCMTokenModel.last_used_at.desc())
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def create(self, token: UserFCMToken) -> UserFCMToken:
+        """Create a new FCM token."""
+        if not token.id:
+            token.id = _generate_id()
+
+        # Check if token already exists
+        existing = self.get_by_token(token.fcm_token)
+        if existing:
+            # Update existing token: reactivate and update last_used_at
+            token.id = existing.id
+            return self.update(token)
+
+        model = UserFCMTokenModel(
+            id=token.id,
+            user_id=token.user_id,
+            fcm_token=token.fcm_token,
+            device_type=token.device_type,
+            device_name=token.device_name,
+            is_active=token.is_active,
+            created_at=token.created_at,
+            updated_at=token.updated_at,
+            last_used_at=token.last_used_at,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update(self, token: UserFCMToken) -> UserFCMToken:
+        """Update existing FCM token."""
+        token.updated_at = datetime.utcnow()
+        model = self.session.query(UserFCMTokenModel).filter_by(id=token.id).first()
+        if not model:
+            raise ValueError(f"FCM token {token.id} not found")
+
+        model.device_type = token.device_type
+        model.device_name = token.device_name
+        model.is_active = token.is_active
+        model.updated_at = token.updated_at
+        model.last_used_at = token.last_used_at
+
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def deactivate_token(self, token_id: str) -> None:
+        """Deactivate a single FCM token."""
+        model = self.session.query(UserFCMTokenModel).filter_by(id=token_id).first()
+        if model:
+            model.is_active = False
+            model.updated_at = datetime.utcnow()
+            self.session.commit()
+
+    def deactivate_tokens(self, fcm_tokens: List[str]) -> None:
+        """Deactivate multiple FCM tokens by token string."""
+        if not fcm_tokens:
+            return
+
+        self.session.query(UserFCMTokenModel).filter(
+            UserFCMTokenModel.fcm_token.in_(fcm_tokens)
+        ).update(
+            {"is_active": False, "updated_at": datetime.utcnow()},
+            synchronize_session=False,
+        )
+        self.session.commit()
+
+    def delete(self, token_id: str) -> None:
+        """Delete FCM token by ID."""
+        model = self.session.query(UserFCMTokenModel).filter_by(id=token_id).first()
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    @staticmethod
+    def _to_domain(model: UserFCMTokenModel) -> UserFCMToken:
+        """Convert SQLAlchemy model to domain model."""
+        return UserFCMToken(
+            id=model.id,
+            user_id=model.user_id,
+            fcm_token=model.fcm_token,
+            device_type=model.device_type,
+            device_name=model.device_name,
+            is_active=model.is_active,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            last_used_at=model.last_used_at,
+        )
+
+
+class PostgresNotificationRepo:
+    """PostgreSQL implementation of NotificationRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, notification_id: str) -> Optional[Notification]:
+        """Get notification by ID."""
+        model = self.session.query(NotificationModel).filter_by(id=notification_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_user(
+        self,
+        user_id: str,
+        unread_only: bool = False,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[Notification]:
+        """Get notifications for a user."""
+        query = self.session.query(NotificationModel).filter_by(user_id=user_id)
+
+        if unread_only:
+            query = query.filter_by(read=False)
+
+        models = (
+            query.order_by(NotificationModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def create(
+        self,
+        user_id: str,
+        type: str,
+        title: str,
+        message: str,
+        action_url: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        image_url: Optional[str] = None,
+        fcm_message_id: Optional[str] = None,
+    ) -> Notification:
+        """Create a new notification."""
+        notification_id = _generate_id()
+        now = datetime.utcnow()
+
+        model = NotificationModel(
+            id=notification_id,
+            user_id=user_id,
+            type=type,
+            title=title,
+            message=message,
+            action_url=action_url,
+            notification_metadata=metadata,
+            image_url=image_url,
+            fcm_message_id=fcm_message_id,
+            read=False,
+            sent_at=now,
+            created_at=now,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def mark_as_read(self, notification_id: str) -> None:
+        """Mark a notification as read."""
+        model = self.session.query(NotificationModel).filter_by(id=notification_id).first()
+        if model and not model.read:
+            model.read = True
+            model.read_at = datetime.utcnow()
+            self.session.commit()
+
+    def mark_all_as_read(self, user_id: str) -> None:
+        """Mark all notifications as read for a user."""
+        now = datetime.utcnow()
+        self.session.query(NotificationModel).filter_by(user_id=user_id, read=False).update(
+            {"read": True, "read_at": now}, synchronize_session=False
+        )
+        self.session.commit()
+
+    def count_unread(self, user_id: str) -> int:
+        """Count unread notifications for a user."""
+        return (
+            self.session.query(func.count(NotificationModel.id))
+            .filter_by(user_id=user_id, read=False)
+            .scalar()
+        )
+
+    def delete(self, notification_id: str) -> None:
+        """Delete a notification."""
+        model = self.session.query(NotificationModel).filter_by(id=notification_id).first()
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    @staticmethod
+    def _to_domain(model: NotificationModel) -> Notification:
+        """Convert SQLAlchemy model to domain model."""
+        return Notification(
+            id=model.id,
+            user_id=model.user_id,
+            type=model.type,
+            title=model.title,
+            message=model.message,
+            action_url=model.action_url,
+            metadata=model.notification_metadata,
+            image_url=model.image_url,
+            read=model.read,
+            sent_at=model.sent_at,
+            read_at=model.read_at,
+            fcm_message_id=model.fcm_message_id,
+            created_at=model.created_at,
         )

@@ -4,6 +4,20 @@ opendeck-frontend/.angular
 opendeck-frontend/node_modules
 opendeck-frontend/dist
 
+# OpenDeck Portal (Angular)
+opendeck-portal/.angular
+opendeck-portal/node_modules
+opendeck-portal/dist
+opendeck-portal/.angular/cache
+
+# Generated service worker (auto-generated at build time)
+opendeck-portal/public/firebase-messaging-sw.js
+
+# Firebase credentials (NEVER commit these!)
+**/firebase-service-account*.json
+firebase-service-account.json
+**/firebase-adminsdk-*.json
+
 # Backend
 backend/__pycache__/
 backend/.pytest_cache/

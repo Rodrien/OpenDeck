@@ -3,11 +3,14 @@
     "version": "1.0.0",
     "scripts": {
         "ng": "ng",
+        "prebuild": "node scripts/generate-sw.js production",
+        "prestart": "node scripts/generate-sw.js development",
         "start": "ng serve",
         "build": "ng build",
         "watch": "ng build --watch --configuration development",
         "format": "prettier --write \"**/*.{js,mjs,ts,mts,d.ts,html}\" --cache",
-        "test": "ng test"
+        "test": "ng test",
+        "generate-sw": "node scripts/generate-sw.js"
     },
     "private": true,
     "dependencies": {
@@ -24,6 +27,7 @@
         "@primeuix/themes": "^1.2.1",
         "@tailwindcss/postcss": "^4.1.11",
         "chart.js": "4.4.2",
+        "firebase": "^10.14.1",
         "primeclt": "^0.1.5",
         "primeicons": "^7.0.0",
         "primeng": "^20",

@@ -192,5 +192,26 @@
       "currentColor": "Color actual",
       "presetColors": "Colores predefinidos rápidos"
     }
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "noNotifications": "No hay notificaciones nuevas",
+    "viewAll": "Ver todas las notificaciones",
+    "permissionDenied": "Por favor habilita las notificaciones en la configuración de tu navegador",
+    "permissionRequest": "Habilita las notificaciones para recibir actualizaciones en tiempo real",
+    "enableNotifications": "Habilitar Notificaciones",
+    "types": {
+      "info": "Información",
+      "success": "Éxito",
+      "warning": "Advertencia",
+      "error": "Error"
+    },
+    "time": {
+      "justNow": "Ahora mismo",
+      "minutesAgo": "Hace {{count}}m",
+      "hoursAgo": "Hace {{count}}h",
+      "daysAgo": "Hace {{count}}d"
+    }
   }
 }
