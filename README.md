@@ -274,6 +274,99 @@ OpenDeck uses JWT-based authentication:
 - **Automatic refresh**: Tokens auto-refresh when expired
 - **Secure storage**: localStorage with HTTP-only cookie option (planned)
 
+## 🔄 Resetting Docker Containers
+
+When you make changes to the code and need to refresh the containers with the latest version:
+
+### Reset All Containers (Full Stack)
+
+```bash
+# From project root
+# Stop and remove all containers with volumes
+docker-compose down -v
+
+# Rebuild and restart all services
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+```
+
+### Reset Backend Only
+
+```bash
+# From backend directory
+cd backend
+
+# Stop and restart backend container
+docker-compose restart app
+
+# Or rebuild if dependencies changed
+docker-compose up -d --build app
+
+# View backend logs
+docker-compose logs -f app
+```
+
+### Reset Frontend Only
+
+```bash
+# From project root
+# Stop and restart frontend container
+docker-compose restart frontend
+
+# Or rebuild if dependencies changed
+docker-compose up -d --build frontend
+
+# View frontend logs
+docker-compose logs -f frontend
+```
+
+### Quick Restart (No Rebuild)
+
+```bash
+# From project root
+# Restart specific service
+docker-compose restart backend
+docker-compose restart frontend
+docker-compose restart celery_worker
+
+# Restart all services
+docker-compose restart
+```
+
+### Common Scenarios
+
+**Code changes in backend Python files:**
+```bash
+docker-compose restart backend
+```
+
+**Code changes in frontend TypeScript/HTML/SCSS:**
+```bash
+docker-compose restart frontend
+```
+
+**Dependency changes (requirements.txt or package.json):**
+```bash
+docker-compose up -d --build
+```
+
+**Database schema changes:**
+```bash
+cd backend
+docker-compose exec app alembic upgrade head
+```
+
+**Complete fresh start:**
+```bash
+docker-compose down -v
+docker-compose up -d --build
+```
+
 ## 📖 API Documentation
 
 When the backend is running, visit:
@@ -437,30 +530,75 @@ We welcome contributions! Please follow these guidelines:
 # Check Docker is running
 docker --version
 
-# Reset database
-cd backend
+# Reset database and containers
 docker-compose down -v
-docker-compose up -d
+docker-compose up -d --build
+
+# View logs for errors
+docker-compose logs -f backend
 ```
 
-### Frontend won't start
+### Frontend won't start or not reflecting changes
 ```bash
-# Clear and reinstall
+# Option 1: Restart container (if running in Docker)
+docker-compose restart frontend
+
+# Option 2: Rebuild container (if dependencies changed)
+docker-compose up -d --build frontend
+
+# Option 3: Local development (not in Docker)
 cd opendeck-portal
 rm -rf node_modules package-lock.json
 npm install
 npm start
 ```
 
+### Changes not reflecting after code update
+```bash
+# Full reset (recommended)
+docker-compose down -v
+docker-compose up -d --build
+
+# Or quick restart (if no dependency changes)
+docker-compose restart backend frontend
+```
+
+### Database migration errors
+```bash
+# Apply migrations manually
+cd backend
+docker-compose exec backend alembic upgrade head
+
+# If that fails, reset database
+docker-compose down -v
+docker-compose up -d
+```
+
 ### API connection errors
 - Ensure backend is running on port 8000
 - Check CORS settings in `backend/app/config.py`
 - Verify `environment.apiBaseUrl` in frontend
+- Check backend logs: `docker-compose logs -f backend`
 
 ### Translation not showing
 - Check translation files exist: `opendeck-portal/src/assets/i18n/`
 - Verify language selector in topbar
 - Check browser console for errors
+- Restart frontend: `docker-compose restart frontend`
+
+### Port already in use
+```bash
+# Find and kill process using port 8000 (backend)
+lsof -ti:8000 | xargs kill -9
+
+# Find and kill process using port 80 (frontend)
+lsof -ti:80 | xargs kill -9
+
+# Then restart containers
+docker-compose up -d
+```
+
+**See the [Resetting Docker Containers](#-resetting-docker-containers) section for more refresh commands.**
 
 ## 📄 License
 

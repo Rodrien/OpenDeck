@@ -138,8 +138,7 @@ class DocumentProcessorService:
                 flashcards = self.ai_provider.generate_flashcards(
                     document_text=extraction_result.text,
                     document_name=document.filename,
-                    page_data=extraction_result.pages,
-                    max_cards=20,
+                    page_data=extraction_result.pages
                 )
 
                 # Create flashcard records

@@ -49,7 +49,8 @@ class OllamaProvider:
         self.timeout = settings.ollama_timeout_seconds
         # Context window varies by model; using conservative default
         # llama2: 4096, mistral: 8192, llama3: 8192
-        self.max_context_tokens = 4096
+        # For deepseek-r1:8b, use smaller context to speed up processing
+        self.max_context_tokens = 2048  # Reduced from 4096 for faster processing
 
         logger.info(
             "ollama_provider_initialized",
@@ -108,7 +109,7 @@ class OllamaProvider:
         document_text: str,
         document_name: str,
         page_data: List[tuple[int, str]],
-        max_cards: int = 20,
+        max_cards: int = 50,
     ) -> List[FlashcardData]:
         """
         Generate flashcards using Ollama model.
@@ -134,7 +135,20 @@ class OllamaProvider:
             pages=len(page_data),
             max_cards=max_cards,
             model=self.model,
+            text_length=len(document_text),
         )
+
+        # Check if document has enough content
+        if len(document_text.strip()) < 100:
+            logger.warning(
+                "document_too_short",
+                document_name=document_name,
+                text_length=len(document_text),
+                text_preview=document_text[:200],
+            )
+            raise AIValidationError(
+                f"Document too short ({len(document_text)} chars). Minimum 100 characters required for flashcard generation."
+            )
 
         try:
             # Check if document needs chunking
@@ -261,8 +275,8 @@ class OllamaProvider:
         chunks = self._chunk_document(document_text, page_data)
         all_flashcards = []
 
-        # Distribute cards across chunks
-        cards_per_chunk = max(1, max_cards // len(chunks))
+        # Distribute cards across chunks - limit to 3 cards per chunk for speed
+        cards_per_chunk = min(3, max(1, max_cards // len(chunks)))
 
         for i, (chunk_text, chunk_pages) in enumerate(chunks, 1):
             logger.info(
@@ -328,9 +342,14 @@ class OllamaProvider:
         payload = {
             "model": self.model,
             "prompt": full_prompt,
-            "stream": False,
+            "stream": False,  # Streaming not implemented yet, but prevents timeout
             "format": "json",
-            "options": {"temperature": 0.7, "num_predict": 4000},
+            "options": {
+                "temperature": 0.7,
+                "num_predict": 2000,  # Reduced from 4000 for faster generation
+                "top_k": 40,
+                "top_p": 0.9,
+            },
         }
 
         try:
@@ -345,6 +364,12 @@ class OllamaProvider:
             if not response_text:
                 raise AIProviderError("Empty response from Ollama")
 
+            logger.info(
+                "ollama_raw_response",
+                response_length=len(response_text),
+                response_preview=response_text[:200] if len(response_text) > 200 else response_text,
+            )
+
             # Parse and validate flashcards
             flashcards = parse_flashcard_response(response_text, document_name)
 
@@ -353,6 +378,14 @@ class OllamaProvider:
         except requests.exceptions.RequestException as e:
             logger.error("ollama_request_failed", error=str(e))
             raise AIProviderError(f"Ollama API request failed: {str(e)}")
+        except AIValidationError as e:
+            # Log the raw response when validation fails
+            logger.error(
+                "ollama_validation_failed",
+                error=str(e),
+                response_text=response_text[:1000] if 'response_text' in locals() else "N/A"
+            )
+            raise
         except Exception as e:
             logger.error("ollama_generation_error", error=str(e))
             raise

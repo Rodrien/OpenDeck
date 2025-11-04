@@ -3,3 +3,46 @@
 @use './layout/layout.scss';
 @use 'primeicons/primeicons.css';
 @use './demo/demo.scss';
+
+/* ==========================================
+   GLOBAL PRIMENG DROPDOWN OVERLAY FIXES
+   ========================================== */
+
+// Ensure PrimeNG Select overlays are always visible and properly styled
+.p-select-overlay {
+  z-index: 9999 !important; // High z-index to appear above all content
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  animation: fadeInDropdown 0.2s ease-out;
+
+  // Dark mode enhancements
+  &:has(.dark) {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5) !important;
+  }
+
+  .p-select-items-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .p-select-item {
+    transition: all 0.15s ease;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateX(2px);
+    }
+  }
+}
+
+// Animation for dropdown appearance
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

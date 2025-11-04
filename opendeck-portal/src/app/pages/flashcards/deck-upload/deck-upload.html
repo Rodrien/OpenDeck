@@ -78,6 +78,8 @@
                   optionValue="value"
                   [placeholder]="'deck.upload.categoryPlaceholder' | translate"
                   styleClass="w-full"
+                  [appendTo]="'body'"
+                  [showClear]="true"
                 >
                   <ng-template let-option pTemplate="item">
                     <div class="option-item">
@@ -108,6 +110,8 @@
                   optionValue="value"
                   [placeholder]="'deck.upload.difficultyPlaceholder' | translate"
                   styleClass="w-full"
+                  [appendTo]="'body'"
+                  [showClear]="true"
                 >
                   <ng-template let-option pTemplate="item">
                     <div class="option-item">

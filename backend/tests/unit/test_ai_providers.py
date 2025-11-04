@@ -286,7 +286,7 @@ class TestOllamaProvider:
             document_text=SAMPLE_DOCUMENT_TEXT,
             document_name=SAMPLE_DOCUMENT_NAME,
             page_data=SAMPLE_PAGE_DATA,
-            max_cards=5
+            max_cards=50
         )
 
         assert len(flashcards) == 1

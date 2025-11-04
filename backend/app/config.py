@@ -76,7 +76,7 @@ class Settings(BaseSettings):
     # Ollama Configuration (local models)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama2"
-    ollama_timeout_seconds: int = 120
+    ollama_timeout_seconds: int = 300  # 5 minutes for large documents
 
     # Common AI Settings
     ai_max_retries: int = 3
