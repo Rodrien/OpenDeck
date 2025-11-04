@@ -63,11 +63,22 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
 
     # AI Services
-    ai_provider: Literal["openai", "anthropic"] = "openai"
+    ai_provider: Literal["openai", "anthropic", "ollama"] = "openai"
+
+    # OpenAI Configuration
     openai_api_key: str | None = None
     openai_model: str = "gpt-4"
+
+    # Anthropic Configuration
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-3-sonnet-20240229"
+
+    # Ollama Configuration (local models)
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama2"
+    ollama_timeout_seconds: int = 120
+
+    # Common AI Settings
     ai_max_retries: int = 3
     ai_timeout_seconds: int = 60
 

@@ -15,7 +15,8 @@ import structlog
 from app.core.models import Document, DocumentStatus, Card
 from app.schemas.flashcard import ProcessingResult
 from app.services.document_extractor import DocumentExtractor
-from app.services.ai_service import AIService
+from app.services.ai import get_ai_provider, AIProvider
+from app.services.ai.base_provider import FlashcardData
 from app.db.postgres_repo import PostgresDocumentRepo, PostgresCardRepo, PostgresDeckRepo
 from app.services.storage_service import StorageService
 from sqlalchemy.orm import Session
@@ -34,7 +35,7 @@ class DocumentProcessorService:
         self,
         session: Session,
         storage: StorageService,
-        ai_service: AIService | None = None,
+        ai_provider: AIProvider | None = None,
         extractor: DocumentExtractor | None = None,
     ):
         """
@@ -43,12 +44,12 @@ class DocumentProcessorService:
         Args:
             session: Database session
             storage: Storage service for file access
-            ai_service: AI service for flashcard generation
+            ai_provider: AI provider for flashcard generation (uses factory if None)
             extractor: Document text extractor
         """
         self.session = session
         self.storage = storage
-        self.ai_service = ai_service or AIService()
+        self.ai_provider = ai_provider or get_ai_provider()
         self.extractor = extractor or DocumentExtractor()
         self.document_repo = PostgresDocumentRepo(session)
         self.card_repo = PostgresCardRepo(session)
@@ -133,8 +134,8 @@ class DocumentProcessorService:
                 # Extract text from document
                 extraction_result = await self._extract_document_text(document)
 
-                # Generate flashcards via AI
-                flashcards = self.ai_service.generate_flashcards(
+                # Generate flashcards via AI provider
+                flashcards = self.ai_provider.generate_flashcards(
                     document_text=extraction_result.text,
                     document_name=document.filename,
                     page_data=extraction_result.pages,
@@ -279,7 +280,7 @@ class DocumentProcessorService:
     def _create_flashcard_records(
         self,
         deck_id: str,
-        flashcards: List,
+        flashcards: List[FlashcardData],
     ) -> int:
         """
         Create flashcard database records from FlashcardData objects.
