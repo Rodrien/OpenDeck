@@ -183,3 +183,72 @@ class Topic:
             raise ValueError("Topic name cannot exceed 100 characters")
         if self.description and len(self.description) > 500:
             raise ValueError("Topic description cannot exceed 500 characters")
+
+
+@dataclass
+class UserFCMToken:
+    """
+    User FCM Token domain model.
+
+    Represents a Firebase Cloud Messaging token associated with a user's device.
+    Tokens are used to send push notifications to specific devices.
+    """
+
+    id: str
+    user_id: str
+    fcm_token: str
+    device_type: str  # 'web', 'ios', 'android'
+    device_name: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
+    last_used_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate FCM token data after initialization."""
+        if not self.user_id:
+            raise ValueError("Token must belong to a user")
+        if not self.fcm_token:
+            raise ValueError("FCM token cannot be empty")
+        if self.device_type not in ('web', 'ios', 'android'):
+            raise ValueError(f"Invalid device_type: {self.device_type}. Must be 'web', 'ios', or 'android'")
+
+
+@dataclass
+class Notification:
+    """
+    Notification domain model.
+
+    Represents a notification sent to a user via Firebase Cloud Messaging.
+    Notifications can be triggered by API actions or background Celery tasks.
+    """
+
+    id: str
+    user_id: str
+    type: str  # 'info', 'success', 'warning', 'error'
+    title: str
+    message: str
+    action_url: Optional[str] = None
+    metadata: Optional[dict] = None
+    image_url: Optional[str] = None
+    read: bool = False
+    sent_at: datetime = field(default_factory=datetime.utcnow)
+    read_at: Optional[datetime] = None
+    fcm_message_id: Optional[str] = None
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate notification data after initialization."""
+        if not self.user_id:
+            raise ValueError("Notification must belong to a user")
+        if not self.title:
+            raise ValueError("Notification title cannot be empty")
+        if not self.message:
+            raise ValueError("Notification message cannot be empty")
+        if self.type not in ('info', 'success', 'warning', 'error'):
+            raise ValueError(f"Invalid notification type: {self.type}. Must be 'info', 'success', 'warning', or 'error'")
+
+    def mark_as_read(self) -> None:
+        """Mark notification as read."""
+        self.read = True
+        self.read_at = datetime.utcnow()

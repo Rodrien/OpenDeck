@@ -4,6 +4,7 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { provideRouter, withEnabledBlockingInitialNavigation, withInMemoryScrolling } from '@angular/router';
 import Aura from '@primeuix/themes/aura';
 import { providePrimeNG } from 'primeng/config';
+import { MessageService } from 'primeng/api';
 import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
 import { appRoutes } from './app.routes';
 import { authInterceptor, errorInterceptor } from './app/interceptors';
@@ -31,6 +32,7 @@ export const appConfig: ApplicationConfig = {
         ),
         provideAnimationsAsync(),
         providePrimeNG({ theme: { preset: Aura, options: { darkModeSelector: '.app-dark' } } }),
+        MessageService,
         importProvidersFrom(
             TranslateModule.forRoot({
                 defaultLanguage: 'en',

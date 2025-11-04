@@ -19,6 +19,95 @@ OpenDeck automatically reads and analyzes documents from your university class f
 - **Source Attribution**: All flashcards include precise references to source documents for verification
 - **Time-Saving**: Spend less time creating study materials and more time actually studying
 
+## ⚙️ Configuration & Environment Setup
+
+### Firebase Push Notifications
+
+OpenDeck supports real-time push notifications via Firebase Cloud Messaging (FCM). This feature is optional but recommended for better user experience.
+
+#### Backend Setup
+
+1. **Create Firebase Project**
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project or use an existing one
+   - Navigate to Project Settings → Service Accounts
+   - Click "Generate new private key" to download credentials JSON
+
+2. **Configure Backend**
+   ```bash
+   cd backend
+
+   # Place your Firebase credentials file
+   cp /path/to/firebase-service-account.json ./firebase-service-account.json
+
+   # Add to .env file
+   echo "FIREBASE_CREDENTIALS_PATH=./firebase-service-account.json" >> .env
+   ```
+
+3. **Verify Setup**
+   ```bash
+   # Backend will log Firebase initialization on startup
+   docker-compose up -d
+   docker-compose logs -f app | grep firebase
+   ```
+
+#### Frontend Setup
+
+1. **Get Firebase Web Configuration**
+   - In Firebase Console → Project Settings → General
+   - Scroll to "Your apps" section
+   - Select or add a Web app
+   - Copy the Firebase configuration object
+
+2. **Get VAPID Key**
+   - In Firebase Console → Project Settings → Cloud Messaging
+   - Scroll to "Web Push certificates"
+   - Click "Generate key pair" if none exists
+   - Copy the VAPID key
+
+3. **Configure Frontend**
+   ```typescript
+   // src/environments/environment.ts
+   export const environment = {
+     production: true,
+     apiBaseUrl: 'http://localhost:8000/api/v1',
+     firebase: {
+       apiKey: "AIzaSy...",
+       authDomain: "opendeck-xxxxx.firebaseapp.com",
+       projectId: "opendeck-xxxxx",
+       storageBucket: "opendeck-xxxxx.appspot.com",
+       messagingSenderId: "1234567890",
+       appId: "1:1234567890:web:abc...",
+       vapidKey: "BNx..."  // From Cloud Messaging > Web Push certificates
+     }
+   };
+
+   // Repeat for environment.development.ts
+   ```
+
+4. **Generate Service Worker**
+   ```bash
+   cd opendeck-portal
+   npm run generate-sw  # Auto-runs before start/build
+   ```
+
+#### Testing Notifications
+
+1. Register/login to the application
+2. Allow notifications when prompted by browser
+3. Backend will automatically send test notifications for:
+   - Deck creation
+   - Document processing completion
+   - Study milestones
+
+#### Disabling Notifications
+
+To run without Firebase notifications:
+- **Backend**: Don't set `FIREBASE_CREDENTIALS_PATH` in `.env`
+- **Frontend**: App will gracefully degrade to database-only notifications
+
+**Note**: Notifications will still be saved to the database and visible in the notification panel even without Firebase.
+
 ## 🏗️ Architecture
 
 OpenDeck consists of two main components:
