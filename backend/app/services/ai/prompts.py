@@ -6,6 +6,9 @@ These prompts are shared across all AI providers to ensure consistent output.
 """
 
 from typing import List
+import structlog
+
+logger = structlog.get_logger()
 
 
 def build_system_prompt(document_name: str, max_cards: int) -> str:
@@ -75,8 +78,16 @@ def build_user_prompt(
     """
     # Truncate if document is very long (to stay within token limits)
     max_chars = 15000
-    if len(document_text) > max_chars:
+    original_length = len(document_text)
+    if original_length > max_chars:
         document_text = document_text[:max_chars] + "\n\n[Document truncated...]"
+        logger.warning(
+            "document_truncated",
+            original_chars=original_length,
+            truncated_to=max_chars,
+            chars_removed=original_length - max_chars,
+            message=f"Document truncated from {original_length} to {max_chars} characters to fit within token limits"
+        )
 
     # Include page information for better source attribution
     page_info = "\n".join(

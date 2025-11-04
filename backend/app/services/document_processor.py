@@ -16,6 +16,7 @@ from app.core.models import Document, DocumentStatus, Card
 from app.schemas.flashcard import ProcessingResult
 from app.services.document_extractor import DocumentExtractor
 from app.services.ai import get_ai_provider, AIProvider
+from app.services.ai.base_provider import FlashcardData
 from app.db.postgres_repo import PostgresDocumentRepo, PostgresCardRepo, PostgresDeckRepo
 from app.services.storage_service import StorageService
 from sqlalchemy.orm import Session
@@ -279,7 +280,7 @@ class DocumentProcessorService:
     def _create_flashcard_records(
         self,
         deck_id: str,
-        flashcards: List,
+        flashcards: List[FlashcardData],
     ) -> int:
         """
         Create flashcard database records from FlashcardData objects.
