@@ -6,7 +6,7 @@
 import { Component, OnInit, OnDestroy, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BadgeModule } from 'primeng/badge';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover } from 'primeng/popover';
 import { NotificationService } from '../../services/notification.service';
 import { NotificationPanelComponent } from '../notification-panel/notification-panel.component';
 import { FirebaseService } from '../../services/firebase.service';
@@ -17,7 +17,7 @@ import { FirebaseService } from '../../services/firebase.service';
   imports: [
     CommonModule,
     BadgeModule,
-    OverlayPanelModule,
+    Popover,
     NotificationPanelComponent
   ],
   template: `
@@ -36,12 +36,12 @@ import { FirebaseService } from '../../services/firebase.service';
       </span>
     </div>
 
-    <p-overlayPanel #op [style]="{ width: '400px', maxWidth: '90vw' }">
+    <p-popover #op [style]="{ width: '400px', maxWidth: '90vw' }">
       <app-notification-panel
         (notificationRead)="onNotificationRead()"
         (closePanel)="op.hide()">
       </app-notification-panel>
-    </p-overlayPanel>
+    </p-popover>
   `,
   styles: [`
     .notification-bell {
@@ -85,7 +85,7 @@ import { FirebaseService } from '../../services/firebase.service';
   `]
 })
 export class NotificationBellComponent implements OnInit, OnDestroy {
-  @ViewChild('op') overlayPanel!: OverlayPanel;
+  @ViewChild('op') popover!: Popover;
 
   unreadCount = signal<number>(0);
 
@@ -117,7 +117,7 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
   }
 
   togglePanel(event: Event) {
-    this.overlayPanel.toggle(event);
+    this.popover.toggle(event);
   }
 
   onNotificationRead() {
