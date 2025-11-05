@@ -1,0 +1,172 @@
+<div class="study-session-container">
+  <p-toast />
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="loading-container">
+    <p-card>
+      <div class="loading-content">
+        <i class="pi pi-spin pi-spinner" style="font-size: 3rem"></i>
+        <h2>{{ 'common.loading' | translate }}</h2>
+        <p>{{ 'study.preparingSession' | translate }}</p>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error() && !isLoading()" class="error-container">
+    <p-card>
+      <div class="error-content">
+        <i class="pi pi-exclamation-circle" style="font-size: 3rem; color: var(--red-500)"></i>
+        <h2>{{ 'common.error' | translate }}</h2>
+        <p>{{ error() }}</p>
+        <p-button
+          [label]="'common.backToDashboard' | translate"
+          icon="pi pi-arrow-left"
+          (onClick)="backToDashboard()"
+          styleClass="p-button-outlined"
+        />
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Session Complete -->
+  <div *ngIf="isSessionComplete() && !isLoading() && !error()" class="session-complete-container">
+    <p-card>
+      <div class="session-complete-content">
+        <i class="pi pi-check-circle success-icon"></i>
+        <h1>{{ 'study.sessionComplete' | translate }}</h1>
+        <p class="subtitle">{{ 'study.greatWork' | translate }}</p>
+
+        <div class="stats-grid">
+          <div class="stat-item">
+            <i class="pi pi-book"></i>
+            <div class="stat-value">{{ cardsReviewed() }}</div>
+            <div class="stat-label">{{ 'study.reviewedCards' | translate }}</div>
+          </div>
+
+          <div class="stat-item">
+            <i class="pi pi-check"></i>
+            <div class="stat-value">{{ cardsCorrect() }}</div>
+            <div class="stat-label">{{ 'study.correctCards' | translate }}</div>
+          </div>
+
+          <div class="stat-item">
+            <i class="pi pi-chart-line"></i>
+            <div class="stat-value">{{ accuracy() }}%</div>
+            <div class="stat-label">{{ 'study.accuracy' | translate }}</div>
+          </div>
+        </div>
+
+        <p-divider />
+
+        <div class="action-buttons">
+          <p-button
+            [label]="'common.backToDashboard' | translate"
+            icon="pi pi-arrow-left"
+            (onClick)="backToDashboard()"
+            styleClass="p-button-outlined"
+          />
+          <p-button
+            [label]="'study.studyAgain' | translate"
+            icon="pi pi-refresh"
+            (onClick)="startNewSession()"
+          />
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Active Study Session -->
+  <div *ngIf="!isLoading() && !error() && !isSessionComplete()" class="session-active-container">
+    <!-- Progress Header -->
+    <div class="progress-header">
+      <div class="progress-info">
+        <div class="progress-text">
+          <span class="current-progress">
+            {{ 'flashcard.progress' | translate: { current: currentCardIndex() + 1, total: cards().length } }}
+          </span>
+          <span class="stats-text">
+            {{ 'study.reviewedCount' | translate }}: {{ cardsReviewed() }}
+            <span class="divider">•</span>
+            {{ 'study.correctCount' | translate }}: {{ cardsCorrect() }}
+            <span class="divider">•</span>
+            {{ 'study.accuracy' | translate }}: {{ accuracy() }}%
+          </span>
+        </div>
+        <p-button
+          icon="pi pi-times"
+          (onClick)="backToDashboard()"
+          styleClass="p-button-text p-button-rounded"
+          [pTooltip]="'common.close' | translate"
+        />
+      </div>
+      <p-progressBar [value]="progressPercentage()" [showValue]="false" />
+    </div>
+
+    <!-- Flashcard Display -->
+    <div class="flashcard-container" *ngIf="currentCard()">
+      <div
+        class="flashcard"
+        [class.flipped]="isFlipped()"
+        (click)="flipCard()"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'study.flip' | translate"
+      >
+        <!-- Front Side (Question) -->
+        <div class="flashcard-side flashcard-front">
+          <div class="card-content">
+            <div class="card-label">{{ 'flashcard.question' | translate }}</div>
+            <div class="card-text">{{ currentCard()?.question }}</div>
+            <div class="flip-hint">
+              <i class="pi pi-sync"></i>
+              <span>{{ 'study.clickToFlip' | translate }}</span>
+              <span class="keyboard-hint">{{ 'study.orPressSpace' | translate }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back Side (Answer) -->
+        <div class="flashcard-side flashcard-back">
+          <div class="card-content">
+            <div class="card-label">{{ 'flashcard.answer' | translate }}</div>
+            <div class="card-text">{{ currentCard()?.answer }}</div>
+
+            <!-- Source Attribution -->
+            <div class="source-info" *ngIf="currentCard()?.source">
+              <i class="pi pi-file"></i>
+              <span>{{ 'flashcard.source' | translate }}: {{ currentCard()?.source }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quality Rating Buttons (shown only when flipped) -->
+      <div class="rating-buttons" *ngIf="isFlipped()">
+        <div class="rating-instructions">
+          {{ 'study.rateYourPerformance' | translate }}
+        </div>
+        <div class="rating-grid">
+          <p-button
+            *ngFor="let rating of qualityRatings; let i = index"
+            [label]="rating.label | translate"
+            [icon]="rating.icon"
+            [severity]="rating.severity"
+            (onClick)="recordReview(rating.value)"
+            styleClass="rating-button"
+            [pTooltip]="rating.description"
+            tooltipPosition="top"
+          >
+            <ng-template pTemplate="content">
+              <div class="button-content">
+                <i [class]="rating.icon"></i>
+                <span>{{ rating.label | translate }}</span>
+                <span class="keyboard-shortcut">{{ i + 1 }}</span>
+              </div>
+            </ng-template>
+          </p-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
