@@ -44,6 +44,27 @@
     "loadingPage": "Loading cards...",
     "page": "Page"
   },
+  "study": {
+    "studyNow": "Study Now",
+    "cardsDue": "cards due",
+    "sessionComplete": "Session Complete!",
+    "greatWork": "Great work! You've completed this study session.",
+    "reviewedCards": "Cards Reviewed",
+    "correctCards": "Correct Cards",
+    "accuracy": "Accuracy",
+    "studyAgain": "Study Again",
+    "preparingSession": "Preparing your study session...",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "flip": "Click to flip",
+    "clickToFlip": "Click to flip card",
+    "orPressSpace": "or press Space",
+    "rateYourPerformance": "How well did you know this?",
+    "reviewedCount": "Reviewed",
+    "correctCount": "Correct"
+  },
   "deck": {
     "title": "Title",
     "description": "Description",
@@ -213,5 +234,18 @@
       "hoursAgo": "{{count}}h ago",
       "daysAgo": "{{count}}d ago"
     }
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Write a comment...",
+    "post": "Post Comment",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "edited",
+    "upvote": "Upvote",
+    "downvote": "Downvote",
+    "loginToComment": "Please log in to comment",
+    "noComments": "No comments yet",
+    "beFirst": "Be the first to comment!"
   }
 }

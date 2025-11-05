@@ -7,8 +7,9 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 """
 
 from __future__ import annotations
-from typing import Protocol, Optional, List
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification
+from typing import Protocol, Optional, List, Tuple
+from datetime import datetime
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
 
 
 class UserRepository(Protocol):
@@ -166,6 +167,52 @@ class CardRepository(Protocol):
 
     def delete(self, card_id: str) -> None:
         """Delete card by ID."""
+        ...
+
+    def get_due_cards(
+        self,
+        deck_id: str,
+        user_id: str,
+        limit: int = 100,
+    ) -> List[Card]:
+        """
+        Get cards due for review in a deck.
+
+        Returns cards where next_review_date is NULL or <= current time.
+
+        Args:
+            deck_id: Deck identifier
+            user_id: User identifier (for authorization)
+            limit: Maximum number of cards to return
+
+        Returns:
+            List of cards due for review, ordered by next_review_date
+        """
+        ...
+
+    def update_review_status(
+        self,
+        card_id: str,
+        ease_factor: float,
+        interval_days: int,
+        repetitions: int,
+        next_review_date: datetime,
+        is_learning: bool,
+    ) -> Card:
+        """
+        Update card's spaced repetition parameters.
+
+        Args:
+            card_id: Card identifier
+            ease_factor: New ease factor
+            interval_days: New interval
+            repetitions: New repetition count
+            next_review_date: Next scheduled review date
+            is_learning: Whether card is in learning phase
+
+        Returns:
+            Updated card
+        """
         ...
 
 
@@ -566,5 +613,385 @@ class NotificationRepository(Protocol):
 
         Args:
             notification_id: Notification to delete
+        """
+        ...
+
+
+class CardReviewRepository(Protocol):
+    """Abstract interface for card review data access."""
+
+    def get(self, review_id: str) -> Optional[CardReview]:
+        """
+        Get card review by ID.
+
+        Args:
+            review_id: Review identifier
+
+        Returns:
+            CardReview if found, None otherwise
+        """
+        ...
+
+    def get_by_card(
+        self,
+        card_id: str,
+        user_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[CardReview]:
+        """
+        Get review history for a specific card.
+
+        Args:
+            card_id: Card identifier
+            user_id: User identifier (for authorization)
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of card reviews ordered by review_date DESC
+        """
+        ...
+
+    def get_by_user(
+        self,
+        user_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[CardReview]:
+        """
+        Get all reviews for a user.
+
+        Args:
+            user_id: User identifier
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of card reviews ordered by review_date DESC
+        """
+        ...
+
+    def create(self, review: CardReview) -> CardReview:
+        """
+        Create a new card review.
+
+        Args:
+            review: Review to create
+
+        Returns:
+            Created review with ID
+        """
+        ...
+
+    def delete(self, review_id: str) -> None:
+        """
+        Delete a card review.
+
+        Args:
+            review_id: Review to delete
+        """
+        ...
+
+
+class StudySessionRepository(Protocol):
+    """Abstract interface for study session data access."""
+
+    def get(self, session_id: str) -> Optional[StudySession]:
+        """
+        Get study session by ID.
+
+        Args:
+            session_id: Session identifier
+
+        Returns:
+            StudySession if found, None otherwise
+        """
+        ...
+
+    def get_by_user(
+        self,
+        user_id: str,
+        deck_id: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[StudySession]:
+        """
+        Get study sessions for a user.
+
+        Args:
+            user_id: User identifier
+            deck_id: Optional deck filter
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of study sessions ordered by started_at DESC
+        """
+        ...
+
+    def get_active_session(self, user_id: str, deck_id: str) -> Optional[StudySession]:
+        """
+        Get active (not ended) study session for a user and deck.
+
+        Args:
+            user_id: User identifier
+            deck_id: Deck identifier
+
+        Returns:
+            Active session if found, None otherwise
+        """
+        ...
+
+    def create(self, session: StudySession) -> StudySession:
+        """
+        Create a new study session.
+
+        Args:
+            session: Session to create
+
+        Returns:
+            Created session with ID
+        """
+        ...
+
+    def update(self, session: StudySession) -> StudySession:
+        """
+        Update existing study session.
+
+        Args:
+            session: Session with updated data
+
+        Returns:
+            Updated session
+        """
+        ...
+
+    def delete(self, session_id: str) -> None:
+        """
+        Delete a study session.
+
+        Args:
+            session_id: Session to delete
+        """
+        ...
+
+
+class DeckCommentRepository(Protocol):
+    """Abstract interface for deck comment data access."""
+
+    def get(self, comment_id: str) -> Optional[DeckComment]:
+        """
+        Get comment by ID.
+
+        Args:
+            comment_id: Comment identifier
+
+        Returns:
+            DeckComment if found, None otherwise
+        """
+        ...
+
+    def get_by_deck(
+        self,
+        deck_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Tuple[List[DeckComment], int]:
+        """
+        Get comments for a deck with pagination.
+
+        Args:
+            deck_id: Deck identifier
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            Tuple of (list of comments ordered by created_at DESC, total count)
+        """
+        ...
+
+    def get_by_user(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[DeckComment]:
+        """
+        Get comments by a user.
+
+        Args:
+            user_id: User identifier
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of comments ordered by created_at DESC
+        """
+        ...
+
+    def get_replies(
+        self,
+        parent_comment_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[DeckComment]:
+        """
+        Get replies to a comment.
+
+        Args:
+            parent_comment_id: Parent comment identifier
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of reply comments ordered by created_at ASC
+        """
+        ...
+
+    def create(self, comment: DeckComment) -> DeckComment:
+        """
+        Create a new comment.
+
+        Args:
+            comment: Comment to create
+
+        Returns:
+            Created comment with ID
+        """
+        ...
+
+    def update(self, comment: DeckComment) -> DeckComment:
+        """
+        Update existing comment.
+
+        Args:
+            comment: Comment with updated data
+
+        Returns:
+            Updated comment
+        """
+        ...
+
+    def delete(self, comment_id: str, user_id: str) -> None:
+        """
+        Delete a comment.
+
+        Args:
+            comment_id: Comment to delete
+            user_id: User ID for authorization check
+        """
+        ...
+
+    def count_by_deck(self, deck_id: str) -> int:
+        """
+        Count total comments for a deck.
+
+        Args:
+            deck_id: Deck identifier
+
+        Returns:
+            Total number of comments
+        """
+        ...
+
+
+class CommentVoteRepository(Protocol):
+    """Abstract interface for comment vote data access."""
+
+    def get(self, vote_id: str) -> Optional[CommentVote]:
+        """
+        Get vote by ID.
+
+        Args:
+            vote_id: Vote identifier
+
+        Returns:
+            CommentVote if found, None otherwise
+        """
+        ...
+
+    def get_user_vote(self, comment_id: str, user_id: str) -> Optional[CommentVote]:
+        """
+        Get user's vote on a specific comment.
+
+        Args:
+            comment_id: Comment identifier
+            user_id: User identifier
+
+        Returns:
+            CommentVote if user voted, None otherwise
+        """
+        ...
+
+    def get_vote_counts(self, comment_id: str) -> Tuple[int, int]:
+        """
+        Get upvote and downvote counts for a comment.
+
+        Args:
+            comment_id: Comment identifier
+
+        Returns:
+            Tuple of (upvotes, downvotes)
+        """
+        ...
+
+    def get_vote_counts_batch(self, comment_ids: List[str]) -> dict[str, Tuple[int, int]]:
+        """
+        Get vote counts for multiple comments in a single query.
+
+        Args:
+            comment_ids: List of comment identifiers
+
+        Returns:
+            Dictionary mapping comment_id to (upvotes, downvotes)
+        """
+        ...
+
+    def get_user_votes_batch(self, comment_ids: List[str], user_id: str) -> dict[str, VoteType]:
+        """
+        Get user's votes for multiple comments in a single query.
+
+        Args:
+            comment_ids: List of comment identifiers
+            user_id: User identifier
+
+        Returns:
+            Dictionary mapping comment_id to VoteType
+        """
+        ...
+
+    def create_or_update(self, vote: CommentVote) -> CommentVote:
+        """
+        Create a new vote or update existing vote.
+
+        If user already voted, update the vote type.
+        If user is changing to the same vote type, remove the vote.
+
+        Args:
+            vote: Vote to create or update
+
+        Returns:
+            Created/updated vote, or None if vote was removed
+        """
+        ...
+
+    def delete(self, vote_id: str, user_id: str) -> None:
+        """
+        Delete a vote.
+
+        Args:
+            vote_id: Vote to delete
+            user_id: User ID for authorization check
+        """
+        ...
+
+    def delete_by_comment_user(self, comment_id: str, user_id: str) -> None:
+        """
+        Delete user's vote on a comment.
+
+        Args:
+            comment_id: Comment identifier
+            user_id: User identifier
         """
         ...
