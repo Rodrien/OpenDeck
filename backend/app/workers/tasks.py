@@ -23,8 +23,9 @@ logger = structlog.get_logger()
     bind=True,
     max_retries=3,
     name="app.workers.tasks.process_documents_task",
-    soft_time_limit=600,  # 10 minutes soft limit (P1: graceful timeout)
-    time_limit=660,       # 11 minutes hard limit
+    # TOOD: Adjust time limits based on expected document sizes and or make defaults configurable
+    soft_time_limit=1200,  # 10x2 minutes soft limit (P1: graceful timeout)
+    time_limit=1320,       # 11x2 minutes hard limit
 )
 def process_documents_task(
     self,

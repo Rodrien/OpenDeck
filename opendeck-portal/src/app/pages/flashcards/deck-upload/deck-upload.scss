@@ -62,7 +62,7 @@
         border: 1px solid var(--surface-border);
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         transition: all 0.3s ease;
-        overflow: hidden;
+        overflow: visible; // Changed from hidden to allow dropdown overlays to display
 
         &:hover {
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
@@ -115,6 +115,58 @@
         &:not(.p-disabled).p-focus {
           border-color: var(--primary-color);
           box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+      }
+
+      // PrimeNG Select Overlay Panel (Dropdown Options)
+      .p-select-overlay {
+        z-index: 9999 !important; // Ensure overlay appears above all content
+        margin-top: 0.25rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid var(--surface-border);
+        border-radius: 8px;
+
+        :host-context(.dark) & {
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+          background: var(--surface-overlay);
+        }
+
+        .p-select-items-wrapper {
+          max-height: 300px;
+        }
+
+        .p-select-item {
+          padding: 0.75rem 1rem;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: var(--primary-50);
+            color: var(--primary-700);
+
+            :host-context(.dark) & {
+              background: rgba(99, 102, 241, 0.15);
+              color: var(--primary-400);
+            }
+          }
+
+          &.p-highlight {
+            background: var(--primary-100);
+            color: var(--primary-800);
+
+            :host-context(.dark) & {
+              background: rgba(99, 102, 241, 0.25);
+              color: var(--primary-300);
+            }
+          }
+
+          &.p-focus {
+            background: var(--primary-50);
+            outline: none;
+
+            :host-context(.dark) & {
+              background: rgba(99, 102, 241, 0.12);
+            }
+          }
         }
       }
 

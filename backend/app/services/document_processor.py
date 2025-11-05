@@ -138,8 +138,7 @@ class DocumentProcessorService:
                 flashcards = self.ai_provider.generate_flashcards(
                     document_text=extraction_result.text,
                     document_name=document.filename,
-                    page_data=extraction_result.pages,
-                    max_cards=20,
+                    page_data=extraction_result.pages
                 )
 
                 # Create flashcard records
@@ -188,26 +187,8 @@ class DocumentProcessorService:
 
                 failed_documents += 1
 
-        # Update deck card count
-        if total_cards > 0:
-            try:
-                deck = self.deck_repo.get(deck_id, user_id)
-                if deck:
-                    deck.card_count = deck.card_count + total_cards
-                    self.deck_repo.update(deck)
-                    self.session.commit()
-
-                    logger.info(
-                        "deck_card_count_updated",
-                        deck_id=deck_id,
-                        new_card_count=deck.card_count,
-                    )
-            except Exception as e:
-                logger.error(
-                    "failed_to_update_deck_card_count",
-                    deck_id=deck_id,
-                    error=str(e),
-                )
+        # NOTE: Deck card count is automatically updated by PostgresCardRepo.create()
+        # No need to manually update it here to avoid double-counting
 
         result = ProcessingResult(
             total_cards=total_cards,
