@@ -18,6 +18,8 @@ from app.db.postgres_repo import (
     PostgresTopicRepo,
     PostgresUserFCMTokenRepo,
     PostgresNotificationRepo,
+    PostgresStudySessionRepo,
+    PostgresCardReviewRepo,
 )
 from app.services.auth_service import AuthService
 from app.services.fcm_service import FCMService
@@ -61,6 +63,16 @@ def get_fcm_token_repo(db: Session = Depends(get_db)) -> PostgresUserFCMTokenRep
 def get_notification_repo(db: Session = Depends(get_db)) -> PostgresNotificationRepo:
     """Get notification repository instance."""
     return PostgresNotificationRepo(db)
+
+
+def get_study_session_repo(db: Session = Depends(get_db)) -> PostgresStudySessionRepo:
+    """Get study session repository instance."""
+    return PostgresStudySessionRepo(db)
+
+
+def get_card_review_repo(db: Session = Depends(get_db)) -> PostgresCardReviewRepo:
+    """Get card review repository instance."""
+    return PostgresCardReviewRepo(db)
 
 
 def get_auth_service(
@@ -152,6 +164,8 @@ DocumentRepoDepends = Annotated[PostgresDocumentRepo, Depends(get_document_repo)
 TopicRepoDepends = Annotated[PostgresTopicRepo, Depends(get_topic_repo)]
 FCMTokenRepoDepends = Annotated[PostgresUserFCMTokenRepo, Depends(get_fcm_token_repo)]
 NotificationRepoDepends = Annotated[PostgresNotificationRepo, Depends(get_notification_repo)]
+StudySessionRepoDepends = Annotated[PostgresStudySessionRepo, Depends(get_study_session_repo)]
+CardReviewRepoDepends = Annotated[PostgresCardReviewRepo, Depends(get_card_review_repo)]
 AuthServiceDepends = Annotated[AuthService, Depends(get_auth_service)]
 FCMServiceDepends = Annotated[FCMService, Depends(get_fcm_service)]
 NotificationServiceDepends = Annotated[NotificationService, Depends(get_notification_service)]

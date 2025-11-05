@@ -8,7 +8,8 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 
 from __future__ import annotations
 from typing import Protocol, Optional, List
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification
+from datetime import datetime
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, StudySession, CardReview
 
 
 class UserRepository(Protocol):
@@ -166,6 +167,49 @@ class CardRepository(Protocol):
 
     def delete(self, card_id: str) -> None:
         """Delete card by ID."""
+        ...
+
+    def get_due_cards(
+        self,
+        deck_id: str,
+        user_id: str,
+        limit: int = 100,
+    ) -> List[Card]:
+        """
+        Get cards due for review in a deck.
+
+        Returns cards where next_review_date is NULL or <= current time.
+
+        Args:
+            deck_id: Deck to query
+            user_id: User ID for authorization
+            limit: Maximum number of cards to return
+
+        Returns:
+            List of cards due for review
+        """
+        ...
+
+    def update_review_status(
+        self,
+        card_id: str,
+        ease_factor: float,
+        interval_days: int,
+        repetitions: int,
+        next_review_date: datetime,
+        is_learning: bool,
+    ) -> None:
+        """
+        Update card's spaced repetition parameters after review.
+
+        Args:
+            card_id: Card to update
+            ease_factor: New ease factor from SM-2 algorithm
+            interval_days: Days until next review
+            repetitions: Consecutive successful reviews
+            next_review_date: When card is due for review
+            is_learning: Whether card is in learning phase
+        """
         ...
 
 
@@ -566,5 +610,93 @@ class NotificationRepository(Protocol):
 
         Args:
             notification_id: Notification to delete
+        """
+        ...
+
+
+class StudySessionRepository(Protocol):
+    """Abstract interface for study session data access."""
+
+    def get(self, session_id: str) -> Optional[StudySession]:
+        """
+        Get session by ID.
+
+        Args:
+            session_id: Study session identifier
+
+        Returns:
+            StudySession if found, None otherwise
+        """
+        ...
+
+    def create(self, session: StudySession) -> StudySession:
+        """
+        Create a new study session.
+
+        Args:
+            session: Study session to create
+
+        Returns:
+            Created session with ID
+        """
+        ...
+
+    def update(self, session: StudySession) -> StudySession:
+        """
+        Update existing session.
+
+        Args:
+            session: Session with updated data
+
+        Returns:
+            Updated session
+        """
+        ...
+
+    def get_active_session(self, user_id: str, deck_id: str) -> Optional[StudySession]:
+        """
+        Get active (not ended) session for user and deck.
+
+        Args:
+            user_id: User identifier
+            deck_id: Deck identifier
+
+        Returns:
+            Active session if found, None otherwise
+        """
+        ...
+
+    def get_by_user(
+        self,
+        user_id: str,
+        deck_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[StudySession]:
+        """
+        List study sessions for a user.
+
+        Args:
+            user_id: User identifier
+            deck_id: Optional deck filter
+            limit: Maximum number of results
+
+        Returns:
+            List of user's study sessions
+        """
+        ...
+
+
+class CardReviewRepository(Protocol):
+    """Abstract interface for card review data access."""
+
+    def create(self, review: CardReview) -> CardReview:
+        """
+        Create a new card review record.
+
+        Args:
+            review: Card review to create
+
+        Returns:
+            Created review with ID
         """
         ...

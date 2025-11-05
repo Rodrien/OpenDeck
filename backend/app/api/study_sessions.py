@@ -213,6 +213,13 @@ async def record_card_review(
             detail="Card not found",
         )
 
+    # SECURITY: Verify card belongs to the deck in the session
+    if card.deck_id != session.deck_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Card does not belong to the deck in this study session",
+        )
+
     # Calculate new SM-2 values
     new_ease, new_interval, new_reps = SM2Algorithm.calculate_next_interval(
         quality=request.quality,

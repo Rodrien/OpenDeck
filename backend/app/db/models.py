@@ -16,6 +16,7 @@ from sqlalchemy import (
     Enum as SQLEnum,
     Table,
     Boolean,
+    Numeric,
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
@@ -93,6 +94,12 @@ class CardModel(Base):
     source_url = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    # Spaced repetition fields (SM-2 algorithm)
+    ease_factor = Column(Numeric(precision=4, scale=2), nullable=False, server_default='2.5')
+    interval_days = Column(Integer, nullable=False, server_default='0')
+    repetitions = Column(Integer, nullable=False, server_default='0')
+    next_review_date = Column(DateTime, nullable=True)
+    is_learning = Column(Boolean, nullable=False, server_default='true')
 
     # Relationships
     deck = relationship("DeckModel", back_populates="cards")
@@ -168,4 +175,38 @@ class NotificationModel(Base):
     sent_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     read_at = Column(DateTime, nullable=True)
     fcm_message_id = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class StudySessionModel(Base):
+    """Study Session table model."""
+
+    __tablename__ = "study_sessions"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    deck_id = Column(String(36), ForeignKey("decks.id", ondelete="CASCADE"), nullable=False, index=True)
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    ended_at = Column(DateTime, nullable=True)
+    cards_reviewed = Column(Integer, default=0, nullable=False)
+    cards_correct = Column(Integer, default=0, nullable=False)
+    cards_incorrect = Column(Integer, default=0, nullable=False)
+    total_duration_seconds = Column(Integer, nullable=True)
+    session_type = Column(String(50), default='review', nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class CardReviewModel(Base):
+    """Card Review table model."""
+
+    __tablename__ = "card_reviews"
+
+    id = Column(String(36), primary_key=True)
+    card_id = Column(String(36), ForeignKey("cards.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    review_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    quality = Column(Integer, nullable=False)  # 0-5
+    ease_factor = Column(Numeric(precision=4, scale=2), nullable=False)
+    interval_days = Column(Integer, nullable=False)
+    repetitions = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

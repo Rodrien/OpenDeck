@@ -98,6 +98,12 @@ class Card:
     source_url: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+    # Spaced repetition fields (SM-2 algorithm)
+    ease_factor: float = 2.5  # SM-2 algorithm ease factor
+    interval_days: int = 0    # Days until next review
+    repetitions: int = 0      # Consecutive successful reviews
+    next_review_date: Optional[datetime] = None  # When card is due
+    is_learning: bool = True  # Whether card is in learning phase
 
     def __post_init__(self) -> None:
         """Validate card data after initialization."""
@@ -252,3 +258,94 @@ class Notification:
         """Mark notification as read."""
         self.read = True
         self.read_at = datetime.utcnow()
+
+
+@dataclass
+class StudySession:
+    """
+    Study Session domain model.
+
+    Represents a user's study session for reviewing flashcards in a deck.
+    Tracks session statistics including cards reviewed, correctness, and duration.
+    """
+
+    id: str
+    user_id: str
+    deck_id: str
+    started_at: datetime
+    ended_at: Optional[datetime] = None
+    cards_reviewed: int = 0
+    cards_correct: int = 0
+    cards_incorrect: int = 0
+    total_duration_seconds: Optional[int] = None
+    session_type: str = "review"  # 'review', 'learn', 'cram'
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate study session data after initialization."""
+        if not self.user_id:
+            raise ValueError("Study session must belong to a user")
+        if not self.deck_id:
+            raise ValueError("Study session must be associated with a deck")
+        if self.cards_reviewed < 0:
+            raise ValueError("Cards reviewed cannot be negative")
+        if self.cards_correct < 0:
+            raise ValueError("Cards correct cannot be negative")
+        if self.cards_incorrect < 0:
+            raise ValueError("Cards incorrect cannot be negative")
+
+    def record_review(self, correct: bool) -> None:
+        """
+        Update session statistics after card review.
+
+        Args:
+            correct: Whether the card was answered correctly (quality >= 3)
+        """
+        self.cards_reviewed += 1
+        if correct:
+            self.cards_correct += 1
+        else:
+            self.cards_incorrect += 1
+
+    def end_session(self) -> None:
+        """Mark session as completed and calculate duration."""
+        self.ended_at = datetime.utcnow()
+        if self.ended_at and self.started_at:
+            self.total_duration_seconds = int(
+                (self.ended_at - self.started_at).total_seconds()
+            )
+
+
+@dataclass
+class CardReview:
+    """
+    Card Review domain model.
+
+    Represents a single review event of a flashcard, storing the quality rating
+    and resulting spaced repetition parameters from the SM-2 algorithm.
+    """
+
+    id: str
+    card_id: str
+    user_id: str
+    review_date: datetime
+    quality: int  # 0-5 scale from SM-2 algorithm
+    ease_factor: float  # SM-2 ease factor after review
+    interval_days: int  # Days until next review
+    repetitions: int  # Consecutive successful reviews
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate card review data after initialization."""
+        if not self.card_id:
+            raise ValueError("Card review must be associated with a card")
+        if not self.user_id:
+            raise ValueError("Card review must belong to a user")
+        if not 0 <= self.quality <= 5:
+            raise ValueError("Quality must be between 0 and 5")
+        if self.ease_factor < 1.3:
+            raise ValueError("Ease factor must be at least 1.3")
+        if self.interval_days < 0:
+            raise ValueError("Interval days cannot be negative")
+        if self.repetitions < 0:
+            raise ValueError("Repetitions cannot be negative")

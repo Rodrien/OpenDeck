@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, StudySession, CardReview
 from app.core.interfaces import (
     UserRepository,
     DeckRepository,
@@ -21,6 +21,8 @@ from app.core.interfaces import (
     TopicRepository,
     UserFCMTokenRepository,
     NotificationRepository,
+    StudySessionRepository,
+    CardReviewRepository,
 )
 from app.db.models import (
     UserModel,
@@ -30,6 +32,8 @@ from app.db.models import (
     TopicModel,
     UserFCMTokenModel,
     NotificationModel,
+    StudySessionModel,
+    CardReviewModel,
     deck_topics,
     card_topics,
 )
@@ -331,6 +335,61 @@ class PostgresCardRepo:
             self._update_deck_count(deck_id, increment=-1)
             self.session.commit()
 
+    def get_due_cards(
+        self,
+        deck_id: str,
+        user_id: str,
+        limit: int = 100,
+    ) -> List[Card]:
+        """
+        Get cards due for review in a deck.
+
+        Returns cards where next_review_date is NULL or <= current time.
+        """
+        now = datetime.utcnow()
+
+        # First verify deck belongs to user
+        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
+        if not deck:
+            return []
+
+        # Get due cards (next_review_date is NULL or <= now)
+        models = (
+            self.session.query(CardModel)
+            .filter_by(deck_id=deck_id)
+            .filter(
+                (CardModel.next_review_date.is_(None)) |
+                (CardModel.next_review_date <= now)
+            )
+            .order_by(CardModel.created_at)
+            .limit(limit)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
+    def update_review_status(
+        self,
+        card_id: str,
+        ease_factor: float,
+        interval_days: int,
+        repetitions: int,
+        next_review_date: datetime,
+        is_learning: bool,
+    ) -> None:
+        """Update card's spaced repetition parameters after review."""
+        model = self.session.query(CardModel).filter_by(id=card_id).first()
+        if not model:
+            raise ValueError(f"Card {card_id} not found")
+
+        model.ease_factor = ease_factor
+        model.interval_days = interval_days
+        model.repetitions = repetitions
+        model.next_review_date = next_review_date
+        model.is_learning = is_learning
+        model.updated_at = datetime.utcnow()
+
+        self.session.commit()
+
     def _update_deck_count(self, deck_id: str, increment: int) -> None:
         """Update the card count for a deck."""
         deck = self.session.query(DeckModel).filter_by(id=deck_id).first()
@@ -349,6 +408,11 @@ class PostgresCardRepo:
             source_url=model.source_url,
             created_at=model.created_at,
             updated_at=model.updated_at,
+            ease_factor=float(model.ease_factor) if model.ease_factor else 2.5,
+            interval_days=model.interval_days if model.interval_days is not None else 0,
+            repetitions=model.repetitions if model.repetitions is not None else 0,
+            next_review_date=model.next_review_date,
+            is_learning=model.is_learning if model.is_learning is not None else True,
         )
 
 
@@ -857,5 +921,147 @@ class PostgresNotificationRepo:
             sent_at=model.sent_at,
             read_at=model.read_at,
             fcm_message_id=model.fcm_message_id,
+            created_at=model.created_at,
+        )
+
+
+class PostgresStudySessionRepo:
+    """PostgreSQL implementation of StudySessionRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, session_id: str) -> Optional[StudySession]:
+        """Get session by ID."""
+        model = self.session.query(StudySessionModel).filter_by(id=session_id).first()
+        return self._to_domain(model) if model else None
+
+    def create(self, session: StudySession) -> StudySession:
+        """Create a new study session."""
+        if not session.id:
+            session.id = _generate_id()
+
+        model = StudySessionModel(
+            id=session.id,
+            user_id=session.user_id,
+            deck_id=session.deck_id,
+            started_at=session.started_at,
+            ended_at=session.ended_at,
+            cards_reviewed=session.cards_reviewed,
+            cards_correct=session.cards_correct,
+            cards_incorrect=session.cards_incorrect,
+            total_duration_seconds=session.total_duration_seconds,
+            session_type=session.session_type,
+            created_at=session.created_at,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update(self, session: StudySession) -> StudySession:
+        """Update existing session."""
+        model = self.session.query(StudySessionModel).filter_by(id=session.id).first()
+        if not model:
+            raise ValueError(f"Study session {session.id} not found")
+
+        model.ended_at = session.ended_at
+        model.cards_reviewed = session.cards_reviewed
+        model.cards_correct = session.cards_correct
+        model.cards_incorrect = session.cards_incorrect
+        model.total_duration_seconds = session.total_duration_seconds
+        model.session_type = session.session_type
+
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def get_active_session(self, user_id: str, deck_id: str) -> Optional[StudySession]:
+        """Get active (not ended) session for user and deck."""
+        model = (
+            self.session.query(StudySessionModel)
+            .filter_by(user_id=user_id, deck_id=deck_id)
+            .filter(StudySessionModel.ended_at.is_(None))
+            .order_by(StudySessionModel.started_at.desc())
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
+    def get_by_user(
+        self,
+        user_id: str,
+        deck_id: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[StudySession]:
+        """List study sessions for a user."""
+        query = self.session.query(StudySessionModel).filter_by(user_id=user_id)
+
+        if deck_id:
+            query = query.filter_by(deck_id=deck_id)
+
+        models = (
+            query.order_by(StudySessionModel.started_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
+    @staticmethod
+    def _to_domain(model: StudySessionModel) -> StudySession:
+        """Convert SQLAlchemy model to domain model."""
+        return StudySession(
+            id=model.id,
+            user_id=model.user_id,
+            deck_id=model.deck_id,
+            started_at=model.started_at,
+            ended_at=model.ended_at,
+            cards_reviewed=model.cards_reviewed,
+            cards_correct=model.cards_correct,
+            cards_incorrect=model.cards_incorrect,
+            total_duration_seconds=model.total_duration_seconds,
+            session_type=model.session_type,
+            created_at=model.created_at,
+        )
+
+
+class PostgresCardReviewRepo:
+    """PostgreSQL implementation of CardReviewRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def create(self, review: CardReview) -> CardReview:
+        """Create a new card review record."""
+        if not review.id:
+            review.id = _generate_id()
+
+        model = CardReviewModel(
+            id=review.id,
+            card_id=review.card_id,
+            user_id=review.user_id,
+            review_date=review.review_date,
+            quality=review.quality,
+            ease_factor=review.ease_factor,
+            interval_days=review.interval_days,
+            repetitions=review.repetitions,
+            created_at=review.created_at,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    @staticmethod
+    def _to_domain(model: CardReviewModel) -> CardReview:
+        """Convert SQLAlchemy model to domain model."""
+        return CardReview(
+            id=model.id,
+            card_id=model.card_id,
+            user_id=model.user_id,
+            review_date=model.review_date,
+            quality=model.quality,
+            ease_factor=float(model.ease_factor),
+            interval_days=model.interval_days,
+            repetitions=model.repetitions,
             created_at=model.created_at,
         )

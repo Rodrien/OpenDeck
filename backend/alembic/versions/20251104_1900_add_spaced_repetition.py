@@ -59,6 +59,14 @@ def upgrade() -> None:
     op.create_index('idx_study_sessions_deck', 'study_sessions', ['deck_id'])
     op.create_index('idx_study_sessions_started', 'study_sessions', ['started_at'])
 
+    # Prevent race condition: only one active session per user/deck
+    # Partial unique index where ended_at IS NULL
+    op.execute(
+        'CREATE UNIQUE INDEX idx_active_session_unique '
+        'ON study_sessions(user_id, deck_id) '
+        'WHERE ended_at IS NULL'
+    )
+
     # Extend cards table with spaced repetition fields
     op.add_column('cards', sa.Column('ease_factor', sa.Numeric(precision=4, scale=2), nullable=False, server_default='2.5'))
     op.add_column('cards', sa.Column('interval_days', sa.Integer(), nullable=False, server_default='0'))
@@ -82,6 +90,7 @@ def downgrade() -> None:
     op.drop_column('cards', 'ease_factor')
 
     # Drop study_sessions table
+    op.execute('DROP INDEX IF EXISTS idx_active_session_unique')
     op.drop_index('idx_study_sessions_started', table_name='study_sessions')
     op.drop_index('idx_study_sessions_deck', table_name='study_sessions')
     op.drop_index('idx_study_sessions_user', table_name='study_sessions')
