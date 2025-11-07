@@ -246,6 +246,33 @@
     "downvote": "Downvote",
     "loginToComment": "Please log in to comment",
     "noComments": "No comments yet",
-    "beFirst": "Be the first to comment!"
+    "beFirst": "Be the first to comment!",
+    "error": {
+      "loadFailed": "Failed to load comments",
+      "loginRequired": "Please log in to comment",
+      "loginRequiredToVote": "Please log in to vote",
+      "postFailed": "Failed to post comment",
+      "updateFailed": "Failed to update comment",
+      "deleteFailed": "Failed to delete comment",
+      "voteFailed": "Failed to record vote",
+      "tooLong": "Comment Too Long",
+      "tooLongDetail": "Comments cannot exceed 5000 characters"
+    },
+    "success": {
+      "posted": "Comment posted successfully",
+      "updated": "Comment updated successfully",
+      "deleted": "Comment deleted successfully"
+    },
+    "confirm": {
+      "deleteMessage": "Are you sure you want to delete this comment?",
+      "deleteHeader": "Delete Comment"
+    },
+    "authRequired": "Authentication Required",
+    "time": {
+      "justNow": "just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
   }
 }

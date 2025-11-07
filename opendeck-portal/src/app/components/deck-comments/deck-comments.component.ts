@@ -13,7 +13,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { PaginatorModule } from 'primeng/paginator';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { CommentService } from '../../services/comment.service';
@@ -64,7 +64,8 @@ export class DeckCommentsComponent implements OnInit {
     private commentService: CommentService,
     private authService: AuthService,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -96,8 +97,8 @@ export class DeckCommentsComponent implements OnInit {
         console.error('Failed to load comments:', error);
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to load comments'
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('comments.error.loadFailed')
         });
         this.loading.set(false);
       }
@@ -119,8 +120,8 @@ export class DeckCommentsComponent implements OnInit {
     if (!this.isAuthenticated()) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Authentication Required',
-        detail: 'Please log in to comment'
+        summary: this.translate.instant('comments.authRequired'),
+        detail: this.translate.instant('comments.error.loginRequired')
       });
       return;
     }
@@ -133,8 +134,8 @@ export class DeckCommentsComponent implements OnInit {
     if (content.length > 5000) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Comment Too Long',
-        detail: 'Comments cannot exceed 5000 characters'
+        summary: this.translate.instant('comments.error.tooLong'),
+        detail: this.translate.instant('comments.error.tooLongDetail')
       });
       return;
     }
@@ -148,8 +149,8 @@ export class DeckCommentsComponent implements OnInit {
         this.submitting.set(false);
         this.messageService.add({
           severity: 'success',
-          summary: 'Success',
-          detail: 'Comment posted successfully'
+          summary: this.translate.instant('common.success'),
+          detail: this.translate.instant('comments.success.posted')
         });
         // Reload comments to show new one
         this.loadComments();
@@ -158,8 +159,8 @@ export class DeckCommentsComponent implements OnInit {
         console.error('Failed to create comment:', error);
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to post comment'
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('comments.error.postFailed')
         });
         this.submitting.set(false);
       }
@@ -194,8 +195,8 @@ export class DeckCommentsComponent implements OnInit {
     if (content.length > 5000) {
       this.messageService.add({
         severity: 'error',
-        summary: 'Comment Too Long',
-        detail: 'Comments cannot exceed 5000 characters'
+        summary: this.translate.instant('comments.error.tooLong'),
+        detail: this.translate.instant('comments.error.tooLongDetail')
       });
       return;
     }
@@ -206,8 +207,8 @@ export class DeckCommentsComponent implements OnInit {
         this.editingContent.set('');
         this.messageService.add({
           severity: 'success',
-          summary: 'Success',
-          detail: 'Comment updated successfully'
+          summary: this.translate.instant('common.success'),
+          detail: this.translate.instant('comments.success.updated')
         });
         // Update comment in list
         this.comments.update(comments =>
@@ -218,8 +219,8 @@ export class DeckCommentsComponent implements OnInit {
         console.error('Failed to update comment:', error);
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'Failed to update comment'
+          summary: this.translate.instant('common.error'),
+          detail: this.translate.instant('comments.error.updateFailed')
         });
       }
     });
@@ -230,8 +231,8 @@ export class DeckCommentsComponent implements OnInit {
    */
   deleteComment(comment: DeckComment): void {
     this.confirmationService.confirm({
-      message: 'Are you sure you want to delete this comment?',
-      header: 'Delete Comment',
+      message: this.translate.instant('comments.confirm.deleteMessage'),
+      header: this.translate.instant('comments.confirm.deleteHeader'),
       icon: 'pi pi-exclamation-triangle',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
@@ -239,8 +240,8 @@ export class DeckCommentsComponent implements OnInit {
           next: () => {
             this.messageService.add({
               severity: 'success',
-              summary: 'Success',
-              detail: 'Comment deleted successfully'
+              summary: this.translate.instant('common.success'),
+              detail: this.translate.instant('comments.success.deleted')
             });
             this.loadComments();
           },
@@ -248,8 +249,8 @@ export class DeckCommentsComponent implements OnInit {
             console.error('Failed to delete comment:', error);
             this.messageService.add({
               severity: 'error',
-              summary: 'Error',
-              detail: 'Failed to delete comment'
+              summary: this.translate.instant('common.error'),
+              detail: this.translate.instant('comments.error.deleteFailed')
             });
           }
         });
@@ -264,8 +265,8 @@ export class DeckCommentsComponent implements OnInit {
     if (!this.isAuthenticated()) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Authentication Required',
-        detail: 'Please log in to vote'
+        summary: this.translate.instant('comments.authRequired'),
+        detail: this.translate.instant('comments.error.loginRequiredToVote')
       });
       return;
     }
@@ -319,8 +320,8 @@ export class DeckCommentsComponent implements OnInit {
           console.error('Failed to vote:', error);
           this.messageService.add({
             severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to record vote'
+            summary: this.translate.instant('common.error'),
+            detail: this.translate.instant('comments.error.voteFailed')
           });
         }
       });
@@ -359,10 +360,10 @@ export class DeckCommentsComponent implements OnInit {
     const diffHour = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHour / 24);
 
-    if (diffSec < 60) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHour < 24) return `${diffHour}h ago`;
-    if (diffDay < 30) return `${diffDay}d ago`;
+    if (diffSec < 60) return this.translate.instant('comments.time.justNow');
+    if (diffMin < 60) return this.translate.instant('comments.time.minutesAgo', { count: diffMin });
+    if (diffHour < 24) return this.translate.instant('comments.time.hoursAgo', { count: diffHour });
+    if (diffDay < 30) return this.translate.instant('comments.time.daysAgo', { count: diffDay });
     return date.toLocaleDateString();
   }
 }

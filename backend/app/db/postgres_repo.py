@@ -64,6 +64,28 @@ class PostgresUserRepo:
         model = self.session.query(UserModel).filter_by(email=email).first()
         return self._to_domain(model) if model else None
 
+    def get_by_ids(self, user_ids: List[str]) -> List[User]:
+        """
+        Get multiple users by IDs in a single query.
+
+        Useful for batch loading user information to avoid N+1 query problems.
+
+        Args:
+            user_ids: List of user IDs to retrieve
+
+        Returns:
+            List of users that exist (may be shorter than input list)
+        """
+        if not user_ids:
+            return []
+
+        models = (
+            self.session.query(UserModel)
+            .filter(UserModel.id.in_(user_ids))
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
     def create(self, user: User) -> User:
         """Create a new user."""
         if not user.id:
@@ -1347,8 +1369,19 @@ class PostgresCommentVoteRepo:
 
         return user_votes
 
-    def create_or_update(self, vote: CommentVote) -> CommentVote:
-        """Create a new vote or update existing vote."""
+    def create_or_update(self, vote: CommentVote) -> Optional[CommentVote]:
+        """
+        Create a new vote or update existing vote.
+
+        If user already voted with the same type, the vote is removed (toggle off).
+        If user voted with a different type, the vote is updated.
+
+        Args:
+            vote: Vote to create or update
+
+        Returns:
+            Created/updated vote, or None if vote was removed (toggle off)
+        """
         # Check if user already voted
         existing = (
             self.session.query(CommentVoteModel)
