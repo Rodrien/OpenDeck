@@ -390,6 +390,136 @@ class PostgresCardRepo:
 
         self.session.commit()
 
+    def reset_card_progress(self, card_id: str) -> None:
+        """Reset a card's spaced repetition progress to default values."""
+        model = self.session.query(CardModel).filter_by(id=card_id).first()
+        if not model:
+            raise ValueError(f"Card {card_id} not found")
+
+        model.ease_factor = 2.5
+        model.interval_days = 0
+        model.repetitions = 0
+        model.next_review_date = None
+        model.is_learning = True
+        model.updated_at = datetime.utcnow()
+
+        self.session.commit()
+
+    def reset_deck_progress(self, deck_id: str, user_id: str) -> None:
+        """Reset all cards' spaced repetition progress in a deck."""
+        # First verify deck belongs to user
+        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
+        if not deck:
+            raise ValueError(f"Deck {deck_id} not found or access denied")
+
+        # Reset all cards in the deck
+        self.session.query(CardModel).filter_by(deck_id=deck_id).update(
+            {
+                "ease_factor": 2.5,
+                "interval_days": 0,
+                "repetitions": 0,
+                "next_review_date": None,
+                "is_learning": True,
+                "updated_at": datetime.utcnow(),
+            },
+            synchronize_session=False,
+        )
+        self.session.commit()
+
+    def get_deck_stats(self, deck_id: str, user_id: str) -> dict:
+        """Get study statistics for a deck."""
+        from sqlalchemy import func
+
+        # First verify deck belongs to user
+        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
+        if not deck:
+            raise ValueError(f"Deck {deck_id} not found or access denied")
+
+        now = datetime.utcnow()
+
+        # Get total cards count
+        total_cards = self.session.query(func.count(CardModel.id)).filter_by(deck_id=deck_id).scalar() or 0
+
+        if total_cards == 0:
+            return {
+                "total_cards": 0,
+                "new_cards": 0,
+                "learning_cards": 0,
+                "review_cards": 0,
+                "due_cards": 0,
+                "next_review_date": None,
+                "average_ease_factor": 2.5,
+                "completion_rate": 0.0,
+            }
+
+        # Get new cards (never reviewed)
+        new_cards = (
+            self.session.query(func.count(CardModel.id))
+            .filter_by(deck_id=deck_id)
+            .filter(CardModel.next_review_date.is_(None))
+            .scalar()
+            or 0
+        )
+
+        # Get learning cards (is_learning = true and has been reviewed at least once)
+        learning_cards = (
+            self.session.query(func.count(CardModel.id))
+            .filter_by(deck_id=deck_id, is_learning=True)
+            .filter(CardModel.next_review_date.isnot(None))
+            .scalar()
+            or 0
+        )
+
+        # Get review cards (is_learning = false)
+        review_cards = (
+            self.session.query(func.count(CardModel.id))
+            .filter_by(deck_id=deck_id, is_learning=False)
+            .scalar()
+            or 0
+        )
+
+        # Get due cards (next_review_date is NULL or <= now)
+        due_cards = (
+            self.session.query(func.count(CardModel.id))
+            .filter_by(deck_id=deck_id)
+            .filter(
+                (CardModel.next_review_date.is_(None)) | (CardModel.next_review_date <= now)
+            )
+            .scalar()
+            or 0
+        )
+
+        # Get next review date (earliest future review)
+        next_review_date = (
+            self.session.query(func.min(CardModel.next_review_date))
+            .filter_by(deck_id=deck_id)
+            .filter(CardModel.next_review_date > now)
+            .scalar()
+        )
+
+        # Get average ease factor
+        average_ease_factor = (
+            self.session.query(func.avg(CardModel.ease_factor))
+            .filter_by(deck_id=deck_id)
+            .scalar()
+            or 2.5
+        )
+
+        # Calculate completion rate (cards that have been reviewed at least once)
+        reviewed_cards = total_cards - new_cards
+        completion_rate = (reviewed_cards / total_cards * 100) if total_cards > 0 else 0.0
+
+        return {
+            "total_cards": total_cards,
+            "new_cards": new_cards,
+            "learning_cards": learning_cards,
+            "review_cards": review_cards,
+            "due_cards": due_cards,
+            "next_review_date": next_review_date,
+            "average_ease_factor": float(average_ease_factor),
+            "completion_rate": round(completion_rate, 2),
+        }
+
     def _update_deck_count(self, deck_id: str, increment: int) -> None:
         """Update the card count for a deck."""
         deck = self.session.query(DeckModel).filter_by(id=deck_id).first()

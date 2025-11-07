@@ -11,6 +11,7 @@ from app.schemas.study_session import (
     StudySessionResponse,
     StudySessionStatsResponse,
     DueCardsCountResponse,
+    StudyStatsResponse,
 )
 from app.schemas.card import CardResponse
 from app.api.dependencies import (
@@ -26,12 +27,13 @@ from app.services.spaced_repetition import SM2Algorithm
 router = APIRouter(tags=["Study Sessions"])
 
 
-@router.post("/study/sessions/start", response_model=StudySessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/study/sessions", response_model=StudySessionResponse, status_code=status.HTTP_201_CREATED)
 async def start_study_session(
     request: StartSessionRequest,
     current_user: CurrentUser,
     deck_repo: DeckRepoDepends,
     session_repo: StudySessionRepoDepends,
+    card_repo: CardRepoDepends,
 ) -> StudySessionResponse:
     """
     Start a new study session for a deck.
@@ -41,9 +43,10 @@ async def start_study_session(
         current_user: Authenticated user
         deck_repo: Deck repository dependency
         session_repo: Study session repository dependency
+        card_repo: Card repository dependency
 
     Returns:
-        Created study session
+        Created study session with card IDs
 
     Raises:
         HTTPException: If deck not found or access denied
@@ -75,10 +78,97 @@ async def start_study_session(
     )
 
     created_session = session_repo.create(session)
-    return StudySessionResponse.model_validate(created_session)
+
+    # Get due cards for this session
+    due_cards = card_repo.get_due_cards(request.deck_id, current_user.id, limit=100)
+    card_ids = [card.id for card in due_cards]
+
+    # Convert to response with additional fields
+    response_data = {
+        "id": created_session.id,
+        "user_id": created_session.user_id,
+        "deck_id": created_session.deck_id,
+        "started_at": created_session.started_at,
+        "ended_at": created_session.ended_at,
+        "cards_reviewed": created_session.cards_reviewed,
+        "cards_correct": created_session.cards_correct,
+        "cards_incorrect": created_session.cards_incorrect,
+        "total_time_seconds": created_session.total_duration_seconds,
+        "session_type": created_session.session_type,
+        "card_ids": card_ids,
+        "reviews": [],
+        "current_card_index": 0,
+        "is_completed": False,
+    }
+
+    return StudySessionResponse(**response_data)
 
 
-@router.get("/study/decks/{deck_id}/due-cards", response_model=List[CardResponse])
+@router.get("/study/sessions/active/{deck_id}", response_model=StudySessionResponse | None)
+async def get_active_session(
+    deck_id: str,
+    current_user: CurrentUser,
+    deck_repo: DeckRepoDepends,
+    session_repo: StudySessionRepoDepends,
+    card_repo: CardRepoDepends,
+) -> StudySessionResponse | None:
+    """
+    Get active study session for a deck.
+
+    Returns the active (not ended) session for the specified deck, or null if none exists.
+
+    Args:
+        deck_id: Deck identifier
+        current_user: Authenticated user
+        deck_repo: Deck repository dependency
+        session_repo: Study session repository dependency
+        card_repo: Card repository dependency
+
+    Returns:
+        Active study session or None
+
+    Raises:
+        HTTPException: If deck not found or access denied
+    """
+    # Verify deck exists and user has access
+    deck = deck_repo.get(deck_id, current_user.id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck not found",
+        )
+
+    # Get active session
+    active_session = session_repo.get_active_session(current_user.id, deck_id)
+    if not active_session:
+        return None
+
+    # Get due cards for this session
+    due_cards = card_repo.get_due_cards(deck_id, current_user.id, limit=100)
+    card_ids = [card.id for card in due_cards]
+
+    # Convert to response with additional fields
+    response_data = {
+        "id": active_session.id,
+        "user_id": active_session.user_id,
+        "deck_id": active_session.deck_id,
+        "started_at": active_session.started_at,
+        "ended_at": active_session.ended_at,
+        "cards_reviewed": active_session.cards_reviewed,
+        "cards_correct": active_session.cards_correct,
+        "cards_incorrect": active_session.cards_incorrect,
+        "total_time_seconds": active_session.total_duration_seconds,
+        "session_type": active_session.session_type,
+        "card_ids": card_ids,
+        "reviews": [],
+        "current_card_index": active_session.cards_reviewed,
+        "is_completed": active_session.ended_at is not None,
+    }
+
+    return StudySessionResponse(**response_data)
+
+
+@router.get("/study/decks/{deck_id}/due", response_model=List[CardResponse])
 async def get_due_cards(
     deck_id: str,
     current_user: CurrentUser,
@@ -124,6 +214,8 @@ async def get_due_cards_count(
     """
     Get count of cards due for review in a deck.
 
+    Uses efficient SQL queries to count cards by status without loading all cards into memory.
+
     Args:
         deck_id: Deck identifier
         current_user: Authenticated user
@@ -144,24 +236,58 @@ async def get_due_cards_count(
             detail="Deck not found",
         )
 
-    # Get all cards in deck
-    all_cards = card_repo.list_by_deck(deck_id, limit=1000)
-
-    # Count due cards
-    due_cards = [card for card in all_cards if SM2Algorithm.is_due_for_review(card.next_review_date)]
-    new_cards = [card for card in all_cards if card.next_review_date is None]
-    learning_cards = [card for card in all_cards if card.is_learning and card.next_review_date is not None]
+    # Get statistics using efficient SQL queries
+    stats = card_repo.get_deck_stats(deck_id, current_user.id)
 
     return DueCardsCountResponse(
         deck_id=deck_id,
-        total_cards=len(all_cards),
-        due_cards=len(due_cards),
-        new_cards=len(new_cards),
-        learning_cards=len(learning_cards),
+        total_cards=stats["total_cards"],
+        due_cards=stats["due_cards"],
+        new_cards=stats["new_cards"],
+        learning_cards=stats["learning_cards"],
     )
 
 
-@router.post("/study/sessions/{session_id}/review", response_model=RecordReviewResponse)
+@router.get("/study/decks/{deck_id}/stats", response_model=StudyStatsResponse)
+async def get_deck_stats(
+    deck_id: str,
+    current_user: CurrentUser,
+    card_repo: CardRepoDepends,
+    deck_repo: DeckRepoDepends,
+) -> StudyStatsResponse:
+    """
+    Get study statistics for a deck.
+
+    Returns comprehensive statistics including card counts by status,
+    average ease factor, completion rate, and next review date.
+
+    Args:
+        deck_id: Deck identifier
+        current_user: Authenticated user
+        card_repo: Card repository dependency
+        deck_repo: Deck repository dependency
+
+    Returns:
+        Deck study statistics
+
+    Raises:
+        HTTPException: If deck not found or access denied
+    """
+    # Verify deck exists and user has access
+    deck = deck_repo.get(deck_id, current_user.id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck not found",
+        )
+
+    # Get statistics from repository
+    stats = card_repo.get_deck_stats(deck_id, current_user.id)
+
+    return StudyStatsResponse(**stats)
+
+
+@router.post("/study/sessions/{session_id}/reviews", response_model=RecordReviewResponse)
 async def record_card_review(
     session_id: str,
     request: RecordReviewRequest,
@@ -266,7 +392,7 @@ async def record_card_review(
     )
 
 
-@router.post("/study/sessions/{session_id}/end", response_model=StudySessionStatsResponse)
+@router.post("/study/sessions/{session_id}/complete", response_model=StudySessionStatsResponse)
 async def end_study_session(
     session_id: str,
     current_user: CurrentUser,
@@ -319,8 +445,26 @@ async def end_study_session(
         limit=1000,
     )
 
+    # Convert session to response with additional fields
+    session_data = {
+        "id": updated_session.id,
+        "user_id": updated_session.user_id,
+        "deck_id": updated_session.deck_id,
+        "started_at": updated_session.started_at,
+        "ended_at": updated_session.ended_at,
+        "cards_reviewed": updated_session.cards_reviewed,
+        "cards_correct": updated_session.cards_correct,
+        "cards_incorrect": updated_session.cards_incorrect,
+        "total_time_seconds": updated_session.total_duration_seconds,
+        "session_type": updated_session.session_type,
+        "card_ids": [],
+        "reviews": [],
+        "current_card_index": updated_session.cards_reviewed,
+        "is_completed": True,
+    }
+
     return StudySessionStatsResponse(
-        session=StudySessionResponse.model_validate(updated_session),
+        session=StudySessionResponse(**session_data),
         accuracy=round(accuracy, 2),
         cards_remaining=len(remaining_cards),
     )
@@ -348,7 +492,29 @@ async def list_study_sessions(
         deck_id=deck_id,
         limit=100,
     )
-    return [StudySessionResponse.model_validate(session) for session in sessions]
+
+    # Convert sessions to response format with additional fields
+    result = []
+    for session in sessions:
+        session_data = {
+            "id": session.id,
+            "user_id": session.user_id,
+            "deck_id": session.deck_id,
+            "started_at": session.started_at,
+            "ended_at": session.ended_at,
+            "cards_reviewed": session.cards_reviewed,
+            "cards_correct": session.cards_correct,
+            "cards_incorrect": session.cards_incorrect,
+            "total_time_seconds": session.total_duration_seconds,
+            "session_type": session.session_type,
+            "card_ids": [],
+            "reviews": [],
+            "current_card_index": session.cards_reviewed,
+            "is_completed": session.ended_at is not None,
+        }
+        result.append(StudySessionResponse(**session_data))
+
+    return result
 
 
 @router.get("/study/sessions/{session_id}", response_model=StudySessionResponse)
@@ -378,4 +544,147 @@ async def get_study_session(
             detail="Study session not found",
         )
 
-    return StudySessionResponse.model_validate(session)
+    # Convert to response format with additional fields
+    session_data = {
+        "id": session.id,
+        "user_id": session.user_id,
+        "deck_id": session.deck_id,
+        "started_at": session.started_at,
+        "ended_at": session.ended_at,
+        "cards_reviewed": session.cards_reviewed,
+        "cards_correct": session.cards_correct,
+        "cards_incorrect": session.cards_incorrect,
+        "total_time_seconds": session.total_duration_seconds,
+        "session_type": session.session_type,
+        "card_ids": [],
+        "reviews": [],
+        "current_card_index": session.cards_reviewed,
+        "is_completed": session.ended_at is not None,
+    }
+
+    return StudySessionResponse(**session_data)
+
+
+@router.get("/study/cards/{card_id}", response_model=CardResponse)
+async def get_card_with_metadata(
+    card_id: str,
+    current_user: CurrentUser,
+    card_repo: CardRepoDepends,
+    deck_repo: DeckRepoDepends,
+) -> CardResponse:
+    """
+    Get a card with spaced repetition metadata.
+
+    Args:
+        card_id: Card identifier
+        current_user: Authenticated user
+        card_repo: Card repository dependency
+        deck_repo: Deck repository dependency
+
+    Returns:
+        Card with full spaced repetition metadata
+
+    Raises:
+        HTTPException: If card not found or access denied
+    """
+    # Get card
+    card = card_repo.get(card_id)
+    if not card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Card not found",
+        )
+
+    # Verify user has access to the deck
+    deck = deck_repo.get(card.deck_id, current_user.id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
+    return CardResponse.model_validate(card)
+
+
+@router.post("/study/cards/{card_id}/reset", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_card_progress(
+    card_id: str,
+    current_user: CurrentUser,
+    card_repo: CardRepoDepends,
+    deck_repo: DeckRepoDepends,
+) -> None:
+    """
+    Reset a card's spaced repetition progress.
+
+    Sets the card back to default SM-2 values:
+    - ease_factor: 2.5
+    - interval_days: 0
+    - repetitions: 0
+    - next_review_date: None
+    - is_learning: True
+
+    Args:
+        card_id: Card identifier
+        current_user: Authenticated user
+        card_repo: Card repository dependency
+        deck_repo: Deck repository dependency
+
+    Raises:
+        HTTPException: If card not found or access denied
+    """
+    # Get card
+    card = card_repo.get(card_id)
+    if not card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Card not found",
+        )
+
+    # Verify user has access to the deck
+    deck = deck_repo.get(card.deck_id, current_user.id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied",
+        )
+
+    # Reset card progress
+    card_repo.reset_card_progress(card_id)
+
+
+@router.post("/study/decks/{deck_id}/reset", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_deck_progress(
+    deck_id: str,
+    current_user: CurrentUser,
+    card_repo: CardRepoDepends,
+    deck_repo: DeckRepoDepends,
+) -> None:
+    """
+    Reset all cards' spaced repetition progress in a deck.
+
+    Sets all cards in the deck back to default SM-2 values:
+    - ease_factor: 2.5
+    - interval_days: 0
+    - repetitions: 0
+    - next_review_date: None
+    - is_learning: True
+
+    Args:
+        deck_id: Deck identifier
+        current_user: Authenticated user
+        card_repo: Card repository dependency
+        deck_repo: Deck repository dependency
+
+    Raises:
+        HTTPException: If deck not found or access denied
+    """
+    # Verify deck exists and user has access
+    deck = deck_repo.get(deck_id, current_user.id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck not found",
+        )
+
+    # Reset all cards in deck
+    card_repo.reset_deck_progress(deck_id, current_user.id)

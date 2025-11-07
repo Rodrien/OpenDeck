@@ -212,6 +212,43 @@ class CardRepository(Protocol):
         """
         ...
 
+    def reset_card_progress(self, card_id: str) -> None:
+        """
+        Reset a card's spaced repetition progress to default values.
+
+        Args:
+            card_id: Card to reset
+        """
+        ...
+
+    def reset_deck_progress(self, deck_id: str, user_id: str) -> None:
+        """
+        Reset all cards' spaced repetition progress in a deck.
+
+        Args:
+            deck_id: Deck identifier
+            user_id: User ID for authorization
+        """
+        ...
+
+    def get_deck_stats(self, deck_id: str, user_id: str) -> dict:
+        """
+        Get study statistics for a deck.
+
+        Returns statistics including card counts by status, average ease factor,
+        completion rate, and next review date.
+
+        Args:
+            deck_id: Deck identifier
+            user_id: User ID for authorization
+
+        Returns:
+            Dictionary with stats: total_cards, new_cards, learning_cards,
+            review_cards, due_cards, next_review_date, average_ease_factor,
+            completion_rate
+        """
+        ...
+
 
 class DocumentRepository(Protocol):
     """Abstract interface for document data access."""

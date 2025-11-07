@@ -49,8 +49,22 @@ class StudySessionResponse(BaseModel):
     cards_reviewed: int
     cards_correct: int
     cards_incorrect: int
-    total_duration_seconds: Optional[int] = None
+    total_time_seconds: Optional[int] = Field(
+        None, description="Total session duration in seconds"
+    )
     session_type: str
+    card_ids: list[str] = Field(
+        default_factory=list, description="List of card IDs in this session"
+    )
+    reviews: list[dict] = Field(
+        default_factory=list, description="List of card reviews in this session"
+    )
+    current_card_index: int = Field(
+        default=0, description="Current position in the session"
+    )
+    is_completed: bool = Field(
+        default=False, description="Whether the session is completed"
+    )
 
     class Config:
         from_attributes = True
@@ -72,3 +86,21 @@ class DueCardsCountResponse(BaseModel):
     due_cards: int = Field(..., description="Number of cards due for review")
     new_cards: int = Field(..., description="Number of cards never reviewed")
     learning_cards: int = Field(..., description="Number of cards currently being learned")
+
+
+class StudyStatsResponse(BaseModel):
+    """Schema for deck study statistics."""
+
+    deck_id: str = Field(..., description="Deck identifier")
+    total_cards: int = Field(..., description="Total number of cards in the deck")
+    new_cards: int = Field(..., description="Number of cards that have never been reviewed")
+    learning_cards: int = Field(..., description="Number of cards currently in learning phase")
+    review_cards: int = Field(..., description="Number of cards in review phase")
+    due_cards: int = Field(..., description="Number of cards due for review now")
+    next_review_date: Optional[datetime] = Field(
+        None, description="Date of the next scheduled review"
+    )
+    average_ease_factor: float = Field(..., description="Average ease factor across all cards")
+    completion_rate: float = Field(
+        ..., ge=0, le=100, description="Percentage of cards that have been reviewed at least once"
+    )
