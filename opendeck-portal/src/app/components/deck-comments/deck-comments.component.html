@@ -1,0 +1,233 @@
+<div class="deck-comments">
+  <!-- Header -->
+  <div class="comments-header mb-4">
+    <h2 class="text-2xl font-semibold">
+      {{ 'comments.title' | translate }}
+      <span class="text-500 font-normal">({{ totalComments() }})</span>
+    </h2>
+  </div>
+
+  <!-- New Comment Form -->
+  <div *ngIf="isAuthenticated()" class="new-comment-form mb-4">
+    <p-card>
+      <div class="flex align-items-start gap-3">
+        <p-avatar
+          [label]="getUserInitials(currentUser()?.name || '')"
+          styleClass="flex-shrink-0"
+          shape="circle"
+        />
+        <div class="flex-1">
+          <textarea
+            pInputTextarea
+            [(ngModel)]="newCommentContent"
+            [placeholder]="'comments.placeholder' | translate"
+            [rows]="3"
+            [autoResize]="true"
+            [maxlength]="5000"
+            class="w-full"
+          ></textarea>
+          <div class="flex justify-content-between align-items-center mt-2">
+            <small class="text-500">
+              {{ newCommentContent().length }} / 5000
+            </small>
+            <p-button
+              [label]="'comments.post' | translate"
+              icon="pi pi-send"
+              [disabled]="!newCommentContent().trim() || submitting()"
+              [loading]="submitting()"
+              (onClick)="submitComment()"
+              size="small"
+            />
+          </div>
+        </div>
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Login Prompt -->
+  <div *ngIf="!isAuthenticated()" class="login-prompt mb-4">
+    <p-card>
+      <div class="text-center py-3">
+        <p class="text-600 mb-3">{{ 'comments.loginToComment' | translate }}</p>
+        <p-button
+          [label]="'auth.login' | translate"
+          icon="pi pi-sign-in"
+          routerLink="/auth/login"
+          size="small"
+        />
+      </div>
+    </p-card>
+  </div>
+
+  <!-- Comments List -->
+  <div class="comments-list" *ngIf="!loading(); else loadingTemplate">
+    <div *ngIf="hasComments(); else noCommentsTemplate">
+      <p-card *ngFor="let comment of comments()" class="comment-card mb-3">
+        <div class="comment-container">
+          <!-- User Avatar -->
+          <div class="comment-avatar">
+            <p-avatar
+              [label]="getUserInitials(comment.user?.name || 'User')"
+              shape="circle"
+              size="large"
+            />
+          </div>
+
+          <!-- Comment Content -->
+          <div class="comment-body flex-1">
+            <!-- Header -->
+            <div class="comment-header flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="comment-author font-semibold">
+                  {{ comment.user?.name || 'Anonymous' }}
+                </div>
+                <div class="comment-meta text-sm text-500">
+                  {{ getRelativeTime(comment.created_at) }}
+                  <span *ngIf="comment.is_edited" class="ml-2">
+                    ({{ 'comments.edited' | translate }})
+                  </span>
+                </div>
+              </div>
+
+              <!-- Actions Menu (for comment owner) -->
+              <div *ngIf="canEdit(comment)" class="comment-actions flex gap-2">
+                <p-button
+                  *ngIf="editingCommentId() !== comment.id"
+                  icon="pi pi-pencil"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  (onClick)="startEdit(comment)"
+                  [pTooltip]="'comments.edit' | translate"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  severity="danger"
+                  (onClick)="deleteComment(comment)"
+                  [pTooltip]="'comments.delete' | translate"
+                />
+              </div>
+            </div>
+
+            <!-- Comment Text (View Mode) -->
+            <div *ngIf="editingCommentId() !== comment.id" class="comment-text mb-3">
+              {{ comment.content }}
+            </div>
+
+            <!-- Comment Text (Edit Mode) -->
+            <div *ngIf="editingCommentId() === comment.id" class="comment-edit mb-3">
+              <textarea
+                pInputTextarea
+                [(ngModel)]="editingContent"
+                [rows]="3"
+                [autoResize]="true"
+                [maxlength]="5000"
+                class="w-full"
+              ></textarea>
+              <div class="flex justify-content-between align-items-center mt-2">
+                <small class="text-500">
+                  {{ editingContent().length }} / 5000
+                </small>
+                <div class="flex gap-2">
+                  <p-button
+                    [label]="'common.cancel' | translate"
+                    severity="secondary"
+                    size="small"
+                    [text]="true"
+                    (onClick)="cancelEdit()"
+                  />
+                  <p-button
+                    [label]="'common.save' | translate"
+                    size="small"
+                    (onClick)="saveEdit(comment.id)"
+                    [disabled]="!editingContent().trim()"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- Vote Buttons -->
+            <div class="comment-votes flex align-items-center gap-3">
+              <div class="vote-group flex align-items-center gap-1">
+                <p-button
+                  icon="pi pi-arrow-up"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  [severity]="comment.user_vote === 'upvote' ? 'success' : undefined"
+                  (onClick)="vote(comment, 'upvote')"
+                  [pTooltip]="'comments.upvote' | translate"
+                />
+                <span class="vote-count font-semibold">
+                  {{ comment.upvotes }}
+                </span>
+              </div>
+
+              <div class="vote-score font-semibold text-lg"
+                   [class.text-green-500]="comment.score > 0"
+                   [class.text-red-500]="comment.score < 0"
+                   [class.text-500]="comment.score === 0">
+                {{ comment.score > 0 ? '+' : '' }}{{ comment.score }}
+              </div>
+
+              <div class="vote-group flex align-items-center gap-1">
+                <p-button
+                  icon="pi pi-arrow-down"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  [severity]="comment.user_vote === 'downvote' ? 'danger' : undefined"
+                  (onClick)="vote(comment, 'downvote')"
+                  [pTooltip]="'comments.downvote' | translate"
+                />
+                <span class="vote-count font-semibold">
+                  {{ comment.downvotes }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Pagination -->
+      <div *ngIf="totalComments() > pageSize()" class="mt-4">
+        <p-paginator
+          [rows]="pageSize()"
+          [totalRecords]="totalComments()"
+          [first]="currentPage() * pageSize()"
+          (onPageChange)="onPageChange($event)"
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- No Comments Template -->
+  <ng-template #noCommentsTemplate>
+    <p-card>
+      <div class="no-comments text-center py-5">
+        <i class="pi pi-comments text-6xl text-400 mb-3"></i>
+        <p class="text-600">{{ 'comments.noComments' | translate }}</p>
+        <p *ngIf="isAuthenticated()" class="text-500 text-sm">
+          {{ 'comments.beFirst' | translate }}
+        </p>
+      </div>
+    </p-card>
+  </ng-template>
+
+  <!-- Loading Template -->
+  <ng-template #loadingTemplate>
+    <div class="loading-container text-center py-5">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+      <p class="text-600 mt-3">{{ 'common.loading' | translate }}</p>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Toast for messages -->
+<p-toast position="top-right" />
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog />
