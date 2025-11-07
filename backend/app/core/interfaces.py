@@ -66,6 +66,21 @@ class DeckRepository(Protocol):
         """
         ...
 
+    def get_by_id(self, deck_id: str) -> Optional[Deck]:
+        """
+        Get deck by ID without authorization check.
+
+        Use this method when you need to verify deck existence
+        without enforcing ownership (e.g., for commenting on any deck).
+
+        Args:
+            deck_id: Unique deck identifier
+
+        Returns:
+            Deck if found, None otherwise
+        """
+        ...
+
     def list(
         self,
         user_id: str,

@@ -155,6 +155,11 @@ class PostgresDeckRepo:
         )
         return self._to_domain(model) if model else None
 
+    def get_by_id(self, deck_id: str) -> Optional[Deck]:
+        """Get deck by ID without authorization check."""
+        model = self.session.query(DeckModel).filter_by(id=deck_id).first()
+        return self._to_domain(model) if model else None
+
     def list(
         self,
         user_id: str,

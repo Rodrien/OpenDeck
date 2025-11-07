@@ -172,7 +172,7 @@ async def create_comment(
     """
     Create a new comment on a deck.
 
-    Requires authentication.
+    Requires authentication. Any authenticated user can comment on any deck.
 
     Args:
         deck_id: Deck identifier
@@ -188,9 +188,8 @@ async def create_comment(
     Raises:
         HTTPException: If deck not found or validation fails
     """
-    # Verify deck exists - we use current_user.id for the lookup to ensure proper authorization
-    # Note: This will only find decks that belong to the current user
-    deck = deck_repo.get(deck_id, current_user.id)
+    # Verify deck exists - allow any authenticated user to comment
+    deck = deck_repo.get_by_id(deck_id)
     if not deck:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
