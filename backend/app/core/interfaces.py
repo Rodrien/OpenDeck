@@ -23,6 +23,20 @@ class UserRepository(Protocol):
         """Get user by email address."""
         ...
 
+    def get_by_ids(self, user_ids: List[str]) -> List[User]:
+        """
+        Get multiple users by IDs in a single query.
+
+        Useful for batch loading user information to avoid N+1 query problems.
+
+        Args:
+            user_ids: List of user IDs to retrieve
+
+        Returns:
+            List of users that exist (may be shorter than input list)
+        """
+        ...
+
     def create(self, user: User) -> User:
         """Create a new user."""
         ...
@@ -49,6 +63,21 @@ class DeckRepository(Protocol):
 
         Returns:
             Deck if found and belongs to user, None otherwise
+        """
+        ...
+
+    def get_by_id(self, deck_id: str) -> Optional[Deck]:
+        """
+        Get deck by ID without authorization check.
+
+        Use this method when you need to verify deck existence
+        without enforcing ownership (e.g., for commenting on any deck).
+
+        Args:
+            deck_id: Unique deck identifier
+
+        Returns:
+            Deck if found, None otherwise
         """
         ...
 
@@ -961,7 +990,7 @@ class CommentVoteRepository(Protocol):
         """
         ...
 
-    def create_or_update(self, vote: CommentVote) -> CommentVote:
+    def create_or_update(self, vote: CommentVote) -> Optional[CommentVote]:
         """
         Create a new vote or update existing vote.
 
@@ -972,7 +1001,7 @@ class CommentVoteRepository(Protocol):
             vote: Vote to create or update
 
         Returns:
-            Created/updated vote, or None if vote was removed
+            Created/updated vote, or None if vote was removed (toggle off)
         """
         ...
 

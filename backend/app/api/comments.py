@@ -74,9 +74,10 @@ async def list_comments(
     if current_user:
         user_votes = comment_vote_repo.get_user_votes_batch(comment_ids, current_user.id)
 
-    # Batch load user information
+    # Batch load user information - avoid N+1 query problem
     user_ids = list(set(c.user_id for c in comments))
-    users = {user.id: user for user in (user_repo.get(uid) for uid in user_ids) if user}
+    users_list = user_repo.get_by_ids(user_ids)
+    users = {user.id: user for user in users_list}
 
     # Build response with enriched data
     comment_responses = []
@@ -171,7 +172,7 @@ async def create_comment(
     """
     Create a new comment on a deck.
 
-    Requires authentication.
+    Requires authentication. Any authenticated user can comment on any deck.
 
     Args:
         deck_id: Deck identifier
@@ -187,9 +188,13 @@ async def create_comment(
     Raises:
         HTTPException: If deck not found or validation fails
     """
-    # Verify deck exists
-    # Note: In production, you might want to verify user has access to this deck
-    # For now, we'll allow anyone authenticated to comment on any deck
+    # Verify deck exists - allow any authenticated user to comment
+    deck = deck_repo.get_by_id(deck_id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Deck not found"
+        )
 
     # If parent_comment_id is provided, verify it exists
     if comment_data.parent_comment_id:

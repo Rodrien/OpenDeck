@@ -246,6 +246,33 @@
     "downvote": "Votar en contra",
     "loginToComment": "Por favor inicia sesión para comentar",
     "noComments": "Aún no hay comentarios",
-    "beFirst": "¡Sé el primero en comentar!"
+    "beFirst": "¡Sé el primero en comentar!",
+    "error": {
+      "loadFailed": "Error al cargar los comentarios",
+      "loginRequired": "Por favor inicia sesión para comentar",
+      "loginRequiredToVote": "Por favor inicia sesión para votar",
+      "postFailed": "Error al publicar el comentario",
+      "updateFailed": "Error al actualizar el comentario",
+      "deleteFailed": "Error al eliminar el comentario",
+      "voteFailed": "Error al registrar el voto",
+      "tooLong": "Comentario demasiado largo",
+      "tooLongDetail": "Los comentarios no pueden exceder 5000 caracteres"
+    },
+    "success": {
+      "posted": "Comentario publicado exitosamente",
+      "updated": "Comentario actualizado exitosamente",
+      "deleted": "Comentario eliminado exitosamente"
+    },
+    "confirm": {
+      "deleteMessage": "¿Estás seguro de que quieres eliminar este comentario?",
+      "deleteHeader": "Eliminar Comentario"
+    },
+    "authRequired": "Autenticación Requerida",
+    "time": {
+      "justNow": "justo ahora",
+      "minutesAgo": "hace {{count}}m",
+      "hoursAgo": "hace {{count}}h",
+      "daysAgo": "hace {{count}}d"
+    }
   }
 }
