@@ -98,6 +98,7 @@ class Card:
     source_url: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+
     # Spaced repetition fields (SM-2 algorithm)
     ease_factor: float = 2.5  # SM-2 algorithm ease factor
     interval_days: int = 0    # Days until next review
@@ -117,6 +118,12 @@ class Card:
             )
         if not self.deck_id:
             raise ValueError("Card must belong to a deck")
+        if self.ease_factor < 1.3:
+            raise ValueError("Ease factor must be at least 1.3")
+        if self.interval_days < 0:
+            raise ValueError("Interval days cannot be negative")
+        if self.repetitions < 0:
+            raise ValueError("Repetitions cannot be negative")
 
 
 @dataclass
@@ -261,42 +268,87 @@ class Notification:
 
 
 @dataclass
+class CardReview:
+    """
+    Card Review domain model.
+
+    Represents a single review of a flashcard with SM-2 algorithm parameters.
+    Used to track learning progress and calculate optimal review intervals.
+    """
+
+    id: str
+    card_id: str
+    user_id: str
+    review_date: datetime
+    quality: int  # 0-5 rating (0-2 = incorrect, 3-5 = correct)
+    ease_factor: float  # SM-2 ease factor
+    interval_days: int  # Days until next review
+    repetitions: int  # Number of successful consecutive reviews
+    created_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate card review data after initialization."""
+        if not self.card_id:
+            raise ValueError("Review must be associated with a card")
+        if not self.user_id:
+            raise ValueError("Review must belong to a user")
+        if not (0 <= self.quality <= 5):
+            raise ValueError("Quality rating must be between 0 and 5")
+        if self.ease_factor < 1.3:
+            raise ValueError("Ease factor cannot be less than 1.3")
+        if self.interval_days < 0:
+            raise ValueError("Interval days cannot be negative")
+        if self.repetitions < 0:
+            raise ValueError("Repetitions cannot be negative")
+
+
+@dataclass
 class StudySession:
     """
     Study Session domain model.
 
-    Represents a user's study session for reviewing flashcards in a deck.
-    Tracks session statistics including cards reviewed, correctness, and duration.
+    Represents a study session where a user reviews flashcards from a deck.
+    Tracks performance metrics and duration for analytics.
     """
 
     id: str
     user_id: str
     deck_id: str
     started_at: datetime
+    session_type: str = "review"  # 'review', 'learn_new', 'cram'
     ended_at: Optional[datetime] = None
     cards_reviewed: int = 0
     cards_correct: int = 0
     cards_incorrect: int = 0
     total_duration_seconds: Optional[int] = None
-    session_type: str = "review"  # 'review', 'learn', 'cram'
     created_at: datetime = field(default_factory=datetime.utcnow)
 
     def __post_init__(self) -> None:
         """Validate study session data after initialization."""
         if not self.user_id:
-            raise ValueError("Study session must belong to a user")
+            raise ValueError("Session must belong to a user")
         if not self.deck_id:
-            raise ValueError("Study session must be associated with a deck")
+            raise ValueError("Session must be associated with a deck")
+        if self.session_type not in ('review', 'learn_new', 'cram'):
+            raise ValueError(f"Invalid session type: {self.session_type}. Must be 'review', 'learn_new', or 'cram'")
         if self.cards_reviewed < 0:
             raise ValueError("Cards reviewed cannot be negative")
         if self.cards_correct < 0:
             raise ValueError("Cards correct cannot be negative")
         if self.cards_incorrect < 0:
             raise ValueError("Cards incorrect cannot be negative")
+        if self.total_duration_seconds is not None and self.total_duration_seconds < 0:
+            raise ValueError("Duration cannot be negative")
+
+    def end_session(self) -> None:
+        """Mark session as ended and calculate duration."""
+        if not self.ended_at:
+            self.ended_at = datetime.utcnow()
+            self.total_duration_seconds = int((self.ended_at - self.started_at).total_seconds())
 
     def record_review(self, correct: bool) -> None:
         """
-        Update session statistics after card review.
+        Record a card review in the session.
 
         Args:
             correct: Whether the card was answered correctly (quality >= 3)
@@ -307,45 +359,86 @@ class StudySession:
         else:
             self.cards_incorrect += 1
 
-    def end_session(self) -> None:
-        """Mark session as completed and calculate duration."""
-        self.ended_at = datetime.utcnow()
-        if self.ended_at and self.started_at:
-            self.total_duration_seconds = int(
-                (self.ended_at - self.started_at).total_seconds()
-            )
+
+class VoteType(str, Enum):
+    """Comment vote types."""
+
+    UPVOTE = "upvote"
+    DOWNVOTE = "downvote"
 
 
 @dataclass
-class CardReview:
+class DeckComment:
     """
-    Card Review domain model.
+    Deck Comment domain model.
 
-    Represents a single review event of a flashcard, storing the quality rating
-    and resulting spaced repetition parameters from the SM-2 algorithm.
+    Represents a user comment on a deck with support for nested replies.
+    Comments can be upvoted/downvoted by users.
     """
 
     id: str
-    card_id: str
+    deck_id: str
     user_id: str
-    review_date: datetime
-    quality: int  # 0-5 scale from SM-2 algorithm
-    ease_factor: float  # SM-2 ease factor after review
-    interval_days: int  # Days until next review
-    repetitions: int  # Consecutive successful reviews
+    content: str
+    parent_comment_id: Optional[str] = None
+    is_edited: bool = False
     created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
 
     def __post_init__(self) -> None:
-        """Validate card review data after initialization."""
-        if not self.card_id:
-            raise ValueError("Card review must be associated with a card")
+        """Validate comment data after initialization."""
+        if not self.deck_id:
+            raise ValueError("Comment must be associated with a deck")
         if not self.user_id:
-            raise ValueError("Card review must belong to a user")
-        if not 0 <= self.quality <= 5:
-            raise ValueError("Quality must be between 0 and 5")
-        if self.ease_factor < 1.3:
-            raise ValueError("Ease factor must be at least 1.3")
-        if self.interval_days < 0:
-            raise ValueError("Interval days cannot be negative")
-        if self.repetitions < 0:
-            raise ValueError("Repetitions cannot be negative")
+            raise ValueError("Comment must belong to a user")
+        if not self.content or not self.content.strip():
+            raise ValueError("Comment content cannot be empty")
+        if len(self.content) > 5000:
+            raise ValueError("Comment content cannot exceed 5000 characters")
+
+    def edit_content(self, new_content: str) -> None:
+        """
+        Edit the comment content.
+
+        Args:
+            new_content: The new content for the comment
+        """
+        if not new_content or not new_content.strip():
+            raise ValueError("Comment content cannot be empty")
+        if len(new_content) > 5000:
+            raise ValueError("Comment content cannot exceed 5000 characters")
+
+        self.content = new_content
+        self.is_edited = True
+        self.updated_at = datetime.utcnow()
+
+
+@dataclass
+class CommentVote:
+    """
+    Comment Vote domain model.
+
+    Represents a user's upvote or downvote on a comment.
+    Each user can only have one vote per comment.
+    """
+
+    id: str
+    comment_id: str
+    user_id: str
+    vote_type: VoteType
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    def __post_init__(self) -> None:
+        """Validate vote data after initialization."""
+        if not self.comment_id:
+            raise ValueError("Vote must be associated with a comment")
+        if not self.user_id:
+            raise ValueError("Vote must belong to a user")
+        if not isinstance(self.vote_type, VoteType):
+            raise ValueError(f"Invalid vote type: {self.vote_type}. Must be 'upvote' or 'downvote'")
+
+    def toggle_vote(self) -> None:
+        """Toggle the vote between upvote and downvote."""
+        self.vote_type = VoteType.DOWNVOTE if self.vote_type == VoteType.UPVOTE else VoteType.UPVOTE
+        self.updated_at = datetime.utcnow()

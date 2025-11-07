@@ -44,6 +44,27 @@
     "loadingPage": "Loading cards...",
     "page": "Page"
   },
+  "study": {
+    "studyNow": "Study Now",
+    "cardsDue": "cards due",
+    "sessionComplete": "Session Complete!",
+    "greatWork": "Great work! You've completed this study session.",
+    "reviewedCards": "Cards Reviewed",
+    "correctCards": "Correct Cards",
+    "accuracy": "Accuracy",
+    "studyAgain": "Study Again",
+    "preparingSession": "Preparing your study session...",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "flip": "Click to flip",
+    "clickToFlip": "Click to flip card",
+    "orPressSpace": "or press Space",
+    "rateYourPerformance": "How well did you know this?",
+    "reviewedCount": "Reviewed",
+    "correctCount": "Correct"
+  },
   "deck": {
     "title": "Title",
     "description": "Description",
@@ -209,6 +230,46 @@
     },
     "time": {
       "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago"
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "placeholder": "Write a comment...",
+    "post": "Post Comment",
+    "edit": "Edit",
+    "delete": "Delete",
+    "edited": "edited",
+    "upvote": "Upvote",
+    "downvote": "Downvote",
+    "loginToComment": "Please log in to comment",
+    "noComments": "No comments yet",
+    "beFirst": "Be the first to comment!",
+    "error": {
+      "loadFailed": "Failed to load comments",
+      "loginRequired": "Please log in to comment",
+      "loginRequiredToVote": "Please log in to vote",
+      "postFailed": "Failed to post comment",
+      "updateFailed": "Failed to update comment",
+      "deleteFailed": "Failed to delete comment",
+      "voteFailed": "Failed to record vote",
+      "tooLong": "Comment Too Long",
+      "tooLongDetail": "Comments cannot exceed 5000 characters"
+    },
+    "success": {
+      "posted": "Comment posted successfully",
+      "updated": "Comment updated successfully",
+      "deleted": "Comment deleted successfully"
+    },
+    "confirm": {
+      "deleteMessage": "Are you sure you want to delete this comment?",
+      "deleteHeader": "Delete Comment"
+    },
+    "authRequired": "Authentication Required",
+    "time": {
+      "justNow": "just now",
       "minutesAgo": "{{count}}m ago",
       "hoursAgo": "{{count}}h ago",
       "daysAgo": "{{count}}d ago"

@@ -7,12 +7,12 @@ Concrete implementations of repository interfaces using SQLAlchemy.
 from __future__ import annotations
 
 import uuid
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, StudySession, CardReview
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
 from app.core.interfaces import (
     UserRepository,
     DeckRepository,
@@ -21,8 +21,10 @@ from app.core.interfaces import (
     TopicRepository,
     UserFCMTokenRepository,
     NotificationRepository,
-    StudySessionRepository,
     CardReviewRepository,
+    StudySessionRepository,
+    DeckCommentRepository,
+    CommentVoteRepository,
 )
 from app.db.models import (
     UserModel,
@@ -32,8 +34,10 @@ from app.db.models import (
     TopicModel,
     UserFCMTokenModel,
     NotificationModel,
-    StudySessionModel,
     CardReviewModel,
+    StudySessionModel,
+    DeckCommentModel,
+    CommentVoteModel,
     deck_topics,
     card_topics,
 )
@@ -59,6 +63,28 @@ class PostgresUserRepo:
         """Get user by email address."""
         model = self.session.query(UserModel).filter_by(email=email).first()
         return self._to_domain(model) if model else None
+
+    def get_by_ids(self, user_ids: List[str]) -> List[User]:
+        """
+        Get multiple users by IDs in a single query.
+
+        Useful for batch loading user information to avoid N+1 query problems.
+
+        Args:
+            user_ids: List of user IDs to retrieve
+
+        Returns:
+            List of users that exist (may be shorter than input list)
+        """
+        if not user_ids:
+            return []
+
+        models = (
+            self.session.query(UserModel)
+            .filter(UserModel.id.in_(user_ids))
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
 
     def create(self, user: User) -> User:
         """Create a new user."""
@@ -127,6 +153,11 @@ class PostgresDeckRepo:
             .filter_by(id=deck_id, user_id=user_id)
             .first()
         )
+        return self._to_domain(model) if model else None
+
+    def get_by_id(self, deck_id: str) -> Optional[Deck]:
+        """Get deck by ID without authorization check."""
+        model = self.session.query(DeckModel).filter_by(id=deck_id).first()
         return self._to_domain(model) if model else None
 
     def list(
@@ -270,6 +301,11 @@ class PostgresCardRepo:
             answer=card.answer,
             source=card.source,
             source_url=card.source_url,
+            ease_factor=card.ease_factor,
+            interval_days=card.interval_days,
+            repetitions=card.repetitions,
+            next_review_date=card.next_review_date,
+            is_learning=card.is_learning,
             created_at=card.created_at,
             updated_at=card.updated_at,
         )
@@ -298,6 +334,11 @@ class PostgresCardRepo:
                 answer=card.answer,
                 source=card.source,
                 source_url=card.source_url,
+                ease_factor=card.ease_factor,
+                interval_days=card.interval_days,
+                repetitions=card.repetitions,
+                next_review_date=card.next_review_date,
+                is_learning=card.is_learning,
                 created_at=card.created_at,
                 updated_at=card.updated_at,
             )
@@ -335,33 +376,33 @@ class PostgresCardRepo:
             self._update_deck_count(deck_id, increment=-1)
             self.session.commit()
 
+    def _update_deck_count(self, deck_id: str, increment: int) -> None:
+        """Update the card count for a deck."""
+        deck = self.session.query(DeckModel).filter_by(id=deck_id).first()
+        if deck:
+            deck.card_count = max(0, deck.card_count + increment)
+
     def get_due_cards(
         self,
         deck_id: str,
         user_id: str,
         limit: int = 100,
     ) -> List[Card]:
-        """
-        Get cards due for review in a deck.
-
-        Returns cards where next_review_date is NULL or <= current time.
-        """
-        now = datetime.utcnow()
-
-        # First verify deck belongs to user
+        """Get cards due for review in a deck."""
+        # Verify user has access to the deck
         deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
         if not deck:
             return []
 
-        # Get due cards (next_review_date is NULL or <= now)
+        # Get cards where next_review_date is NULL or <= now
+        now = datetime.utcnow()
         models = (
             self.session.query(CardModel)
-            .filter_by(deck_id=deck_id)
             .filter(
-                (CardModel.next_review_date.is_(None)) |
-                (CardModel.next_review_date <= now)
+                CardModel.deck_id == deck_id,
+                (CardModel.next_review_date.is_(None)) | (CardModel.next_review_date <= now)
             )
-            .order_by(CardModel.created_at)
+            .order_by(CardModel.next_review_date.nullsfirst())
             .limit(limit)
             .all()
         )
@@ -375,8 +416,8 @@ class PostgresCardRepo:
         repetitions: int,
         next_review_date: datetime,
         is_learning: bool,
-    ) -> None:
-        """Update card's spaced repetition parameters after review."""
+    ) -> Card:
+        """Update card's spaced repetition parameters."""
         model = self.session.query(CardModel).filter_by(id=card_id).first()
         if not model:
             raise ValueError(f"Card {card_id} not found")
@@ -389,142 +430,8 @@ class PostgresCardRepo:
         model.updated_at = datetime.utcnow()
 
         self.session.commit()
-
-    def reset_card_progress(self, card_id: str) -> None:
-        """Reset a card's spaced repetition progress to default values."""
-        model = self.session.query(CardModel).filter_by(id=card_id).first()
-        if not model:
-            raise ValueError(f"Card {card_id} not found")
-
-        model.ease_factor = 2.5
-        model.interval_days = 0
-        model.repetitions = 0
-        model.next_review_date = None
-        model.is_learning = True
-        model.updated_at = datetime.utcnow()
-
-        self.session.commit()
-
-    def reset_deck_progress(self, deck_id: str, user_id: str) -> None:
-        """Reset all cards' spaced repetition progress in a deck."""
-        # First verify deck belongs to user
-        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
-        if not deck:
-            raise ValueError(f"Deck {deck_id} not found or access denied")
-
-        # Reset all cards in the deck
-        self.session.query(CardModel).filter_by(deck_id=deck_id).update(
-            {
-                "ease_factor": 2.5,
-                "interval_days": 0,
-                "repetitions": 0,
-                "next_review_date": None,
-                "is_learning": True,
-                "updated_at": datetime.utcnow(),
-            },
-            synchronize_session=False,
-        )
-        self.session.commit()
-
-    def get_deck_stats(self, deck_id: str, user_id: str) -> dict:
-        """Get study statistics for a deck."""
-        from sqlalchemy import func
-
-        # First verify deck belongs to user
-        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
-        if not deck:
-            raise ValueError(f"Deck {deck_id} not found or access denied")
-
-        now = datetime.utcnow()
-
-        # Get total cards count
-        total_cards = self.session.query(func.count(CardModel.id)).filter_by(deck_id=deck_id).scalar() or 0
-
-        if total_cards == 0:
-            return {
-                "total_cards": 0,
-                "new_cards": 0,
-                "learning_cards": 0,
-                "review_cards": 0,
-                "due_cards": 0,
-                "next_review_date": None,
-                "average_ease_factor": 2.5,
-                "completion_rate": 0.0,
-            }
-
-        # Get new cards (never reviewed)
-        new_cards = (
-            self.session.query(func.count(CardModel.id))
-            .filter_by(deck_id=deck_id)
-            .filter(CardModel.next_review_date.is_(None))
-            .scalar()
-            or 0
-        )
-
-        # Get learning cards (is_learning = true and has been reviewed at least once)
-        learning_cards = (
-            self.session.query(func.count(CardModel.id))
-            .filter_by(deck_id=deck_id, is_learning=True)
-            .filter(CardModel.next_review_date.isnot(None))
-            .scalar()
-            or 0
-        )
-
-        # Get review cards (is_learning = false)
-        review_cards = (
-            self.session.query(func.count(CardModel.id))
-            .filter_by(deck_id=deck_id, is_learning=False)
-            .scalar()
-            or 0
-        )
-
-        # Get due cards (next_review_date is NULL or <= now)
-        due_cards = (
-            self.session.query(func.count(CardModel.id))
-            .filter_by(deck_id=deck_id)
-            .filter(
-                (CardModel.next_review_date.is_(None)) | (CardModel.next_review_date <= now)
-            )
-            .scalar()
-            or 0
-        )
-
-        # Get next review date (earliest future review)
-        next_review_date = (
-            self.session.query(func.min(CardModel.next_review_date))
-            .filter_by(deck_id=deck_id)
-            .filter(CardModel.next_review_date > now)
-            .scalar()
-        )
-
-        # Get average ease factor
-        average_ease_factor = (
-            self.session.query(func.avg(CardModel.ease_factor))
-            .filter_by(deck_id=deck_id)
-            .scalar()
-            or 2.5
-        )
-
-        # Calculate completion rate (cards that have been reviewed at least once)
-        reviewed_cards = total_cards - new_cards
-        completion_rate = (reviewed_cards / total_cards * 100) if total_cards > 0 else 0.0
-
-        return {
-            "total_cards": total_cards,
-            "new_cards": new_cards,
-            "learning_cards": learning_cards,
-            "review_cards": review_cards,
-            "due_cards": due_cards,
-            "next_review_date": next_review_date,
-            "average_ease_factor": float(average_ease_factor),
-            "completion_rate": round(completion_rate, 2),
-        }
-
-    def _update_deck_count(self, deck_id: str, increment: int) -> None:
-        """Update the card count for a deck."""
-        deck = self.session.query(DeckModel).filter_by(id=deck_id).first()
-        if deck:
-            deck.card_count = max(0, deck.card_count + increment)
+        self.session.refresh(model)
+        return self._to_domain(model)
 
     @staticmethod
     def _to_domain(model: CardModel) -> Card:
@@ -536,13 +443,13 @@ class PostgresCardRepo:
             answer=model.answer,
             source=model.source,
             source_url=model.source_url,
-            created_at=model.created_at,
-            updated_at=model.updated_at,
             ease_factor=float(model.ease_factor) if model.ease_factor else 2.5,
             interval_days=model.interval_days if model.interval_days is not None else 0,
             repetitions=model.repetitions if model.repetitions is not None else 0,
             next_review_date=model.next_review_date,
             is_learning=model.is_learning if model.is_learning is not None else True,
+            created_at=model.created_at,
+            updated_at=model.updated_at,
         )
 
 
@@ -1055,6 +962,96 @@ class PostgresNotificationRepo:
         )
 
 
+class PostgresCardReviewRepo:
+    """PostgreSQL implementation of CardReviewRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, review_id: str) -> Optional[CardReview]:
+        """Get card review by ID."""
+        model = self.session.query(CardReviewModel).filter_by(id=review_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_card(
+        self,
+        card_id: str,
+        user_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[CardReview]:
+        """Get review history for a specific card."""
+        models = (
+            self.session.query(CardReviewModel)
+            .filter_by(card_id=card_id, user_id=user_id)
+            .order_by(CardReviewModel.review_date.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
+    def get_by_user(
+        self,
+        user_id: str,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[CardReview]:
+        """Get all reviews for a user."""
+        models = (
+            self.session.query(CardReviewModel)
+            .filter_by(user_id=user_id)
+            .order_by(CardReviewModel.review_date.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
+    def create(self, review: CardReview) -> CardReview:
+        """Create a new card review."""
+        if not review.id:
+            review.id = _generate_id()
+
+        model = CardReviewModel(
+            id=review.id,
+            card_id=review.card_id,
+            user_id=review.user_id,
+            review_date=review.review_date,
+            quality=review.quality,
+            ease_factor=review.ease_factor,
+            interval_days=review.interval_days,
+            repetitions=review.repetitions,
+            created_at=review.created_at,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def delete(self, review_id: str) -> None:
+        """Delete a card review."""
+        model = self.session.query(CardReviewModel).filter_by(id=review_id).first()
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    @staticmethod
+    def _to_domain(model: CardReviewModel) -> CardReview:
+        """Convert SQLAlchemy model to domain model."""
+        return CardReview(
+            id=model.id,
+            card_id=model.card_id,
+            user_id=model.user_id,
+            review_date=model.review_date,
+            quality=model.quality,
+            ease_factor=float(model.ease_factor),
+            interval_days=model.interval_days,
+            repetitions=model.repetitions,
+            created_at=model.created_at,
+        )
+
+
 class PostgresStudySessionRepo:
     """PostgreSQL implementation of StudySessionRepository."""
 
@@ -1062,8 +1059,40 @@ class PostgresStudySessionRepo:
         self.session = session
 
     def get(self, session_id: str) -> Optional[StudySession]:
-        """Get session by ID."""
+        """Get study session by ID."""
         model = self.session.query(StudySessionModel).filter_by(id=session_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_user(
+        self,
+        user_id: str,
+        deck_id: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[StudySession]:
+        """Get study sessions for a user."""
+        query = self.session.query(StudySessionModel).filter_by(user_id=user_id)
+
+        if deck_id:
+            query = query.filter_by(deck_id=deck_id)
+
+        models = (
+            query.order_by(StudySessionModel.started_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(model) for model in models]
+
+    def get_active_session(self, user_id: str, deck_id: str) -> Optional[StudySession]:
+        """Get active (not ended) study session for a user and deck."""
+        model = (
+            self.session.query(StudySessionModel)
+            .filter_by(user_id=user_id, deck_id=deck_id)
+            .filter(StudySessionModel.ended_at.is_(None))
+            .order_by(StudySessionModel.started_at.desc())
+            .first()
+        )
         return self._to_domain(model) if model else None
 
     def create(self, session: StudySession) -> StudySession:
@@ -1090,7 +1119,7 @@ class PostgresStudySessionRepo:
         return self._to_domain(model)
 
     def update(self, session: StudySession) -> StudySession:
-        """Update existing session."""
+        """Update existing study session."""
         model = self.session.query(StudySessionModel).filter_by(id=session.id).first()
         if not model:
             raise ValueError(f"Study session {session.id} not found")
@@ -1100,41 +1129,17 @@ class PostgresStudySessionRepo:
         model.cards_correct = session.cards_correct
         model.cards_incorrect = session.cards_incorrect
         model.total_duration_seconds = session.total_duration_seconds
-        model.session_type = session.session_type
 
         self.session.commit()
         self.session.refresh(model)
         return self._to_domain(model)
 
-    def get_active_session(self, user_id: str, deck_id: str) -> Optional[StudySession]:
-        """Get active (not ended) session for user and deck."""
-        model = (
-            self.session.query(StudySessionModel)
-            .filter_by(user_id=user_id, deck_id=deck_id)
-            .filter(StudySessionModel.ended_at.is_(None))
-            .order_by(StudySessionModel.started_at.desc())
-            .first()
-        )
-        return self._to_domain(model) if model else None
-
-    def get_by_user(
-        self,
-        user_id: str,
-        deck_id: Optional[str] = None,
-        limit: int = 100,
-    ) -> List[StudySession]:
-        """List study sessions for a user."""
-        query = self.session.query(StudySessionModel).filter_by(user_id=user_id)
-
-        if deck_id:
-            query = query.filter_by(deck_id=deck_id)
-
-        models = (
-            query.order_by(StudySessionModel.started_at.desc())
-            .limit(limit)
-            .all()
-        )
-        return [self._to_domain(model) for model in models]
+    def delete(self, session_id: str) -> None:
+        """Delete a study session."""
+        model = self.session.query(StudySessionModel).filter_by(id=session_id).first()
+        if model:
+            self.session.delete(model)
+            self.session.commit()
 
     @staticmethod
     def _to_domain(model: StudySessionModel) -> StudySession:
@@ -1154,44 +1159,302 @@ class PostgresStudySessionRepo:
         )
 
 
-class PostgresCardReviewRepo:
-    """PostgreSQL implementation of CardReviewRepository."""
+class PostgresDeckCommentRepo:
+    """PostgreSQL implementation of DeckCommentRepository."""
 
     def __init__(self, session: Session) -> None:
         self.session = session
 
-    def create(self, review: CardReview) -> CardReview:
-        """Create a new card review record."""
-        if not review.id:
-            review.id = _generate_id()
+    def get(self, comment_id: str) -> Optional[DeckComment]:
+        """Get comment by ID."""
+        model = self.session.query(DeckCommentModel).filter_by(id=comment_id).first()
+        return self._to_domain(model) if model else None
 
-        model = CardReviewModel(
-            id=review.id,
-            card_id=review.card_id,
-            user_id=review.user_id,
-            review_date=review.review_date,
-            quality=review.quality,
-            ease_factor=review.ease_factor,
-            interval_days=review.interval_days,
-            repetitions=review.repetitions,
-            created_at=review.created_at,
+    def get_by_deck(
+        self,
+        deck_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> Tuple[List[DeckComment], int]:
+        """Get comments for a deck with pagination."""
+        # Get total count
+        total = (
+            self.session.query(func.count(DeckCommentModel.id))
+            .filter_by(deck_id=deck_id, parent_comment_id=None)
+            .scalar()
+        )
+
+        # Get paginated comments (only top-level, not replies)
+        models = (
+            self.session.query(DeckCommentModel)
+            .filter_by(deck_id=deck_id, parent_comment_id=None)
+            .order_by(DeckCommentModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        comments = [self._to_domain(m) for m in models]
+        return comments, total
+
+    def get_by_user(
+        self,
+        user_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[DeckComment]:
+        """Get comments by a user."""
+        models = (
+            self.session.query(DeckCommentModel)
+            .filter_by(user_id=user_id)
+            .order_by(DeckCommentModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def get_replies(
+        self,
+        parent_comment_id: str,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[DeckComment]:
+        """Get replies to a comment."""
+        models = (
+            self.session.query(DeckCommentModel)
+            .filter_by(parent_comment_id=parent_comment_id)
+            .order_by(DeckCommentModel.created_at.asc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def create(self, comment: DeckComment) -> DeckComment:
+        """Create a new comment."""
+        if not comment.id:
+            comment.id = _generate_id()
+
+        model = DeckCommentModel(
+            id=comment.id,
+            deck_id=comment.deck_id,
+            user_id=comment.user_id,
+            content=comment.content,
+            parent_comment_id=comment.parent_comment_id,
+            is_edited=comment.is_edited,
+            created_at=comment.created_at,
+            updated_at=comment.updated_at,
         )
         self.session.add(model)
         self.session.commit()
         self.session.refresh(model)
         return self._to_domain(model)
 
+    def update(self, comment: DeckComment) -> DeckComment:
+        """Update existing comment."""
+        comment.updated_at = datetime.utcnow()
+        model = self.session.query(DeckCommentModel).filter_by(id=comment.id).first()
+        if not model:
+            raise ValueError(f"Comment {comment.id} not found")
+
+        model.content = comment.content
+        model.is_edited = comment.is_edited
+        model.updated_at = comment.updated_at
+
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def delete(self, comment_id: str, user_id: str) -> None:
+        """Delete a comment with authorization check."""
+        model = (
+            self.session.query(DeckCommentModel)
+            .filter_by(id=comment_id, user_id=user_id)
+            .first()
+        )
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    def count_by_deck(self, deck_id: str) -> int:
+        """Count total comments for a deck."""
+        return (
+            self.session.query(func.count(DeckCommentModel.id))
+            .filter_by(deck_id=deck_id)
+            .scalar()
+        )
+
     @staticmethod
-    def _to_domain(model: CardReviewModel) -> CardReview:
+    def _to_domain(model: DeckCommentModel) -> DeckComment:
         """Convert SQLAlchemy model to domain model."""
-        return CardReview(
+        return DeckComment(
             id=model.id,
-            card_id=model.card_id,
+            deck_id=model.deck_id,
             user_id=model.user_id,
-            review_date=model.review_date,
-            quality=model.quality,
-            ease_factor=float(model.ease_factor),
-            interval_days=model.interval_days,
-            repetitions=model.repetitions,
+            content=model.content,
+            parent_comment_id=model.parent_comment_id,
+            is_edited=model.is_edited,
             created_at=model.created_at,
+            updated_at=model.updated_at,
+        )
+
+
+class PostgresCommentVoteRepo:
+    """PostgreSQL implementation of CommentVoteRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, vote_id: str) -> Optional[CommentVote]:
+        """Get vote by ID."""
+        model = self.session.query(CommentVoteModel).filter_by(id=vote_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_user_vote(self, comment_id: str, user_id: str) -> Optional[CommentVote]:
+        """Get user's vote on a specific comment."""
+        model = (
+            self.session.query(CommentVoteModel)
+            .filter_by(comment_id=comment_id, user_id=user_id)
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
+    def get_vote_counts(self, comment_id: str) -> Tuple[int, int]:
+        """Get upvote and downvote counts for a comment."""
+        result = (
+            self.session.query(
+                func.sum(case((CommentVoteModel.vote_type == 'upvote', 1), else_=0)).label('upvotes'),
+                func.sum(case((CommentVoteModel.vote_type == 'downvote', 1), else_=0)).label('downvotes'),
+            )
+            .filter_by(comment_id=comment_id)
+            .first()
+        )
+        return (result.upvotes or 0, result.downvotes or 0)
+
+    def get_vote_counts_batch(self, comment_ids: List[str]) -> dict[str, Tuple[int, int]]:
+        """Get vote counts for multiple comments in a single query."""
+        if not comment_ids:
+            return {}
+
+        results = (
+            self.session.query(
+                CommentVoteModel.comment_id,
+                func.sum(case((CommentVoteModel.vote_type == 'upvote', 1), else_=0)).label('upvotes'),
+                func.sum(case((CommentVoteModel.vote_type == 'downvote', 1), else_=0)).label('downvotes'),
+            )
+            .filter(CommentVoteModel.comment_id.in_(comment_ids))
+            .group_by(CommentVoteModel.comment_id)
+            .all()
+        )
+
+        vote_counts = {comment_id: (0, 0) for comment_id in comment_ids}
+        for row in results:
+            vote_counts[row.comment_id] = (row.upvotes or 0, row.downvotes or 0)
+
+        return vote_counts
+
+    def get_user_votes_batch(self, comment_ids: List[str], user_id: str) -> dict[str, VoteType]:
+        """Get user's votes for multiple comments in a single query."""
+        if not comment_ids:
+            return {}
+
+        results = (
+            self.session.query(CommentVoteModel.comment_id, CommentVoteModel.vote_type)
+            .filter(
+                CommentVoteModel.comment_id.in_(comment_ids),
+                CommentVoteModel.user_id == user_id,
+            )
+            .all()
+        )
+
+        user_votes = {}
+        for row in results:
+            user_votes[row.comment_id] = VoteType(row.vote_type)
+
+        return user_votes
+
+    def create_or_update(self, vote: CommentVote) -> Optional[CommentVote]:
+        """
+        Create a new vote or update existing vote.
+
+        If user already voted with the same type, the vote is removed (toggle off).
+        If user voted with a different type, the vote is updated.
+
+        Args:
+            vote: Vote to create or update
+
+        Returns:
+            Created/updated vote, or None if vote was removed (toggle off)
+        """
+        # Check if user already voted
+        existing = (
+            self.session.query(CommentVoteModel)
+            .filter_by(comment_id=vote.comment_id, user_id=vote.user_id)
+            .first()
+        )
+
+        if existing:
+            # If same vote type, remove the vote (toggle off)
+            if existing.vote_type == vote.vote_type.value:
+                self.session.delete(existing)
+                self.session.commit()
+                return None
+
+            # Update to new vote type
+            existing.vote_type = vote.vote_type.value
+            existing.updated_at = datetime.utcnow()
+            self.session.commit()
+            self.session.refresh(existing)
+            return self._to_domain(existing)
+
+        # Create new vote
+        if not vote.id:
+            vote.id = _generate_id()
+
+        model = CommentVoteModel(
+            id=vote.id,
+            comment_id=vote.comment_id,
+            user_id=vote.user_id,
+            vote_type=vote.vote_type.value,
+            created_at=vote.created_at,
+            updated_at=vote.updated_at,
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def delete(self, vote_id: str, user_id: str) -> None:
+        """Delete a vote with authorization check."""
+        model = (
+            self.session.query(CommentVoteModel)
+            .filter_by(id=vote_id, user_id=user_id)
+            .first()
+        )
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    def delete_by_comment_user(self, comment_id: str, user_id: str) -> None:
+        """Delete user's vote on a comment."""
+        model = (
+            self.session.query(CommentVoteModel)
+            .filter_by(comment_id=comment_id, user_id=user_id)
+            .first()
+        )
+        if model:
+            self.session.delete(model)
+            self.session.commit()
+
+    @staticmethod
+    def _to_domain(model: CommentVoteModel) -> CommentVote:
+        """Convert SQLAlchemy model to domain model."""
+        return CommentVote(
+            id=model.id,
+            comment_id=model.comment_id,
+            user_id=model.user_id,
+            vote_type=VoteType(model.vote_type),
+            created_at=model.created_at,
+            updated_at=model.updated_at,
         )

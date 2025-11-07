@@ -44,6 +44,27 @@
     "loadingPage": "Cargando tarjetas...",
     "page": "Página"
   },
+  "study": {
+    "studyNow": "Estudiar ahora",
+    "cardsDue": "tarjetas pendientes",
+    "sessionComplete": "¡Sesión completada!",
+    "greatWork": "¡Excelente trabajo! Has completado esta sesión de estudio.",
+    "reviewedCards": "Tarjetas revisadas",
+    "correctCards": "Tarjetas correctas",
+    "accuracy": "Precisión",
+    "studyAgain": "Estudiar de nuevo",
+    "preparingSession": "Preparando tu sesión de estudio...",
+    "again": "Otra vez",
+    "hard": "Difícil",
+    "good": "Bien",
+    "easy": "Fácil",
+    "flip": "Haz clic para voltear",
+    "clickToFlip": "Haz clic para voltear la tarjeta",
+    "orPressSpace": "o presiona Espacio",
+    "rateYourPerformance": "¿Qué tan bien lo sabías?",
+    "reviewedCount": "Revisadas",
+    "correctCount": "Correctas"
+  },
   "deck": {
     "title": "Título",
     "description": "Descripción",
@@ -212,6 +233,46 @@
       "minutesAgo": "Hace {{count}}m",
       "hoursAgo": "Hace {{count}}h",
       "daysAgo": "Hace {{count}}d"
+    }
+  },
+  "comments": {
+    "title": "Comentarios",
+    "placeholder": "Escribe un comentario...",
+    "post": "Publicar Comentario",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "edited": "editado",
+    "upvote": "Votar a favor",
+    "downvote": "Votar en contra",
+    "loginToComment": "Por favor inicia sesión para comentar",
+    "noComments": "Aún no hay comentarios",
+    "beFirst": "¡Sé el primero en comentar!",
+    "error": {
+      "loadFailed": "Error al cargar los comentarios",
+      "loginRequired": "Por favor inicia sesión para comentar",
+      "loginRequiredToVote": "Por favor inicia sesión para votar",
+      "postFailed": "Error al publicar el comentario",
+      "updateFailed": "Error al actualizar el comentario",
+      "deleteFailed": "Error al eliminar el comentario",
+      "voteFailed": "Error al registrar el voto",
+      "tooLong": "Comentario demasiado largo",
+      "tooLongDetail": "Los comentarios no pueden exceder 5000 caracteres"
+    },
+    "success": {
+      "posted": "Comentario publicado exitosamente",
+      "updated": "Comentario actualizado exitosamente",
+      "deleted": "Comentario eliminado exitosamente"
+    },
+    "confirm": {
+      "deleteMessage": "¿Estás seguro de que quieres eliminar este comentario?",
+      "deleteHeader": "Eliminar Comentario"
+    },
+    "authRequired": "Autenticación Requerida",
+    "time": {
+      "justNow": "justo ahora",
+      "minutesAgo": "hace {{count}}m",
+      "hoursAgo": "hace {{count}}h",
+      "daysAgo": "hace {{count}}d"
     }
   }
 }
