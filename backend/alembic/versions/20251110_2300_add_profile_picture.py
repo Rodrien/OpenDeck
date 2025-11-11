@@ -1,7 +1,7 @@
 """Add profile picture column to users
 
 Revision ID: 20251110_2300
-Revises: 20251104_2000
+Revises: 006
 Create Date: 2025-11-10 23:00:00
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '20251110_2300'
-down_revision = '20251104_2000'
+down_revision = '006'
 branch_labels = None
 depends_on = None
 

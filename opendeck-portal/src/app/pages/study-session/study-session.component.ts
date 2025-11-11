@@ -19,6 +19,9 @@ import { CardService } from '../../services/card.service';
 import { StudySession, QUALITY_RATINGS, QualityRating } from '../../models/study.model';
 import { Card } from '../../models/card.model';
 
+// Components
+import { ReportCardDialog } from '../../components/report-card-dialog/report-card-dialog';
+
 /**
  * Study Session Component
  * Implements spaced repetition study session with flashcard review
@@ -34,7 +37,8 @@ import { Card } from '../../models/card.model';
     ProgressBarModule,
     DividerModule,
     ToastModule,
-    TooltipModule
+    TooltipModule,
+    ReportCardDialog
   ],
   providers: [MessageService],
   templateUrl: './study-session.component.html',
@@ -55,6 +59,7 @@ export class StudySessionComponent implements OnInit, OnDestroy {
   isLoading = signal<boolean>(true);
   isSessionComplete = signal<boolean>(false);
   error = signal<string | null>(null);
+  showReportDialog = signal<boolean>(false);
 
   // Computed values
   currentCard = computed(() => {
@@ -388,5 +393,20 @@ export class StudySessionComponent implements OnInit, OnDestroy {
         }
         break;
     }
+  }
+
+  /**
+   * Open the report card dialog
+   */
+  openReportDialog(): void {
+    this.showReportDialog.set(true);
+  }
+
+  /**
+   * Handle card report submission during study session
+   */
+  onCardReported(): void {
+    // Optional: Track reported cards in session
+    console.log('Card reported during study session');
   }
 }

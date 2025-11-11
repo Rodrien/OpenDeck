@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus
 from app.core.interfaces import (
     UserRepository,
     DeckRepository,
@@ -25,6 +25,7 @@ from app.core.interfaces import (
     StudySessionRepository,
     DeckCommentRepository,
     CommentVoteRepository,
+    CardReportRepository,
 )
 from app.db.models import (
     UserModel,
@@ -38,6 +39,7 @@ from app.db.models import (
     StudySessionModel,
     DeckCommentModel,
     CommentVoteModel,
+    CardReportModel,
     deck_topics,
     card_topics,
 )
@@ -1546,4 +1548,103 @@ class PostgresCommentVoteRepo:
             vote_type=VoteType(model.vote_type),
             created_at=model.created_at,
             updated_at=model.updated_at,
+        )
+
+
+class PostgresCardReportRepo:
+    """PostgreSQL implementation of CardReportRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, report_id: str) -> Optional[CardReport]:
+        """Get report by ID."""
+        model = self.session.query(CardReportModel).filter_by(id=report_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_by_card_id(self, card_id: str) -> List[CardReport]:
+        """Get all reports for a specific card."""
+        models = (
+            self.session.query(CardReportModel)
+            .filter_by(card_id=card_id)
+            .order_by(CardReportModel.created_at.desc())
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def get_by_user_id(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CardReport]:
+        """Get all reports created by a user."""
+        models = (
+            self.session.query(CardReportModel)
+            .filter_by(user_id=user_id)
+            .order_by(CardReportModel.created_at.desc())
+            .limit(limit)
+            .offset(skip)
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def create(
+        self,
+        card_id: str,
+        user_id: str,
+        reason: str,
+    ) -> CardReport:
+        """Create a new card report."""
+        report_id = _generate_id()
+
+        model = CardReportModel(
+            id=report_id,
+            card_id=card_id,
+            user_id=user_id,
+            reason=reason,
+            status=ReportStatus.PENDING.value,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update_status(
+        self,
+        report_id: str,
+        status: ReportStatus,
+        reviewed_by: Optional[str] = None,
+    ) -> CardReport:
+        """Update report status and mark as reviewed."""
+        model = self.session.query(CardReportModel).filter_by(id=report_id).first()
+        if not model:
+            raise ValueError(f"Report {report_id} not found")
+
+        model.status = status.value
+        model.updated_at = datetime.utcnow()
+
+        if reviewed_by:
+            model.reviewed_by = reviewed_by
+            model.reviewed_at = datetime.utcnow()
+
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    @staticmethod
+    def _to_domain(model: CardReportModel) -> CardReport:
+        """Convert SQLAlchemy model to domain model."""
+        return CardReport(
+            id=model.id,
+            card_id=model.card_id,
+            user_id=model.user_id,
+            reason=model.reason,
+            status=ReportStatus(model.status),
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            reviewed_by=model.reviewed_by,
+            reviewed_at=model.reviewed_at,
         )

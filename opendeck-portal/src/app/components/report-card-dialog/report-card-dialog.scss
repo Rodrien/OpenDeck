@@ -1,0 +1,71 @@
+/**
+ * Report Card Dialog Styles
+ * Dark mode compatible styling for the card report dialog
+ */
+
+:host ::ng-deep {
+  .p-dialog {
+    .p-dialog-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--surface-border);
+      background: var(--surface-card);
+
+      .p-dialog-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    }
+
+    .p-dialog-content {
+      padding: 1.5rem;
+      background: var(--surface-card);
+    }
+
+    .p-dialog-footer {
+      padding: 1.5rem;
+      border-top: 1px solid var(--surface-border);
+      background: var(--surface-card);
+    }
+  }
+
+  // Textarea styling
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    line-height: 1.5;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  // Warning message styling
+  .p-message {
+    margin-top: 0;
+  }
+
+  // Smooth transitions for color changes
+  .text-orange-500,
+  .text-red-500 {
+    transition: color 0.2s ease;
+  }
+}
+
+// Mobile responsiveness
+@media (max-width: 640px) {
+  :host ::ng-deep {
+    .p-dialog {
+      width: 95vw !important;
+      max-width: 95vw !important;
+
+      .p-dialog-header,
+      .p-dialog-content,
+      .p-dialog-footer {
+        padding: 1rem;
+      }
+    }
+  }
+}

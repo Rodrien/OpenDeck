@@ -443,3 +443,63 @@ class CommentVote:
         """Toggle the vote between upvote and downvote."""
         self.vote_type = VoteType.DOWNVOTE if self.vote_type == VoteType.UPVOTE else VoteType.UPVOTE
         self.updated_at = datetime.utcnow()
+
+
+class ReportStatus(str, Enum):
+    """Card report status types."""
+
+    PENDING = "pending"
+    REVIEWED = "reviewed"
+    RESOLVED = "resolved"
+    DISMISSED = "dismissed"
+
+
+@dataclass
+class CardReport:
+    """
+    Card Report domain model.
+
+    Represents a user report of a card that has incorrect, misleading,
+    or unhelpful information. Reports are reviewed by admins or deck owners.
+    """
+
+    id: str
+    card_id: str
+    user_id: str
+    reason: str
+    status: ReportStatus
+    created_at: datetime
+    updated_at: datetime
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        """Validate card report data after initialization."""
+        if not self.card_id:
+            raise ValueError("Report must be associated with a card")
+        if not self.user_id:
+            raise ValueError("Report must belong to a user")
+        if not self.reason or not self.reason.strip():
+            raise ValueError("Report reason cannot be empty")
+        if len(self.reason) < 10:
+            raise ValueError("Report reason must be at least 10 characters")
+        if len(self.reason) > 1000:
+            raise ValueError("Report reason cannot exceed 1000 characters")
+        if not isinstance(self.status, ReportStatus):
+            raise ValueError(f"Invalid report status: {self.status}")
+
+    def mark_reviewed(self, reviewed_by: str, status: ReportStatus) -> None:
+        """
+        Mark report as reviewed with resolution status.
+
+        Args:
+            reviewed_by: User ID of the reviewer
+            status: New status (reviewed, resolved, dismissed)
+        """
+        if status not in (ReportStatus.REVIEWED, ReportStatus.RESOLVED, ReportStatus.DISMISSED):
+            raise ValueError(f"Invalid review status: {status}")
+
+        self.status = status
+        self.reviewed_by = reviewed_by
+        self.reviewed_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()

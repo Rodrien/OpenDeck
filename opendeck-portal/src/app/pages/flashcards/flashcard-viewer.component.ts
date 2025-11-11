@@ -25,6 +25,7 @@ import { CardDirection } from './models/flashcard-data.interface';
 
 // Components
 import { DeckCommentsComponent } from '../../components/deck-comments/deck-comments.component';
+import { ReportCardDialog } from '../../components/report-card-dialog/report-card-dialog';
 
 @Component({
     selector: 'app-flashcard-viewer',
@@ -37,7 +38,8 @@ import { DeckCommentsComponent } from '../../components/deck-comments/deck-comme
         Tag,
         ProgressSpinner,
         Message,
-        DeckCommentsComponent
+        DeckCommentsComponent,
+        ReportCardDialog
     ],
     templateUrl: './flashcard-viewer.component.html',
     styleUrls: ['./flashcard-viewer.component.scss'],
@@ -71,6 +73,7 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     loadingInitial = signal<boolean>(false);
     error = signal<string | null>(null);
     resumedFromProgress = signal<boolean>(false);
+    showReportDialog = signal<boolean>(false);
 
     // Pagination state
     pageSize = signal<number>(10);
@@ -558,5 +561,20 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
         if (url && url !== '#') {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
+    }
+
+    /**
+     * Open the report card dialog
+     */
+    openReportDialog(): void {
+        this.showReportDialog.set(true);
+    }
+
+    /**
+     * Handle card report submission
+     */
+    onCardReported(): void {
+        // Optional: Refresh card data or show additional feedback
+        console.log('Card reported successfully');
     }
 }

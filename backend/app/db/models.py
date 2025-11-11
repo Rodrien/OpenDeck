@@ -109,6 +109,7 @@ class CardModel(Base):
     deck = relationship("DeckModel", back_populates="cards")
     topics = relationship("TopicModel", secondary=card_topics, back_populates="cards")
     reviews = relationship("CardReviewModel", back_populates="card", cascade="all, delete-orphan")
+    reports = relationship("CardReportModel", back_populates="card", cascade="all, delete-orphan")
 
 
 class TopicModel(Base):
@@ -271,3 +272,30 @@ class CommentVoteModel(Base):
     # Relationships
     comment = relationship("DeckCommentModel", back_populates="votes")
     user = relationship("UserModel", foreign_keys=[user_id])
+
+
+class CardReportModel(Base):
+    """Card Report table model."""
+
+    __tablename__ = "card_reports"
+
+    id = Column(String(36), primary_key=True)
+    card_id = Column(String(36), ForeignKey("cards.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reason = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    reviewed_by = Column(String(36), ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'reviewed', 'resolved', 'dismissed')", name='check_report_status'),
+        CheckConstraint('length(reason) >= 10', name='check_report_reason_min_length'),
+        CheckConstraint('length(reason) <= 1000', name='check_report_reason_max_length'),
+    )
+
+    # Relationships
+    card = relationship("CardModel", back_populates="reports")
+    reporter = relationship("UserModel", foreign_keys=[user_id])
+    reviewer = relationship("UserModel", foreign_keys=[reviewed_by])

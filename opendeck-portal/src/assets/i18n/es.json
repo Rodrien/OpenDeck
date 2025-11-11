@@ -290,5 +290,19 @@
       "hoursAgo": "hace {{count}}h",
       "daysAgo": "hace {{count}}d"
     }
+  },
+  "report": {
+    "title": "Reportar Tarjeta",
+    "description": "Ayúdanos a mejorar reportando tarjetas con información incorrecta, engañosa o poco útil.",
+    "reasonLabel": "¿Por qué estás reportando esta tarjeta?",
+    "reasonPlaceholder": "Por favor describe el problema con esta tarjeta (ej: información incorrecta, pregunta poco clara, error tipográfico)...",
+    "minimumChars": "Por favor proporciona al menos {{count}} caracteres más",
+    "minimumLength": "Se requieren mínimo {{min}} caracteres",
+    "reasonValid": "Tu razón se ve bien",
+    "validationMessage": "Por favor proporciona una razón detallada para reportar esta tarjeta",
+    "submit": "Enviar Reporte",
+    "reportCard": "Reportar Tarjeta",
+    "successMessage": "Tarjeta reportada exitosamente. ¡Gracias por tu retroalimentación!",
+    "errorMessage": "Error al reportar la tarjeta. Por favor intenta de nuevo."
   }
 }

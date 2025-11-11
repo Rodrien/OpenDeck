@@ -159,7 +159,27 @@
             <span class="rating-label">{{ rating.label | translate }}</span>
           </button>
         </div>
+
+        <!-- Report Card Button -->
+        <div class="report-section">
+          <p-button
+            [label]="'report.reportCard' | translate"
+            icon="pi pi-flag"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            (onClick)="openReportDialog()"
+            [attr.aria-label]="'Report this flashcard for incorrect information'"
+          />
+        </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Report Card Dialog -->
+<app-report-card-dialog
+  [(visible)]="showReportDialog"
+  [cardId]="currentCard()?.id || ''"
+  (reportSubmitted)="onCardReported()"
+/>

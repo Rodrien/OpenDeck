@@ -9,7 +9,7 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 from __future__ import annotations
 from typing import Protocol, Optional, List, Tuple
 from datetime import datetime
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus
 
 
 class UserRepository(Protocol):
@@ -1022,5 +1022,93 @@ class CommentVoteRepository(Protocol):
         Args:
             comment_id: Comment identifier
             user_id: User identifier
+        """
+        ...
+
+
+class CardReportRepository(Protocol):
+    """Abstract interface for card report data access."""
+
+    def get(self, report_id: str) -> Optional[CardReport]:
+        """
+        Get report by ID.
+
+        Args:
+            report_id: Report identifier
+
+        Returns:
+            CardReport if found, None otherwise
+        """
+        ...
+
+    def get_by_card_id(self, card_id: str) -> List[CardReport]:
+        """
+        Get all reports for a specific card.
+
+        Args:
+            card_id: Card identifier
+
+        Returns:
+            List of reports for the card, ordered by created_at DESC
+        """
+        ...
+
+    def get_by_user_id(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CardReport]:
+        """
+        Get all reports created by a user.
+
+        Args:
+            user_id: User identifier
+            skip: Number of results to skip
+            limit: Maximum number of results
+
+        Returns:
+            List of reports ordered by created_at DESC
+        """
+        ...
+
+    def create(
+        self,
+        card_id: str,
+        user_id: str,
+        reason: str,
+    ) -> CardReport:
+        """
+        Create a new card report.
+
+        Args:
+            card_id: Card identifier
+            user_id: User identifier
+            reason: Reason for reporting the card
+
+        Returns:
+            Created report with ID
+        """
+        ...
+
+    def update_status(
+        self,
+        report_id: str,
+        status: ReportStatus,
+        reviewed_by: Optional[str] = None,
+    ) -> CardReport:
+        """
+        Update report status and mark as reviewed.
+
+        Args:
+            report_id: Report identifier
+            status: New status
+            reviewed_by: User ID of reviewer (optional)
+
+        Returns:
+            Updated report
+
+        Raises:
+            ValueError: If report not found
         """
         ...

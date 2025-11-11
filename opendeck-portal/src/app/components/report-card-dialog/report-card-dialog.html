@@ -1,0 +1,90 @@
+<p-dialog
+  [(visible)]="visible"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '500px', maxWidth: '90vw' }"
+  (onHide)="onHide()"
+>
+  <ng-template pTemplate="header">
+    <div class="flex items-center gap-2">
+      <i class="pi pi-flag text-xl"></i>
+      <h3 class="text-xl font-semibold m-0">{{ 'report.title' | translate }}</h3>
+    </div>
+  </ng-template>
+
+  <div class="flex flex-col gap-4">
+    <p class="text-surface-600 dark:text-surface-400 m-0">
+      {{ 'report.description' | translate }}
+    </p>
+
+    <div class="flex flex-col gap-2">
+      <label for="reason" class="font-medium text-surface-900 dark:text-surface-0">
+        {{ 'report.reasonLabel' | translate }}
+      </label>
+      <textarea
+        id="reason"
+        pInputTextarea
+        [(ngModel)]="reason"
+        [rows]="5"
+        [placeholder]="'report.reasonPlaceholder' | translate"
+        [disabled]="isSubmitting()"
+        [maxlength]="MAX_REASON_LENGTH"
+        class="w-full"
+      ></textarea>
+
+      <div class="flex justify-between items-center text-sm">
+        @if (!isReasonValid && reason().length > 0) {
+          <span class="text-red-500 dark:text-red-400">
+            {{ 'report.minimumChars' | translate: { count: remainingChars } }}
+          </span>
+        } @else if (isReasonValid) {
+          <span class="text-green-600 dark:text-green-400">
+            <i class="pi pi-check-circle mr-1"></i>
+            {{ 'report.reasonValid' | translate }}
+          </span>
+        } @else {
+          <span class="text-surface-500 dark:text-surface-400">
+            {{ 'report.minimumLength' | translate: { min: MIN_REASON_LENGTH } }}
+          </span>
+        }
+
+        <span
+          class="text-surface-500 dark:text-surface-400"
+          [class.text-orange-500]="currentLength > MAX_REASON_LENGTH * 0.9"
+          [class.text-red-500]="currentLength >= MAX_REASON_LENGTH"
+        >
+          {{ currentLength }} / {{ MAX_REASON_LENGTH }}
+        </span>
+      </div>
+    </div>
+
+    @if (!isReasonValid && reason().length > 0) {
+      <p-message
+        severity="warn"
+        [text]="'report.validationMessage' | translate"
+      ></p-message>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-end gap-2">
+      <p-button
+        [label]="'common.cancel' | translate"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="onHide()"
+        [disabled]="isSubmitting()"
+      />
+      <p-button
+        [label]="'report.submit' | translate"
+        severity="danger"
+        icon="pi pi-flag"
+        (onClick)="onSubmit()"
+        [disabled]="!isReasonValid || isSubmitting()"
+        [loading]="isSubmitting()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

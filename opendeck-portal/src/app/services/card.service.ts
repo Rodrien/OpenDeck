@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Card, CreateCardDto, UpdateCardDto, CardFilterParams } from '../models/card.model';
 import { PaginatedResponse } from '../models/api-response.model';
+import { CardReport, CardReportCreate } from '../models/card-report.model';
 
 /**
  * Card Service
@@ -129,6 +130,39 @@ export class CardService {
    */
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Report a card for review
+   * @param cardId - Card ID to report
+   * @param reportData - Report creation data
+   * @returns Observable of created CardReport
+   */
+  reportCard(cardId: string, reportData: CardReportCreate): Observable<CardReport> {
+    const url = `${environment.apiBaseUrl}/cards/${cardId}/report`;
+    return this.http.post<CardReport>(url, reportData)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get all reports for a specific card
+   * @param cardId - Card ID
+   * @returns Observable of CardReport array
+   */
+  getCardReports(cardId: string): Observable<CardReport[]> {
+    const url = `${environment.apiBaseUrl}/reports/card/${cardId}`;
+    return this.http.get<CardReport[]>(url)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get all reports created by the current user
+   * @returns Observable of CardReport array
+   */
+  getMyReports(): Observable<CardReport[]> {
+    const url = `${environment.apiBaseUrl}/reports/my-reports`;
+    return this.http.get<CardReport[]>(url)
       .pipe(catchError(this.handleError));
   }
 
