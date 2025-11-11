@@ -140,7 +140,7 @@ export class CardService {
    * @returns Observable of created CardReport
    */
   reportCard(cardId: string, reportData: CardReportCreate): Observable<CardReport> {
-    const url = `${environment.apiBaseUrl}/cards/${cardId}/report`;
+    const url = `${environment.apiBaseUrl}/reports/cards/${cardId}/report`;
     return this.http.post<CardReport>(url, reportData)
       .pipe(catchError(this.handleError));
   }
@@ -151,7 +151,7 @@ export class CardService {
    * @returns Observable of CardReport array
    */
   getCardReports(cardId: string): Observable<CardReport[]> {
-    const url = `${environment.apiBaseUrl}/reports/card/${cardId}`;
+    const url = `${environment.apiBaseUrl}/reports/cards/${cardId}`;
     return this.http.get<CardReport[]>(url)
       .pipe(catchError(this.handleError));
   }
