@@ -190,11 +190,35 @@
                             </div>
                         </div>
 
-                        <!-- Hover Effect Indicator -->
+                        <!-- Study Actions -->
                         <div class="mt-4 pt-4 border-t border-surface-200 dark:border-surface-700">
-                            <div class="flex items-center justify-between text-primary-500 dark:text-primary-400">
-                                <span class="text-sm font-medium">{{ 'deck.startStudying' | translate }}</span>
-                                <i class="pi pi-arrow-right text-sm"></i>
+                            <!-- Due Cards Badge -->
+                            @if (hasDueCards(deck.id)) {
+                                <div class="mb-3">
+                                    <p-badge
+                                        [value]="getDueCardCount(deck.id) + ' ' + ('study.cardsDue' | translate)"
+                                        severity="warn"
+                                        styleClass="w-full"
+                                    />
+                                </div>
+                            }
+
+                            <!-- Action Buttons -->
+                            <div class="flex items-center gap-2">
+                                <p-button
+                                    [label]="'study.studyNow' | translate"
+                                    icon="pi pi-play"
+                                    (onClick)="onStudyNow(deck, $event)"
+                                    styleClass="flex-1"
+                                    size="small"
+                                    [outlined]="true"
+                                />
+                                <p-button
+                                    icon="pi pi-eye"
+                                    [pTooltip]="'deck.viewCards' | translate"
+                                    styleClass="p-button-text"
+                                    size="small"
+                                />
                             </div>
                         </div>
                     </p-card>

@@ -67,6 +67,16 @@ def get_notification_repo(db: Session = Depends(get_db)) -> PostgresNotification
     return PostgresNotificationRepo(db)
 
 
+def get_study_session_repo(db: Session = Depends(get_db)) -> PostgresStudySessionRepo:
+    """Get study session repository instance."""
+    return PostgresStudySessionRepo(db)
+
+
+def get_card_review_repo(db: Session = Depends(get_db)) -> PostgresCardReviewRepo:
+    """Get card review repository instance."""
+    return PostgresCardReviewRepo(db)
+
+
 def get_auth_service(
     user_repo: PostgresUserRepo = Depends(get_user_repo),
 ) -> AuthService:
@@ -88,16 +98,6 @@ def get_notification_service(
 ) -> NotificationService:
     """Get notification service instance."""
     return NotificationService(notification_repo, fcm_service)
-
-
-def get_card_review_repo(db: Session = Depends(get_db)) -> PostgresCardReviewRepo:
-    """Get card review repository instance."""
-    return PostgresCardReviewRepo(db)
-
-
-def get_study_session_repo(db: Session = Depends(get_db)) -> PostgresStudySessionRepo:
-    """Get study session repository instance."""
-    return PostgresStudySessionRepo(db)
 
 
 def get_comment_repo(db: Session = Depends(get_db)) -> PostgresDeckCommentRepo:

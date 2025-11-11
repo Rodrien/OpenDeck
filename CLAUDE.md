@@ -19,6 +19,9 @@ OpenDeck is an AI-first web application that automatically generates flashcards 
 - Multi-language support (English, Spanish)
 - Dark mode support
 - User preferences page with theme customization
+- **Spaced repetition study sessions** with SM-2 algorithm
+- Study statistics and progress tracking
+- Interactive study session UI with keyboard shortcuts
 
 ### Phase 2: AI Integration (Planned)
 - Document upload and processing
@@ -189,6 +192,20 @@ ng lint
 - `PUT /api/v1/cards/{id}` - Update card
 - `DELETE /api/v1/cards/{id}` - Delete card
 
+### Study Sessions (Spaced Repetition)
+- `POST /api/v1/study/sessions` - Start new study session
+- `GET /api/v1/study/sessions/active/{deckId}` - Get active session for deck
+- `GET /api/v1/study/sessions/{id}` - Get session details
+- `GET /api/v1/study/sessions` - List user's study sessions
+- `POST /api/v1/study/sessions/{id}/reviews` - Record card review
+- `POST /api/v1/study/sessions/{id}/complete` - Complete study session
+- `GET /api/v1/study/decks/{deckId}/due` - Get cards due for review
+- `GET /api/v1/study/decks/{deckId}/due-count` - Get count of due cards
+- `GET /api/v1/study/decks/{deckId}/stats` - Get deck study statistics
+- `GET /api/v1/study/cards/{id}` - Get card with spaced repetition data
+- `POST /api/v1/study/cards/{id}/reset` - Reset card progress
+- `POST /api/v1/study/decks/{id}/reset` - Reset entire deck progress
+
 ### Health
 - `GET /health` - Health check & database status
 
@@ -199,6 +216,10 @@ ng lint
 - Dashboard displaying available decks by topic
 - Deck detail view with flashcard list
 - Interactive flashcard viewer with keyboard navigation
+- **Study session interface** with spaced repetition (SM-2 algorithm)
+- Real-time study progress tracking and statistics
+- Quality rating buttons (Again, Hard, Good, Easy)
+- Keyboard shortcuts for study sessions (Space/Enter to flip, 1-4 for ratings)
 - User preferences page (language, dark mode, theme customization)
 - Responsive topbar with user menu
 - Dark mode toggle with persistent settings
@@ -220,6 +241,16 @@ ng lint
 - Automatic token refresh
 - Auth guards for protected routes
 - Error interceptor with user feedback
+
+### Spaced Repetition System
+- **SM-2 Algorithm**: SuperMemo 2 algorithm implementation
+- **Card States**: New, Learning, Review phases
+- **Quality Ratings**: 0 (Again), 3 (Hard), 4 (Good), 5 (Easy)
+- **Ease Factor**: Dynamically adjusted based on performance (1.3 - 2.5)
+- **Review Intervals**: Calculated based on card difficulty and past performance
+- **Study Sessions**: Track cards reviewed, accuracy, and session duration
+- **Progress Tracking**: Per-card and per-deck statistics
+- **Reset Functionality**: Reset individual cards or entire decks
 
 ## Development Guidelines
 
@@ -333,11 +364,13 @@ ng test --code-coverage         # With coverage
 - Background processing with Celery (planned)
 
 ### Enhanced Features
-- Study statistics and progress tracking
-- Spaced repetition algorithm
+- ✅ **Study statistics and progress tracking** (Completed)
+- ✅ **Spaced repetition algorithm** (SM-2, Completed)
 - Deck sharing functionality
 - Export/import decks
 - Mobile app (React Native)
+- Advanced study modes (cram, learn new)
+- Custom study session scheduling
 
 ### Infrastructure
 - AWS Lambda deployment

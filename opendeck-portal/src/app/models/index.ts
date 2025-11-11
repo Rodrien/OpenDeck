@@ -8,3 +8,4 @@ export * from './card.model';
 export * from './deck.model';
 export * from './topic.model';
 export * from './user.model';
+export * from './study.model';

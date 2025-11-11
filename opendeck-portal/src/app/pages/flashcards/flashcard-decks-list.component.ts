@@ -13,14 +13,17 @@ import { Badge } from 'primeng/badge';
 import { Button } from 'primeng/button';
 import { ProgressSpinner } from 'primeng/progressspinner';
 import { Message } from 'primeng/message';
+import { TooltipModule } from 'primeng/tooltip';
 
 // Services
 import { DeckService } from '../../services/deck.service';
+import { StudyService } from '../../services/study.service';
 import { TranslateService } from '@ngx-translate/core';
 
 // Models
 import { Deck as ApiDeck, DifficultyLevel } from '../../models/deck.model';
 import { DeckStats } from './models/deck.interface';
+import { StudyStats } from '../../models/study.model';
 
 @Component({
     selector: 'app-flashcard-decks-list',
@@ -35,7 +38,8 @@ import { DeckStats } from './models/deck.interface';
         Badge,
         Button,
         ProgressSpinner,
-        Message
+        Message,
+        TooltipModule
     ],
     templateUrl: './flashcard-decks-list.component.html',
     styleUrls: ['./flashcard-decks-list.component.scss']
@@ -46,6 +50,7 @@ export class FlashcardDecksListComponent implements OnInit {
     decks = signal<ApiDeck[]>([]);
     loading = signal<boolean>(false);
     error = signal<string | null>(null);
+    deckStudyStats = signal<Map<string, StudyStats>>(new Map());
 
     // Computed filtered decks based on search query
     filteredDecks = computed(() => {
@@ -94,6 +99,7 @@ export class FlashcardDecksListComponent implements OnInit {
     constructor(
         private router: Router,
         private deckService: DeckService,
+        private studyService: StudyService,
         private translate: TranslateService
     ) {}
 
@@ -113,6 +119,8 @@ export class FlashcardDecksListComponent implements OnInit {
             next: (response) => {
                 this.decks.set(response.items);
                 this.loading.set(false);
+                // Load study stats for each deck
+                this.loadStudyStats(response.items);
             },
             error: (err) => {
                 this.error.set(this.translate.instant('errors.loadFailed'));
@@ -123,10 +131,60 @@ export class FlashcardDecksListComponent implements OnInit {
     }
 
     /**
+     * Load study statistics for all decks
+     */
+    private loadStudyStats(decks: ApiDeck[]): void {
+        const statsMap = new Map<string, StudyStats>();
+
+        decks.forEach(deck => {
+            this.studyService.getStudyStats(deck.id).subscribe({
+                next: (stats) => {
+                    statsMap.set(deck.id, stats);
+                    this.deckStudyStats.set(new Map(statsMap));
+                },
+                error: (err) => {
+                    console.warn(`Failed to load study stats for deck ${deck.id}:`, err);
+                }
+            });
+        });
+    }
+
+    /**
+     * Get study stats for a specific deck
+     */
+    getStudyStatsForDeck(deckId: string): StudyStats | undefined {
+        return this.deckStudyStats().get(deckId);
+    }
+
+    /**
+     * Check if a deck has due cards
+     */
+    hasDueCards(deckId: string): boolean {
+        const stats = this.getStudyStatsForDeck(deckId);
+        return stats ? stats.due_cards > 0 : false;
+    }
+
+    /**
+     * Get due card count for a deck
+     */
+    getDueCardCount(deckId: string): number {
+        const stats = this.getStudyStatsForDeck(deckId);
+        return stats ? stats.due_cards : 0;
+    }
+
+    /**
      * Navigate to the flashcard viewer for the selected deck
      */
     onDeckSelect(deck: ApiDeck): void {
         this.router.navigate(['/pages/flashcards/viewer', deck.id]);
+    }
+
+    /**
+     * Start a study session for the selected deck
+     */
+    onStudyNow(deck: ApiDeck, event: Event): void {
+        event.stopPropagation(); // Prevent card click event
+        this.router.navigate(['/pages/study', deck.id]);
     }
 
     /**

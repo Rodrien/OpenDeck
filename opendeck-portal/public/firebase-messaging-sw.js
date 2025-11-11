@@ -1,11 +1,12 @@
 // Firebase Cloud Messaging Service Worker
-// This file must be in the public directory at the root of your app
+// Auto-generated from scripts/generate-sw.js - DO NOT EDIT MANUALLY
+// This file is generated during build with Firebase config from environment
 
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
 
-// TODO: Replace with actual Firebase config
 // Initialize Firebase app in service worker
+// Configuration injected at build time from environment file
 firebase.initializeApp({
   apiKey: "YOUR_API_KEY",
   authDomain: "opendeck.firebaseapp.com",

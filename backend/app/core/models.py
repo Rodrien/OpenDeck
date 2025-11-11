@@ -96,16 +96,15 @@ class Card:
     answer: str
     source: str  # REQUIRED: Document name, page, section (e.g., "Biology101.pdf - Page 5, Section 2.1")
     source_url: Optional[str] = None
-
-    # Spaced repetition fields
-    ease_factor: float = 2.5
-    interval_days: int = 0
-    repetitions: int = 0
-    next_review_date: Optional[datetime] = None
-    is_learning: bool = True
-
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
+
+    # Spaced repetition fields (SM-2 algorithm)
+    ease_factor: float = 2.5  # SM-2 algorithm ease factor
+    interval_days: int = 0    # Days until next review
+    repetitions: int = 0      # Consecutive successful reviews
+    next_review_date: Optional[datetime] = None  # When card is due
+    is_learning: bool = True  # Whether card is in learning phase
 
     def __post_init__(self) -> None:
         """Validate card data after initialization."""
