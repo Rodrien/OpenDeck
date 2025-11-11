@@ -68,6 +68,15 @@ class PostgresUserRepo:
         model = self.session.query(UserModel).filter_by(email=email).first()
         return self._to_domain(model) if model else None
 
+    def get_by_oauth_id(self, provider: str, oauth_id: str) -> Optional[User]:
+        """Get user by OAuth provider and ID."""
+        model = (
+            self.session.query(UserModel)
+            .filter_by(oauth_provider=provider, oauth_id=oauth_id)
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
     def get_by_ids(self, user_ids: List[str]) -> List[User]:
         """
         Get multiple users by IDs in a single query.
@@ -100,6 +109,8 @@ class PostgresUserRepo:
             email=user.email,
             name=user.name,
             password_hash=user.password_hash,
+            oauth_provider=user.oauth_provider,
+            oauth_id=user.oauth_id,
             profile_picture=user.profile_picture,
             created_at=user.created_at,
             updated_at=user.updated_at,
@@ -119,6 +130,8 @@ class PostgresUserRepo:
         model.email = user.email
         model.name = user.name
         model.password_hash = user.password_hash
+        model.oauth_provider = user.oauth_provider
+        model.oauth_id = user.oauth_id
         model.profile_picture = user.profile_picture
         model.updated_at = user.updated_at
 
@@ -141,6 +154,8 @@ class PostgresUserRepo:
             email=model.email,
             name=model.name,
             password_hash=model.password_hash,
+            oauth_provider=model.oauth_provider,
+            oauth_id=model.oauth_id,
             profile_picture=model.profile_picture,
             created_at=model.created_at,
             updated_at=model.updated_at,

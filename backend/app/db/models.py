@@ -52,10 +52,24 @@ class UserModel(Base):
     id = Column(String(36), primary_key=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(100), nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)  # Optional for OAuth users
+    oauth_provider = Column(String(20), nullable=True)  # 'google', 'local', or None
+    oauth_id = Column(String(255), nullable=True)  # OAuth user ID from provider
     profile_picture = Column(String(255), nullable=True)  # Stores filename (e.g., "uuid.jpg")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "oauth_provider IN ('google', 'local') OR oauth_provider IS NULL",
+            name='check_oauth_provider'
+        ),
+        CheckConstraint(
+            "(oauth_provider IS NOT NULL AND oauth_id IS NOT NULL) OR (oauth_provider IS NULL AND oauth_id IS NULL)",
+            name='check_oauth_consistency'
+        ),
+    )
 
     # Relationships
     decks = relationship("DeckModel", back_populates="user", cascade="all, delete-orphan")

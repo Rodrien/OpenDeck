@@ -23,6 +23,10 @@ class UserRepository(Protocol):
         """Get user by email address."""
         ...
 
+    def get_by_oauth_id(self, provider: str, oauth_id: str) -> Optional[User]:
+        """Get user by OAuth provider and ID."""
+        ...
+
     def get_by_ids(self, user_ids: List[str]) -> List[User]:
         """
         Get multiple users by IDs in a single query.

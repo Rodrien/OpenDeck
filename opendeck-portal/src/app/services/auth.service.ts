@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { MessageService } from 'primeng/api';
 import { environment } from '../../environments/environment';
 import {
   User,
@@ -39,6 +40,7 @@ export class AuthService {
 
   // Inject FCM service
   private fcmService = inject(FCMService);
+  private messageService = inject(MessageService);
 
   constructor(
     private http: HttpClient,
@@ -194,10 +196,54 @@ export class AuthService {
   }
 
   /**
-   * Handle HTTP errors
-   * @param error - HTTP error response
-   * @returns Observable error
-   */
+    * Get Google OAuth authorization URL
+    * @returns Observable with authorization URL
+    */
+  getGoogleAuthUrl(): Observable<{ authorization_url: string }> {
+    return this.http.get<{ authorization_url: string }>(`${this.apiUrl}/google/url`)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+    * Handle Google OAuth callback
+    * @param code - Authorization code from Google
+    * @returns Observable of AuthTokenResponse
+    */
+  handleGoogleCallback(code: string): Observable<AuthTokenResponse> {
+    return this.http.post<AuthTokenResponse>(`${this.apiUrl}/google/callback`, { code })
+      .pipe(
+        tap(async response => await this.handleAuthSuccess(response)),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+     * Initiate Google OAuth login
+     * Redirects to Google OAuth consent screen
+     */
+  loginWithGoogle(): void {
+    this.getGoogleAuthUrl().subscribe({
+      next: (authUrl: any) => {
+        window.location.href = authUrl.authorization_url;
+      },
+      error: (error: any) => {
+        console.error('Google login error:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Login Failed',
+          detail: 'Failed to initiate Google sign-in'
+        });
+      }
+    });
+  }
+
+  /**
+    * Handle HTTP errors
+    * @param error - HTTP error response
+    * @returns Observable error
+    */
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An error occurred during authentication';
 

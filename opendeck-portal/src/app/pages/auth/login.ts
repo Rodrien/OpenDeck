@@ -99,6 +99,23 @@ import { CommonModule } from '@angular/common';
                                 [disabled]="loginForm.invalid"
                             ></p-button>
 
+                            <!-- Google OAuth Divider -->
+                            <div class="flex items-center my-6">
+                                <div class="flex-1 h-px bg-surface-200 dark:bg-surface-700"></div>
+                                <span class="mx-4 text-muted-color text-sm">{{ 'auth.orContinueWith' | translate }}</span>
+                                <div class="flex-1 h-px bg-surface-200 dark:bg-surface-700"></div>
+                            </div>
+
+                            <!-- Google Sign-In Button -->
+                            <p-button
+                                [label]="'auth.continueWithGoogle' | translate"
+                                styleClass="w-full bg-white dark:bg-surface-800 text-surface-900 dark:text-surface-0 border border-surface-300 dark:border-surface-600 hover:bg-surface-50 dark:hover:bg-surface-700"
+                                (click)="loginWithGoogle()"
+                                [loading]="isLoading()"
+                                icon="pi pi-google"
+                                iconPos="left"
+                            ></p-button>
+
                             <div class="text-center mt-6">
                                 <span class="text-muted-color">{{ 'auth.noAccount' | translate }} </span>
                                 <a routerLink="/auth/register" class="text-primary font-medium hover:underline">{{ 'auth.signUp' | translate }}</a>
@@ -171,5 +188,12 @@ export class Login implements OnInit {
                 console.error('Login error:', error);
             }
         });
+    }
+
+    /**
+     * Handle Google OAuth login
+     */
+    loginWithGoogle(): void {
+        this.authService.loginWithGoogle();
     }
 }

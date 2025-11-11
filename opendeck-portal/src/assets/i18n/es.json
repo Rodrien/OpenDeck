@@ -23,7 +23,15 @@
     "noAccount": "¿No tienes una cuenta?",
     "signUp": "Regístrate",
     "newUser": "¿Nuevo usuario?",
-    "existingUser": "¿Ya tienes una cuenta?"
+    "existingUser": "¿Ya tienes una cuenta?",
+    "google": {
+      "signIn": "Iniciar sesión con Google",
+      "signUp": "Registrarse con Google",
+      "loading": "Completando inicio de sesión con Google...",
+      "error": "Error al iniciar sesión con Google",
+      "cancelled": "Inicio de sesión con Google cancelado",
+      "invalidResponse": "Respuesta de autenticación inválida"
+    }
   },
   "flashcard": {
     "question": "Pregunta",

@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
+from app.core.models import User
 
 
 class UserBase(BaseModel):
@@ -35,3 +36,15 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_user(cls, user: "User") -> "UserResponse":
+        """Create UserResponse from User domain model."""
+        return cls(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            profile_picture_url=user.profile_picture,
+            created_at=user.created_at,
+            updated_at=user.updated_at,
+        )

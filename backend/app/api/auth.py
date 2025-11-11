@@ -1,10 +1,14 @@
 """Authentication API Endpoints"""
 
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, status, Request, Depends
+from sqlalchemy.orm import Session
 from app.schemas.auth import LoginRequest, TokenResponse, RefreshTokenRequest
 from app.schemas.user import UserCreate, UserResponse
-from app.api.dependencies import AuthServiceDepends
+from app.schemas.oauth import GoogleAuthRequest, GoogleAuthResponse, GoogleAuthUrlResponse
+from app.api.dependencies import AuthServiceDepends, get_user_repo
 from app.config import settings
+from app.services.google_oauth_service import GoogleOAuthService
+from app.db.base import get_db
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -139,7 +143,7 @@ async def refresh_token(
         )
 
     # Get user data to include in response
-    user = auth_service.user_repository.get_by_id(user_id)
+    user = auth_service.user_repo.get(user_id)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -157,3 +161,81 @@ async def refresh_token(
         expires_in=settings.access_token_expire_minutes * 60,
         user=_user_to_response(user, request),
     )
+
+
+@router.get("/google/url", response_model=GoogleAuthUrlResponse)
+async def get_google_auth_url(
+    auth_service: AuthServiceDepends,
+    user_repo = Depends(get_user_repo),
+) -> GoogleAuthUrlResponse:
+    """
+    Get Google OAuth authorization URL.
+    
+    Returns:
+        Google OAuth authorization URL for frontend to redirect user
+    """
+    try:
+        # Create Google OAuth service
+        google_service = GoogleOAuthService(user_repo, auth_service)
+        
+        auth_url = google_service.get_authorization_url()
+        
+        return GoogleAuthUrlResponse(authorization_url=auth_url)
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate Google OAuth URL",
+        )
+
+
+@router.post("/google/callback", response_model=GoogleAuthResponse)
+async def google_auth_callback(
+    request: Request,
+    auth_data: GoogleAuthRequest,
+    auth_service: AuthServiceDepends,
+    user_repo = Depends(get_user_repo),
+) -> GoogleAuthResponse:
+    """
+    Handle Google OAuth callback.
+    
+    Args:
+        request: FastAPI request
+        auth_data: Google authorization code
+        
+    Returns:
+        JWT tokens and user information
+        
+    Raises:
+        HTTPException: If OAuth flow fails
+    """
+    try:
+        # Create Google OAuth service
+        google_service = GoogleOAuthService(user_repo, auth_service)
+        
+        # Handle Google login flow
+        auth_response = await google_service.handle_google_login(auth_data.code)
+        
+        # Update profile picture URL for response
+        user = auth_response.user
+        if user.profile_picture_url and user.profile_picture_url.startswith("http"):
+            # Keep external Google profile picture URL
+            pass
+        else:
+            # Build internal profile picture URL if needed
+            user.profile_picture_url = _build_profile_picture_url(request, user.profile_picture_url)
+        
+        return auth_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to authenticate with Google",
+        )

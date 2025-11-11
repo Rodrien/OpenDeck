@@ -34,12 +34,15 @@ class User:
     User domain model.
 
     Represents an authenticated user in the system.
+    Supports both local authentication (email/password) and OAuth authentication.
     """
 
     id: str
     email: str
     name: str
-    password_hash: str
+    password_hash: Optional[str] = None  # Optional for OAuth users
+    oauth_provider: Optional[str] = None  # 'google', 'local', or None
+    oauth_id: Optional[str] = None  # OAuth user ID from provider
     profile_picture: Optional[str] = None  # Filename of profile picture (e.g., "uuid.jpg")
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
@@ -50,6 +53,19 @@ class User:
             raise ValueError("Invalid email address")
         if not self.name:
             raise ValueError("Name cannot be empty")
+        
+        # Validate OAuth configuration
+        if self.oauth_provider:
+            if self.oauth_provider not in ('google', 'local'):
+                raise ValueError("OAuth provider must be 'google' or 'local'")
+            if not self.oauth_id:
+                raise ValueError("OAuth ID is required when OAuth provider is specified")
+        elif self.oauth_id:
+            raise ValueError("OAuth provider is required when OAuth ID is specified")
+        
+        # Validate authentication method
+        if not self.password_hash and not self.oauth_provider:
+            raise ValueError("Either password_hash or oauth_provider must be provided")
 
 
 @dataclass

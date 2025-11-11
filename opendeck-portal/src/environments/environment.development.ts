@@ -13,5 +13,12 @@ export const environment = {
     appId: "1:1025215022520:web:d81e4a8911c13ad4d43b4d",
     measurementId: "G-KK0C1NT91G",
     vapidKey: "BA059KqD0PmLOqkJtzqgn5mjhrPOoS7sChq5fEp81R9BQI5Xkp-oNPULtMFgUYf6vkolrZF--VCtmJkpUhaAk00"  // For web push (found in Cloud Messaging settings)
+  },
+  // Google OAuth configuration
+  // TODO: Replace with actual Google OAuth credentials from Google Cloud Console
+  // See: https://console.cloud.google.com/apis/credentials
+  google: {
+    clientId: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    redirectUri: "http://localhost:4200/auth/google/callback"
   }
 };

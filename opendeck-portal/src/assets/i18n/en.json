@@ -23,7 +23,15 @@
     "noAccount": "Don't have an account?",
     "signUp": "Sign up",
     "newUser": "New user?",
-    "existingUser": "Already have an account?"
+    "existingUser": "Already have an account?",
+    "google": {
+      "signIn": "Sign in with Google",
+      "signUp": "Sign up with Google",
+      "loading": "Completing Google sign-in...",
+      "error": "Failed to sign in with Google",
+      "cancelled": "Google sign-in was cancelled",
+      "invalidResponse": "Invalid authentication response"
+    }
   },
   "flashcard": {
     "question": "Question",
