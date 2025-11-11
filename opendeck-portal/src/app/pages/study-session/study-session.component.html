@@ -147,24 +147,17 @@
           {{ 'study.rateYourPerformance' | translate }}
         </div>
         <div class="rating-grid">
-          <p-button
+          <button
             *ngFor="let rating of qualityRatings; let i = index"
-            [label]="rating.label | translate"
-            [icon]="rating.icon"
-            [severity]="rating.severity"
-            (onClick)="recordReview(rating.value)"
-            styleClass="rating-button"
+            class="rating-btn rating-{{ rating.severity }}"
+            (click)="recordReview(rating.value)"
             [pTooltip]="rating.description"
             tooltipPosition="top"
           >
-            <ng-template pTemplate="content">
-              <div class="button-content">
-                <i [class]="rating.icon"></i>
-                <span>{{ rating.label | translate }}</span>
-                <span class="keyboard-shortcut">{{ i + 1 }}</span>
-              </div>
-            </ng-template>
-          </p-button>
+            <span class="keyboard-hint">{{ i + 1 }}</span>
+            <i [class]="rating.icon + ' rating-icon'"></i>
+            <span class="rating-label">{{ rating.label | translate }}</span>
+          </button>
         </div>
       </div>
     </div>

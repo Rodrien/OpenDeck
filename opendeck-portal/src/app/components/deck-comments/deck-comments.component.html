@@ -19,25 +19,28 @@
         <div class="flex-1">
           <textarea
             pInputTextarea
-            [(ngModel)]="newCommentContent"
+            [ngModel]="newCommentContent()"
+            (ngModelChange)="updateNewCommentContent($event)"
             [placeholder]="'comments.placeholder' | translate"
             [rows]="3"
             [autoResize]="true"
             [maxlength]="5000"
             class="w-full"
           ></textarea>
-          <div class="flex justify-content-between align-items-center mt-2">
-            <small class="text-500">
+          <div class="mt-2">
+            <small class="text-500 block mb-2">
               {{ newCommentContent().length }} / 5000
             </small>
-            <p-button
-              [label]="'comments.post' | translate"
-              icon="pi pi-send"
-              [disabled]="!newCommentContent().trim() || submitting()"
-              [loading]="submitting()"
-              (onClick)="submitComment()"
-              size="small"
-            />
+            <div class="button-container">
+              <p-button
+                [label]="'comments.post' | translate"
+                icon="pi pi-send"
+                [disabled]="!newCommentContent().trim() || submitting()"
+                [loading]="submitting()"
+                (onClick)="submitComment()"
+                size="small"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -121,7 +124,8 @@
             <div *ngIf="editingCommentId() === comment.id" class="comment-edit mb-3">
               <textarea
                 pInputTextarea
-                [(ngModel)]="editingContent"
+                [ngModel]="editingContent()"
+                (ngModelChange)="updateEditingContent($event)"
                 [rows]="3"
                 [autoResize]="true"
                 [maxlength]="5000"

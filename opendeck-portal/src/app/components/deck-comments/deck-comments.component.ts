@@ -8,11 +8,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/textarea';
 import { AvatarModule } from 'primeng/avatar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { PaginatorModule } from 'primeng/paginator';
+import { TooltipModule } from 'primeng/tooltip';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -28,11 +29,12 @@ import { DeckComment, CreateCommentDto, VoteType } from '../../models/comment.mo
     FormsModule,
     ButtonModule,
     CardModule,
-    InputTextareaModule,
+    Textarea,
     AvatarModule,
     ConfirmDialogModule,
     ToastModule,
     PaginatorModule,
+    TooltipModule,
     TranslateModule
   ],
   providers: [ConfirmationService, MessageService],
@@ -56,7 +58,7 @@ export class DeckCommentsComponent implements OnInit {
   editingContent = signal('');
 
   // Computed values
-  currentUser = computed(() => this.authService.currentUser());
+  currentUser = computed(() => this.authService.getCurrentUser());
   isAuthenticated = computed(() => this.authService.isAuthenticated());
   hasComments = computed(() => this.comments().length > 0);
 
@@ -352,9 +354,32 @@ export class DeckCommentsComponent implements OnInit {
    * Format relative time
    */
   getRelativeTime(dateString: string): string {
-    const date = new Date(dateString);
+    // Backend returns naive datetime strings (without timezone info)
+    // We need to treat them as UTC and append 'Z' if missing
+    let dateStr = dateString;
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T00:00:00')) {
+      // If the string doesn't have timezone info, assume UTC
+      dateStr = dateStr + 'Z';
+    }
+
+    // Parse the date string
+    const date = new Date(dateStr);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date string:', dateString, 'parsed as:', dateStr);
+      return dateString;
+    }
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
+
+    // Handle negative differences (future dates)
+    if (diffMs < 0) {
+      console.warn('Comment date is in the future:', dateString, 'diff:', diffMs);
+      return this.translate.instant('comments.time.justNow');
+    }
+
     const diffSec = Math.floor(diffMs / 1000);
     const diffMin = Math.floor(diffSec / 60);
     const diffHour = Math.floor(diffMin / 60);
@@ -365,5 +390,19 @@ export class DeckCommentsComponent implements OnInit {
     if (diffHour < 24) return this.translate.instant('comments.time.hoursAgo', { count: diffHour });
     if (diffDay < 30) return this.translate.instant('comments.time.daysAgo', { count: diffDay });
     return date.toLocaleDateString();
+  }
+
+  /**
+   * Update comment content signal
+   */
+  updateNewCommentContent(value: string): void {
+    this.newCommentContent.set(value);
+  }
+
+  /**
+   * Update editing content signal
+   */
+  updateEditingContent(value: string): void {
+    this.editingContent.set(value);
   }
 }

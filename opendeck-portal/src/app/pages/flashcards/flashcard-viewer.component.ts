@@ -23,6 +23,9 @@ import { DeckProgressService } from '../../services/deck-progress.service';
 import { Card as ApiCard } from '../../models/card.model';
 import { CardDirection } from './models/flashcard-data.interface';
 
+// Components
+import { DeckCommentsComponent } from '../../components/deck-comments/deck-comments.component';
+
 @Component({
     selector: 'app-flashcard-viewer',
     imports: [
@@ -33,7 +36,8 @@ import { CardDirection } from './models/flashcard-data.interface';
         ProgressBar,
         Tag,
         ProgressSpinner,
-        Message
+        Message,
+        DeckCommentsComponent
     ],
     templateUrl: './flashcard-viewer.component.html',
     styleUrls: ['./flashcard-viewer.component.scss'],
@@ -508,6 +512,24 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
      */
     @HostListener('document:keydown', ['$event'])
     handleKeyboardEvent(event: KeyboardEvent): void {
+        // Check if user is typing in an input field
+        const target = event.target as HTMLElement;
+        const activeElement = document.activeElement as HTMLElement;
+
+        const isInputElement = (element: HTMLElement | null): boolean => {
+            if (!element) return false;
+            const tagName = element.tagName;
+            return tagName === 'INPUT' ||
+                   tagName === 'TEXTAREA' ||
+                   tagName === 'SELECT' ||
+                   element.isContentEditable;
+        };
+
+        // Don't handle keyboard shortcuts when typing in input fields
+        if (isInputElement(target) || isInputElement(activeElement)) {
+            return;
+        }
+
         switch (event.key) {
             case 'ArrowLeft':
                 event.preventDefault();

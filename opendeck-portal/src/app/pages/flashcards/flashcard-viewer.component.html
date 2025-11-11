@@ -242,6 +242,25 @@
                 </span>
             </p>
         </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section mt-12">
+            <!-- Section Divider -->
+            <div class="divider-container mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 h-px bg-surface-300 dark:bg-surface-700"></div>
+                    <div class="flex items-center gap-2 text-surface-600 dark:text-surface-400">
+                        <i class="pi pi-comments text-xl"></i>
+                        <span class="text-lg font-medium">{{ 'comments.title' | translate }}</span>
+                    </div>
+                    <div class="flex-1 h-px bg-surface-300 dark:bg-surface-700"></div>
+                </div>
+            </div>
+
+            <!-- Comments Component -->
+            <app-deck-comments [deckId]="deckId()" />
+        </div>
+
         } <!-- End of !loading() && !error() && cards().length > 0 condition -->
     </div>
 </div>

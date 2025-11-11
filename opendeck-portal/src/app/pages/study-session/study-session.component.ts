@@ -100,7 +100,7 @@ export class StudySessionComponent implements OnInit, OnDestroy {
     }
 
     this.deckId.set(deckId);
-    this.startStudySession(deckId);
+    this.checkForActiveSessionOrStart(deckId);
   }
 
   ngOnDestroy(): void {
@@ -109,11 +109,38 @@ export class StudySessionComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Check for an active session first, then start a new one if needed
+   */
+  private checkForActiveSessionOrStart(deckId: string): void {
+    this.isLoading.set(true);
+
+    this.studyService
+      .getActiveSession(deckId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (activeSession) => {
+          if (activeSession) {
+            // Resume existing active session
+            console.log('Resuming active session:', activeSession.id);
+            this.sessionId.set(activeSession.id);
+            this.loadCardsForSession(activeSession);
+          } else {
+            // No active session, start a new one
+            this.startStudySession(deckId);
+          }
+        },
+        error: (err) => {
+          console.error('Error checking for active session:', err);
+          // If check fails, try to start a new session anyway
+          this.startStudySession(deckId);
+        }
+      });
+  }
+
+  /**
    * Start a new study session
    */
   private startStudySession(deckId: string): void {
-    this.isLoading.set(true);
-
     this.studyService
       .startSession(deckId, 'review')
       .pipe(takeUntil(this.destroy$))
@@ -308,6 +335,26 @@ export class StudySessionComponent implements OnInit, OnDestroy {
     // Ignore if session is complete or loading
     if (this.isSessionComplete() || this.isLoading()) {
       return;
+    }
+
+    // Ignore keyboard shortcuts when user is typing in input fields
+    // Check BOTH event.target (where the event originated) AND document.activeElement
+    const target = event.target as HTMLElement;
+    const activeElement = document.activeElement as HTMLElement;
+
+    const isInputElement = (element: HTMLElement | null): boolean => {
+      if (!element) return false;
+
+      const tagName = element.tagName;
+      return tagName === 'INPUT' ||
+             tagName === 'TEXTAREA' ||
+             tagName === 'SELECT' ||
+             element.isContentEditable;
+    };
+
+    // If user is typing in any input field, completely ignore keyboard shortcuts
+    if (isInputElement(target) || isInputElement(activeElement)) {
+      return; // Don't interfere with normal typing behavior
     }
 
     switch (event.key) {

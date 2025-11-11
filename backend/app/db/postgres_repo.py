@@ -433,6 +433,92 @@ class PostgresCardRepo:
         self.session.refresh(model)
         return self._to_domain(model)
 
+    def get_deck_stats(self, deck_id: str, user_id: str) -> dict:
+        """Get comprehensive statistics for a deck."""
+        # Verify user has access to the deck
+        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
+        if not deck:
+            return {
+                "deck_id": deck_id,
+                "total_cards": 0,
+                "new_cards": 0,
+                "learning_cards": 0,
+                "review_cards": 0,
+                "due_cards": 0,
+                "next_review_date": None,
+                "average_ease_factor": 2.5,
+                "completion_rate": 0.0,
+            }
+
+        # Get all cards for the deck
+        now = datetime.utcnow()
+        cards = self.session.query(CardModel).filter_by(deck_id=deck_id).all()
+
+        total_cards = len(cards)
+        if total_cards == 0:
+            return {
+                "deck_id": deck_id,
+                "total_cards": 0,
+                "new_cards": 0,
+                "learning_cards": 0,
+                "review_cards": 0,
+                "due_cards": 0,
+                "next_review_date": None,
+                "average_ease_factor": 2.5,
+                "completion_rate": 0.0,
+            }
+
+        # Calculate statistics
+        new_cards = 0
+        learning_cards = 0
+        review_cards = 0
+        due_cards = 0
+        reviewed_cards = 0
+        ease_factors = []
+        next_reviews = []
+
+        for card in cards:
+            # Track ease factors for average
+            if card.ease_factor:
+                ease_factors.append(float(card.ease_factor))
+
+            # Track next review dates
+            if card.next_review_date:
+                next_reviews.append(card.next_review_date)
+
+            # Categorize cards
+            if card.repetitions == 0 and card.next_review_date is None:
+                # Never reviewed
+                new_cards += 1
+            else:
+                reviewed_cards += 1
+
+                if card.is_learning:
+                    learning_cards += 1
+                else:
+                    review_cards += 1
+
+                # Check if due for review
+                if card.next_review_date is None or card.next_review_date <= now:
+                    due_cards += 1
+
+        # Calculate averages
+        average_ease_factor = sum(ease_factors) / len(ease_factors) if ease_factors else 2.5
+        completion_rate = (reviewed_cards / total_cards * 100) if total_cards > 0 else 0.0
+        next_review_date = min(next_reviews) if next_reviews else None
+
+        return {
+            "deck_id": deck_id,
+            "total_cards": total_cards,
+            "new_cards": new_cards,
+            "learning_cards": learning_cards,
+            "review_cards": review_cards,
+            "due_cards": due_cards,
+            "next_review_date": next_review_date,
+            "average_ease_factor": round(average_ease_factor, 2),
+            "completion_rate": round(completion_rate, 1),
+        }
+
     @staticmethod
     def _to_domain(model: CardModel) -> Card:
         """Convert SQLAlchemy model to domain model."""
