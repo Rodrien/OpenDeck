@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus, Feedback, FeedbackStatus
 from app.core.interfaces import (
     UserRepository,
     DeckRepository,
@@ -26,6 +26,7 @@ from app.core.interfaces import (
     DeckCommentRepository,
     CommentVoteRepository,
     CardReportRepository,
+    FeedbackRepository,
 )
 from app.db.models import (
     UserModel,
@@ -40,6 +41,7 @@ from app.db.models import (
     DeckCommentModel,
     CommentVoteModel,
     CardReportModel,
+    FeedbackModel,
     deck_topics,
     card_topics,
 )
@@ -1647,4 +1649,86 @@ class PostgresCardReportRepo:
             updated_at=model.updated_at,
             reviewed_by=model.reviewed_by,
             reviewed_at=model.reviewed_at,
+        )
+
+
+class PostgresFeedbackRepo:
+    """PostgreSQL implementation of FeedbackRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, feedback_id: str) -> Optional[Feedback]:
+        """Get feedback by ID."""
+        model = self.session.query(FeedbackModel).filter_by(id=feedback_id).first()
+        return self._to_domain(model) if model else None
+
+    def list(
+        self,
+        status: Optional[FeedbackStatus] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Feedback]:
+        """List all feedback with optional status filter."""
+        query = self.session.query(FeedbackModel)
+
+        if status:
+            query = query.filter_by(status=status.value)
+
+        models = (
+            query
+            .order_by(FeedbackModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return [self._to_domain(model) for model in models]
+
+    def create(self, feedback: Feedback) -> Feedback:
+        """Create new feedback."""
+        if not feedback.id:
+            feedback.id = _generate_id()
+
+        model = FeedbackModel(
+            id=feedback.id,
+            user_id=feedback.user_id,
+            feedback_type=feedback.feedback_type.value,
+            message=feedback.message,
+            status=feedback.status.value,
+            created_at=feedback.created_at,
+        )
+
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update_status(
+        self,
+        feedback_id: str,
+        status: FeedbackStatus,
+    ) -> Feedback:
+        """Update feedback status."""
+        model = self.session.query(FeedbackModel).filter_by(id=feedback_id).first()
+        if not model:
+            raise ValueError(f"Feedback {feedback_id} not found")
+
+        model.status = status.value
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    @staticmethod
+    def _to_domain(model: FeedbackModel) -> Feedback:
+        """Convert SQLAlchemy model to domain model."""
+        from app.core.models import FeedbackType
+
+        return Feedback(
+            id=model.id,
+            user_id=model.user_id,
+            feedback_type=FeedbackType(model.feedback_type),
+            message=model.message,
+            status=FeedbackStatus(model.status),
+            created_at=model.created_at,
         )

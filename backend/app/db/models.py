@@ -22,7 +22,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-from app.core.models import DifficultyLevel, DocumentStatus, VoteType
+from app.core.models import DifficultyLevel, DocumentStatus, VoteType, FeedbackType, FeedbackStatus
 
 
 # Junction table for deck-topic many-to-many relationship
@@ -299,3 +299,26 @@ class CardReportModel(Base):
     card = relationship("CardModel", back_populates="reports")
     reporter = relationship("UserModel", foreign_keys=[user_id])
     reviewer = relationship("UserModel", foreign_keys=[reviewed_by])
+
+
+class FeedbackModel(Base):
+    """Feedback table model."""
+
+    __tablename__ = "feedback"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    feedback_type = Column(String(20), nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="new", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        CheckConstraint("feedback_type IN ('bug', 'feature', 'general', 'other')", name='check_feedback_type'),
+        CheckConstraint("status IN ('new', 'reviewed', 'resolved')", name='check_feedback_status'),
+        CheckConstraint('length(message) >= 10', name='check_feedback_message_min_length'),
+        CheckConstraint('length(message) <= 5000', name='check_feedback_message_max_length'),
+    )
+
+    # Relationships
+    user = relationship("UserModel", foreign_keys=[user_id])

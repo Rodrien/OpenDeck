@@ -152,7 +152,8 @@
     "switchToDarkMode": "Cambiar a modo oscuro",
     "userMenu": "Menú de usuario",
     "user": "Usuario",
-    "notLoggedIn": "No has iniciado sesión"
+    "notLoggedIn": "No has iniciado sesión",
+    "feedback": "Enviar Comentarios"
   },
   "common": {
     "save": "Guardar",
@@ -304,5 +305,26 @@
     "reportCard": "Reportar Tarjeta",
     "successMessage": "Tarjeta reportada exitosamente. ¡Gracias por tu retroalimentación!",
     "errorMessage": "Error al reportar la tarjeta. Por favor intenta de nuevo."
+  },
+  "feedback": {
+    "title": "Enviar Comentarios",
+    "description": "Comparte tus ideas, sugerencias o reporta problemas para ayudarnos a mejorar OpenDeck.",
+    "typeLabel": "Tipo de comentario",
+    "typePlaceholder": "Selecciona el tipo de comentario",
+    "messageLabel": "Tu mensaje",
+    "messagePlaceholder": "Cuéntanos qué tienes en mente...",
+    "messageRequired": "El mensaje es requerido (mínimo 10 caracteres)",
+    "messageMinLength": "Por favor proporciona al menos {{count}} caracteres más",
+    "characters": "caracteres",
+    "submit": "Enviar Comentarios",
+    "cancel": "Cancelar",
+    "successMessage": "¡Gracias por tus comentarios! Apreciamos tu aporte.",
+    "errorMessage": "Error al enviar comentarios. Por favor intenta de nuevo.",
+    "types": {
+      "bugReport": "Reporte de Error",
+      "featureRequest": "Solicitud de Característica",
+      "generalFeedback": "Comentarios Generales",
+      "other": "Otro"
+    }
   }
 }

@@ -503,3 +503,58 @@ class CardReport:
         self.reviewed_by = reviewed_by
         self.reviewed_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
+
+
+class FeedbackType(str, Enum):
+    """Feedback types."""
+
+    BUG = "bug"
+    FEATURE = "feature"
+    GENERAL = "general"
+    OTHER = "other"
+
+
+class FeedbackStatus(str, Enum):
+    """Feedback status types."""
+
+    NEW = "new"
+    REVIEWED = "reviewed"
+    RESOLVED = "resolved"
+
+
+@dataclass
+class Feedback:
+    """
+    Feedback domain model.
+
+    Represents user feedback or suggestions about the application.
+    Can be submitted anonymously (user_id is optional).
+    """
+
+    id: str
+    feedback_type: FeedbackType
+    message: str
+    status: FeedbackStatus
+    created_at: datetime
+    user_id: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Validate feedback data after initialization."""
+        if not self.message or not self.message.strip():
+            raise ValueError("Feedback message cannot be empty")
+        if len(self.message) < 10:
+            raise ValueError("Feedback message must be at least 10 characters")
+        if len(self.message) > 5000:
+            raise ValueError("Feedback message cannot exceed 5000 characters")
+        if not isinstance(self.feedback_type, FeedbackType):
+            raise ValueError(f"Invalid feedback type: {self.feedback_type}")
+        if not isinstance(self.status, FeedbackStatus):
+            raise ValueError(f"Invalid feedback status: {self.status}")
+
+    def mark_reviewed(self) -> None:
+        """Mark feedback as reviewed."""
+        self.status = FeedbackStatus.REVIEWED
+
+    def mark_resolved(self) -> None:
+        """Mark feedback as resolved."""
+        self.status = FeedbackStatus.RESOLVED

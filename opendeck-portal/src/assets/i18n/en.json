@@ -152,7 +152,8 @@
     "switchToDarkMode": "Switch to dark mode",
     "userMenu": "User menu",
     "user": "User",
-    "notLoggedIn": "Not logged in"
+    "notLoggedIn": "Not logged in",
+    "feedback": "Send Feedback"
   },
   "common": {
     "save": "Save",
@@ -304,5 +305,26 @@
     "reportCard": "Report Card",
     "successMessage": "Card reported successfully. Thank you for your feedback!",
     "errorMessage": "Failed to report card. Please try again."
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "description": "Share your thoughts, suggestions, or report issues to help us improve OpenDeck.",
+    "typeLabel": "Feedback Type",
+    "typePlaceholder": "Select feedback type",
+    "messageLabel": "Your Message",
+    "messagePlaceholder": "Tell us what's on your mind...",
+    "messageRequired": "Message is required (minimum 10 characters)",
+    "messageMinLength": "Please provide at least {{count}} more characters",
+    "characters": "characters",
+    "submit": "Send Feedback",
+    "cancel": "Cancel",
+    "successMessage": "Thank you for your feedback! We appreciate your input.",
+    "errorMessage": "Failed to submit feedback. Please try again.",
+    "types": {
+      "bugReport": "Bug Report",
+      "featureRequest": "Feature Request",
+      "generalFeedback": "General Feedback",
+      "other": "Other"
+    }
   }
 }

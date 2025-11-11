@@ -9,7 +9,7 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 from __future__ import annotations
 from typing import Protocol, Optional, List, Tuple
 from datetime import datetime
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus, Feedback, FeedbackStatus
 
 
 class UserRepository(Protocol):
@@ -1110,5 +1110,72 @@ class CardReportRepository(Protocol):
 
         Raises:
             ValueError: If report not found
+        """
+        ...
+
+
+class FeedbackRepository(Protocol):
+    """Abstract interface for feedback data access."""
+
+    def get(self, feedback_id: str) -> Optional[Feedback]:
+        """
+        Get feedback by ID.
+
+        Args:
+            feedback_id: Feedback identifier
+
+        Returns:
+            Feedback if found, None otherwise
+        """
+        ...
+
+    def list(
+        self,
+        status: Optional[FeedbackStatus] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Feedback]:
+        """
+        List all feedback with optional status filter.
+
+        Args:
+            status: Optional status filter
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of feedback ordered by created_at DESC
+        """
+        ...
+
+    def create(self, feedback: Feedback) -> Feedback:
+        """
+        Create new feedback.
+
+        Args:
+            feedback: Feedback to create
+
+        Returns:
+            Created feedback with ID
+        """
+        ...
+
+    def update_status(
+        self,
+        feedback_id: str,
+        status: FeedbackStatus,
+    ) -> Feedback:
+        """
+        Update feedback status.
+
+        Args:
+            feedback_id: Feedback identifier
+            status: New status
+
+        Returns:
+            Updated feedback
+
+        Raises:
+            ValueError: If feedback not found
         """
         ...
