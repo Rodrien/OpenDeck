@@ -40,6 +40,7 @@ class User:
     email: str
     name: str
     password_hash: str
+    profile_picture: Optional[str] = None  # Filename of profile picture (e.g., "uuid.jpg")
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 

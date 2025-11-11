@@ -193,6 +193,22 @@
     "reset": "Reset to Defaults",
     "resetConfirm": "Are you sure you want to reset all preferences to their default values?",
     "confirmHeader": "Confirm Reset",
+    "profilePicture": {
+      "title": "Profile Picture",
+      "description": "Upload a profile picture to personalize your account",
+      "changePicture": "Change Picture",
+      "removePicture": "Remove Picture",
+      "requirements": "JPEG, PNG, or WebP format. Max 5MB. Image will be resized to 200x200px.",
+      "uploading": "Uploading your profile picture...",
+      "uploadSuccess": "Profile picture updated successfully",
+      "uploadFailed": "Failed to upload profile picture. Please try again.",
+      "removeConfirm": "Are you sure you want to remove your profile picture?",
+      "removeHeader": "Remove Profile Picture",
+      "removeSuccess": "Profile picture removed successfully",
+      "removeFailed": "Failed to remove profile picture. Please try again.",
+      "invalidType": "Invalid file type. Please upload a JPEG, PNG, or WebP image.",
+      "fileTooLarge": "File is too large. Maximum size is 5MB."
+    },
     "language": {
       "title": "Language Settings",
       "description": "Choose your preferred language for the interface",

@@ -1,6 +1,7 @@
 """User API Schemas"""
 
 from datetime import datetime
+from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -28,6 +29,7 @@ class UserResponse(UserBase):
     """Schema for user data in responses."""
 
     id: str
+    profile_picture_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

@@ -64,12 +64,21 @@ interface TranslationMap {
                         (click)="toggleUserMenu($event)"
                         [attr.aria-label]="userMenuAriaLabel()"
                     >
-                        <p-avatar
-                            icon="pi pi-user"
-                            styleClass="bg-primary text-white"
-                            shape="circle"
-                            size="large"
-                        ></p-avatar>
+                        @if (currentUser()?.profilePictureUrl) {
+                            <p-avatar
+                                [image]="currentUser()!.profilePictureUrl"
+                                styleClass="bg-primary text-white"
+                                shape="circle"
+                                size="large"
+                            ></p-avatar>
+                        } @else {
+                            <p-avatar
+                                [label]="getUserInitials()"
+                                styleClass="bg-primary text-white"
+                                shape="circle"
+                                size="large"
+                            ></p-avatar>
+                        }
                     </button>
                     <p-menu #userMenu [model]="userMenuItems" [popup]="true" appendTo="body" styleClass="user-menu">
                         <ng-template pTemplate="start">
@@ -261,5 +270,19 @@ export class AppTopbar implements OnInit {
 
     navigateToPreferences() {
         this.router.navigate(['/pages/preferences']);
+    }
+
+    /**
+     * Get user initials for avatar
+     */
+    getUserInitials(): string {
+        const user = this.currentUser();
+        if (!user || !user.name) return 'U';
+
+        const parts = user.name.split(' ');
+        if (parts.length >= 2) {
+            return (parts[0][0] + parts[1][0]).toUpperCase();
+        }
+        return user.name.substring(0, 2).toUpperCase();
     }
 }

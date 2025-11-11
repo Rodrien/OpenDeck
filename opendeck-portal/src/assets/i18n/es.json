@@ -193,6 +193,22 @@
     "reset": "Restablecer valores predeterminados",
     "resetConfirm": "¿Estás seguro de que quieres restablecer todas las preferencias a los valores predeterminados?",
     "confirmHeader": "Confirmar restablecimiento",
+    "profilePicture": {
+      "title": "Foto de perfil",
+      "description": "Sube una foto de perfil para personalizar tu cuenta",
+      "changePicture": "Cambiar foto",
+      "removePicture": "Eliminar foto",
+      "requirements": "Formato JPEG, PNG o WebP. Máx. 5MB. La imagen se redimensionará a 200x200px.",
+      "uploading": "Subiendo tu foto de perfil...",
+      "uploadSuccess": "Foto de perfil actualizada exitosamente",
+      "uploadFailed": "Error al subir la foto de perfil. Por favor, intenta de nuevo.",
+      "removeConfirm": "¿Estás seguro de que quieres eliminar tu foto de perfil?",
+      "removeHeader": "Eliminar Foto de Perfil",
+      "removeSuccess": "Foto de perfil eliminada exitosamente",
+      "removeFailed": "Error al eliminar la foto de perfil. Por favor, intenta de nuevo.",
+      "invalidType": "Tipo de archivo inválido. Por favor, sube una imagen JPEG, PNG o WebP.",
+      "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 5MB."
+    },
     "language": {
       "title": "Configuración de idioma",
       "description": "Elige tu idioma preferido para la interfaz",

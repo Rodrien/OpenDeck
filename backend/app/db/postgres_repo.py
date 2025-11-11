@@ -96,6 +96,7 @@ class PostgresUserRepo:
             email=user.email,
             name=user.name,
             password_hash=user.password_hash,
+            profile_picture=user.profile_picture,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -114,6 +115,7 @@ class PostgresUserRepo:
         model.email = user.email
         model.name = user.name
         model.password_hash = user.password_hash
+        model.profile_picture = user.profile_picture
         model.updated_at = user.updated_at
 
         self.session.commit()
@@ -135,6 +137,7 @@ class PostgresUserRepo:
             email=model.email,
             name=model.name,
             password_hash=model.password_hash,
+            profile_picture=model.profile_picture,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )

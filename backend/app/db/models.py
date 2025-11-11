@@ -53,6 +53,7 @@ class UserModel(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(100), nullable=False)
     password_hash = Column(String(255), nullable=False)
+    profile_picture = Column(String(255), nullable=True)  # Stores filename (e.g., "uuid.jpg")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 

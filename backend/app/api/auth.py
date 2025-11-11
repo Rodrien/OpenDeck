@@ -1,6 +1,6 @@
 """Authentication API Endpoints"""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from app.schemas.auth import LoginRequest, TokenResponse, RefreshTokenRequest
 from app.schemas.user import UserCreate, UserResponse
 from app.api.dependencies import AuthServiceDepends
@@ -9,8 +9,30 @@ from app.config import settings
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def _build_profile_picture_url(request: Request, filename: str | None) -> str | None:
+    """Build full URL for profile picture."""
+    if not filename:
+        return None
+    base_url = str(request.base_url).rstrip("/")
+    return f"{base_url}/api/v1/users/profile-picture/{filename}"
+
+
+def _user_to_response(user, request: Request) -> UserResponse:
+    """Convert User domain model to UserResponse with profile picture URL."""
+    profile_picture_url = _build_profile_picture_url(request, user.profile_picture)
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        name=user.name,
+        profile_picture_url=profile_picture_url,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(
+    request: Request,
     user_data: UserCreate,
     auth_service: AuthServiceDepends,
 ) -> UserResponse:
@@ -18,6 +40,7 @@ async def register(
     Register a new user account.
 
     Args:
+        request: FastAPI request
         user_data: User registration data (email, name, password)
         auth_service: Authentication service dependency
 
@@ -33,7 +56,7 @@ async def register(
             name=user_data.name,
             password=user_data.password,
         )
-        return UserResponse.model_validate(user)
+        return _user_to_response(user, request)
 
     except ValueError as e:
         raise HTTPException(
@@ -44,6 +67,7 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
+    request: Request,
     login_data: LoginRequest,
     auth_service: AuthServiceDepends,
 ) -> TokenResponse:
@@ -51,6 +75,7 @@ async def login(
     Authenticate user and return JWT tokens.
 
     Args:
+        request: FastAPI request
         login_data: Login credentials (email, password)
         auth_service: Authentication service dependency
 
@@ -80,12 +105,13 @@ async def login(
         refresh_token=refresh_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
-        user=UserResponse.model_validate(user),
+        user=_user_to_response(user, request),
     )
 
 
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
+    request: Request,
     refresh_data: RefreshTokenRequest,
     auth_service: AuthServiceDepends,
 ) -> TokenResponse:
@@ -93,6 +119,7 @@ async def refresh_token(
     Refresh access token using refresh token.
 
     Args:
+        request: FastAPI request
         refresh_data: Refresh token
         auth_service: Authentication service dependency
 
@@ -128,5 +155,5 @@ async def refresh_token(
         refresh_token=new_refresh_token,
         token_type="bearer",
         expires_in=settings.access_token_expire_minutes * 60,
-        user=UserResponse.model_validate(user),
+        user=_user_to_response(user, request),
     )
