@@ -172,7 +172,7 @@ export class CardService {
    * @returns Observable error
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
+    let errorMessage: string = 'An error occurred';
 
     if (error.error instanceof ErrorEvent) {
       // Client-side error

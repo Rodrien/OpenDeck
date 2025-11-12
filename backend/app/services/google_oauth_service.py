@@ -212,14 +212,23 @@ class GoogleOAuthService:
             
             # Check if user exists by email (might have registered with password)
             email_user = self.user_repo.get_by_email(google_user.email)
-            
-            if email_user and email_user.oauth_provider != "google":
-                # Email already registered with different auth method
-                logger.warning(f"Email {google_user.email} already registered with non-OAuth method")
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="An account with this email already exists. Please sign in with your password."
-                )
+
+            if email_user:
+                # Email already exists - check authentication method
+                if email_user.oauth_provider is None:
+                    # Local account (email + password registration)
+                    logger.warning(f"Email {google_user.email} already registered as local account")
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="An account with this email already exists. Please sign in with your password."
+                    )
+                elif email_user.oauth_provider != "google":
+                    # Different OAuth provider
+                    logger.warning(f"Email {google_user.email} already registered with {email_user.oauth_provider}")
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"An account with this email is already linked to {email_user.oauth_provider}. Please use that method to sign in."
+                    )
             
             # Create new OAuth user
             new_user = User(

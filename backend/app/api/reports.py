@@ -17,6 +17,7 @@ from app.api.dependencies import (
     CurrentUser,
     CardReportRepoDepends,
     CardRepoDepends,
+    DeckRepoDepends,
 )
 
 router = APIRouter(prefix="/reports", tags=["Card Reports"])
@@ -80,10 +81,11 @@ async def report_card(
             reviewed_by=UUID(report.reviewed_by) if report.reviewed_by else None,
             reviewed_at=report.reviewed_at,
         )
-    except ValueError as e:
+    except ValueError:
+        # Don't expose internal error details
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
+            detail="Invalid report data provided",
         )
 
 
@@ -191,51 +193,87 @@ async def get_my_reports(
     "/{report_id}/status",
     response_model=CardReportResponse,
     summary="Update report status",
-    description="Update the status of a report (future: admin only).",
+    description="Update the status of a report. Only deck owners can update report status for cards in their decks.",
 )
 async def update_report_status(
     report_id: UUID,
     status_update: CardReportStatusUpdate,
     current_user: CurrentUser,
     report_repo: CardReportRepoDepends,
+    card_repo: CardRepoDepends,
+    deck_repo: DeckRepoDepends,
 ) -> CardReportResponse:
     """
     Update the status of a report.
 
-    Currently allows any authenticated user to update report status.
-    In a future enhancement, this should be restricted to admins or deck owners.
+    Only deck owners can update the status of reports for cards in their decks.
+    This ensures proper authorization for report management.
 
     Args:
         report_id: ID of the report to update
         status_update: New status for the report
-        current_user: Authenticated user (future: must be admin)
+        current_user: Authenticated user (must be deck owner)
         report_repo: Report repository
+        card_repo: Card repository
+        deck_repo: Deck repository
 
     Returns:
         Updated report details
 
     Raises:
-        HTTPException: If report not found
+        HTTPException: If report not found or user is not authorized
     """
+    # Get the report to find the card
+    report = report_repo.get(str(report_id))
+    if not report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Report {report_id} not found",
+        )
+
+    # Get the card to find the deck
+    card = card_repo.get(report.card_id)
+    if not card:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Card {report.card_id} not found",
+        )
+
+    # Get the deck to check ownership
+    deck = deck_repo.get(card.deck_id)
+    if not deck:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Deck {card.deck_id} not found",
+        )
+
+    # Verify user is the deck owner
+    if deck.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not authorized to update reports for this card. Only deck owners can manage reports.",
+        )
+
     try:
-        report = report_repo.update_status(
+        updated_report = report_repo.update_status(
             report_id=str(report_id),
             status=status_update.status,
             reviewed_by=current_user.id,
         )
         return CardReportResponse(
-            id=UUID(report.id),
-            card_id=UUID(report.card_id),
-            user_id=UUID(report.user_id),
-            reason=report.reason,
-            status=report.status,
-            created_at=report.created_at,
-            updated_at=report.updated_at,
-            reviewed_by=UUID(report.reviewed_by) if report.reviewed_by else None,
-            reviewed_at=report.reviewed_at,
+            id=UUID(updated_report.id),
+            card_id=UUID(updated_report.card_id),
+            user_id=UUID(updated_report.user_id),
+            reason=updated_report.reason,
+            status=updated_report.status,
+            created_at=updated_report.created_at,
+            updated_at=updated_report.updated_at,
+            reviewed_by=UUID(updated_report.reviewed_by) if updated_report.reviewed_by else None,
+            reviewed_at=updated_report.reviewed_at,
         )
-    except ValueError as e:
+    except ValueError:
+        # Don't expose internal error details
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e),
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to update report status",
         )

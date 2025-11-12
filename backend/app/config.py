@@ -93,6 +93,9 @@ class Settings(BaseSettings):
     # File Upload Configuration (Profile Pictures, etc.)
     upload_dir: str = "/app/storage/uploads"
     profile_pictures_dir: str = "/app/storage/uploads/profile_pictures"
+    profile_picture_max_size_mb: int = 5
+    profile_picture_width: int = 200
+    profile_picture_height: int = 200
 
     # S3 Configuration (when storage_backend=s3)
     s3_bucket: str | None = None

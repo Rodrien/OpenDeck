@@ -25,16 +25,12 @@ class FileStorageService:
         "image/webp": ".webp",
     }
 
-    # Maximum file size (5MB)
-    MAX_FILE_SIZE = 5 * 1024 * 1024
-
-    # Profile picture dimensions
-    PROFILE_PICTURE_SIZE = (200, 200)
-
     def __init__(self) -> None:
         """Initialize file storage service and ensure upload directory exists."""
-        # Get upload directory from config
+        # Get configuration from settings
         self.UPLOAD_DIR = Path(settings.profile_pictures_dir)
+        self.MAX_FILE_SIZE = settings.profile_picture_max_size_mb * 1024 * 1024
+        self.PROFILE_PICTURE_SIZE = (settings.profile_picture_width, settings.profile_picture_height)
         self._ensure_upload_directory()
 
     def _ensure_upload_directory(self) -> None:

@@ -54,7 +54,7 @@ export class FeedbackService {
   submitFeedback(feedbackData: FeedbackRequest): Observable<FeedbackResponse> {
     return this.http
       .post<FeedbackResponse>(this.apiUrl, feedbackData)
-      .pipe(catchError(this.handleError));
+      .pipe(catchError(this.handleError.bind(this)));
   }
 
   /**
@@ -63,7 +63,7 @@ export class FeedbackService {
    * @returns An observable error
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred while submitting feedback';
+    let errorMessage: string = 'An error occurred while submitting feedback';
 
     if (error.error instanceof ErrorEvent) {
       // Client-side error

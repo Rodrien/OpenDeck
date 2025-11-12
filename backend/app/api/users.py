@@ -127,19 +127,21 @@ async def upload_profile_picture(
             )
     except HTTPException:
         raise
-    except Exception as e:
+    except Exception:
+        # Don't expose internal error details
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to read file metadata: {str(e)}",
+            detail="Failed to process uploaded file",
         )
 
     # Read file content (now we know it's within size limits)
     try:
         file_content = await file.read()
-    except Exception as e:
+    except Exception:
+        # Don't expose internal error details
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to read uploaded file: {str(e)}",
+            detail="Failed to read uploaded file",
         )
 
     # Process and save image
