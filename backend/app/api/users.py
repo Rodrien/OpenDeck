@@ -1,5 +1,6 @@
 """User Profile API Endpoints"""
 
+import re
 from typing import Annotated
 from fastapi import APIRouter, HTTPException, status, UploadFile, File, Request
 from fastapi.responses import FileResponse
@@ -16,6 +17,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 # Initialize file storage service
 file_storage = FileStorageService()
+
+# Regex pattern for validating profile picture filenames (UUID + extension)
+# Format: {uuid}.{jpg|png|webp}
+PROFILE_PICTURE_FILENAME_PATTERN = re.compile(
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$",
+    re.IGNORECASE
+)
 
 
 def _build_profile_picture_url(request: Request, filename: str | None) -> str | None:
@@ -100,7 +108,32 @@ async def upload_profile_picture(
     Raises:
         HTTPException: If file validation fails or upload fails
     """
-    # Read file content
+    # Get content type
+    content_type = file.content_type or "application/octet-stream"
+
+    # Check file size before reading to avoid memory issues
+    # Seek to end to get size, then back to start
+    try:
+        await file.seek(0, 2)  # Seek to end
+        file_size = await file.tell()
+        await file.seek(0)  # Seek back to start
+
+        # Validate size before reading entire file
+        if file_size > file_storage.MAX_FILE_SIZE:
+            max_size_mb = file_storage.MAX_FILE_SIZE / (1024 * 1024)
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File size ({file_size / (1024 * 1024):.2f}MB) exceeds maximum allowed size of {max_size_mb}MB",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read file metadata: {str(e)}",
+        )
+
+    # Read file content (now we know it's within size limits)
     try:
         file_content = await file.read()
     except Exception as e:
@@ -108,9 +141,6 @@ async def upload_profile_picture(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to read uploaded file: {str(e)}",
         )
-
-    # Get content type
-    content_type = file.content_type or "application/octet-stream"
 
     # Process and save image
     filename, error = file_storage.process_profile_picture(file_content, content_type)
@@ -121,13 +151,16 @@ async def upload_profile_picture(
             detail=error,
         )
 
-    # Delete old profile picture if exists
-    if current_user.profile_picture:
-        file_storage.delete_profile_picture(current_user.profile_picture)
+    # Store old profile picture filename for deletion after DB update
+    old_profile_picture = current_user.profile_picture
 
-    # Update user record with new filename
+    # Update user record with new filename FIRST (transaction safety)
     current_user.profile_picture = filename
     updated_user = user_repo.update(current_user)
+
+    # Delete old profile picture AFTER successful database update
+    if old_profile_picture:
+        file_storage.delete_profile_picture(old_profile_picture)
 
     return _user_to_response(updated_user, request)
 
@@ -186,8 +219,15 @@ async def get_profile_picture(filename: str) -> FileResponse:
         Image file with appropriate cache headers
 
     Raises:
-        HTTPException: If file not found
+        HTTPException: If file not found or invalid filename format
     """
+    # Validate filename format (UUID + extension)
+    if not PROFILE_PICTURE_FILENAME_PATTERN.match(filename):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid profile picture filename format",
+        )
+
     # Sanitize filename to prevent path traversal
     safe_filename = file_storage.sanitize_filename(filename)
 

@@ -90,6 +90,10 @@ class Settings(BaseSettings):
     max_files_per_upload: int = 10
     allowed_file_types: str = "pdf,docx,pptx,txt"
 
+    # File Upload Configuration (Profile Pictures, etc.)
+    upload_dir: str = "/app/storage/uploads"
+    profile_pictures_dir: str = "/app/storage/uploads/profile_pictures"
+
     # S3 Configuration (when storage_backend=s3)
     s3_bucket: str | None = None
     s3_region: str = "us-east-1"

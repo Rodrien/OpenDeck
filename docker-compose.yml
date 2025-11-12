@@ -56,6 +56,9 @@ services:
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
       - STORAGE_BACKEND=local
       - STORAGE_PATH=/app/storage/documents
+      # File Uploads
+      - UPLOAD_DIR=/app/storage/uploads
+      - PROFILE_PICTURES_DIR=/app/storage/uploads/profile_pictures
       # AI Provider Configuration (set your API key)
       - AI_PROVIDER=anthropic
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}

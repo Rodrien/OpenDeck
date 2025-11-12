@@ -31,11 +31,10 @@ class FileStorageService:
     # Profile picture dimensions
     PROFILE_PICTURE_SIZE = (200, 200)
 
-    # Base upload directory
-    UPLOAD_DIR = Path(__file__).parent.parent.parent / "uploads" / "profile_pictures"
-
     def __init__(self) -> None:
         """Initialize file storage service and ensure upload directory exists."""
+        # Get upload directory from config
+        self.UPLOAD_DIR = Path(settings.profile_pictures_dir)
         self._ensure_upload_directory()
 
     def _ensure_upload_directory(self) -> None:
@@ -65,6 +64,11 @@ class FileStorageService:
         # Validate image can be opened by PIL
         try:
             image = Image.open(io.BytesIO(file_content))
+
+            # Reject animated images (GIFs with multiple frames)
+            if hasattr(image, 'n_frames') and image.n_frames > 1:
+                return False, "Animated images are not supported. Please upload a static image."
+
             image.verify()  # Verify it's a valid image
         except Exception as e:
             return False, f"Invalid or corrupted image file: {str(e)}"
@@ -94,6 +98,12 @@ class FileStorageService:
         try:
             # Open and process image
             image = Image.open(io.BytesIO(file_content))
+
+            # Handle EXIF orientation data (auto-rotate based on camera orientation)
+            # exif_transpose returns None if there's no EXIF data to process
+            transposed_image = ImageOps.exif_transpose(image)
+            if transposed_image is not None:
+                image = transposed_image
 
             # Convert RGBA to RGB if necessary (for JPEG compatibility)
             if image.mode in ("RGBA", "LA", "P"):

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 // PrimeNG Components
 import { DialogModule } from 'primeng/dialog';
@@ -46,7 +46,8 @@ export class ReportCardDialog {
 
   constructor(
     private cardService: CardService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private translate: TranslateService
   ) {}
 
   /**
@@ -94,8 +95,8 @@ export class ReportCardDialog {
         next: () => {
           this.messageService.add({
             severity: 'success',
-            summary: 'Success',
-            detail: 'Card reported successfully. Thank you for your feedback!'
+            summary: this.translate.instant('common.success'),
+            detail: this.translate.instant('reportCard.successMessage')
           });
           this.reportSubmitted.emit();
           this.onHide();
@@ -105,8 +106,8 @@ export class ReportCardDialog {
           console.error('Error reporting card:', error);
           this.messageService.add({
             severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to report card. Please try again.'
+            summary: this.translate.instant('common.error'),
+            detail: this.translate.instant('reportCard.errorMessage')
           });
           this.isSubmitting.set(false);
         }

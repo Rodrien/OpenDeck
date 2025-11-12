@@ -547,11 +547,17 @@ export class AppTopbar implements OnInit {
         } catch (error) {
             console.error('Error submitting feedback:', error);
 
-            // Show error toast
+            // Parse error message from backend or use default
+            let errorDetail = this.feedbackErrorMessage();
+            if (error instanceof Error) {
+                errorDetail = error.message || errorDetail;
+            }
+
+            // Show error toast with specific message
             this.messageService.add({
                 severity: 'error',
                 summary: this.feedbackDialogTitle(),
-                detail: this.feedbackErrorMessage(),
+                detail: errorDetail,
                 life: 5000
             });
 
