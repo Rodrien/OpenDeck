@@ -1,5 +1,6 @@
 """Authentication API Endpoints"""
 
+import logging
 from fastapi import APIRouter, HTTPException, status, Request, Depends
 from sqlalchemy.orm import Session
 from app.schemas.auth import LoginRequest, TokenResponse, RefreshTokenRequest
@@ -10,14 +11,28 @@ from app.config import settings
 from app.services.google_oauth_service import GoogleOAuthService
 from app.db.base import get_db
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 def _build_profile_picture_url(request: Request, filename: str | None) -> str | None:
-    """Build full URL for profile picture."""
+    """
+    Build full URL for profile picture using configured base URL.
+
+    Uses settings.base_url instead of request.base_url to prevent
+    Host header manipulation attacks.
+
+    Args:
+        request: FastAPI request object (unused, kept for compatibility)
+        filename: Profile picture filename
+
+    Returns:
+        Full URL to profile picture or None if no filename
+    """
     if not filename:
         return None
-    base_url = str(request.base_url).rstrip("/")
+    # Use configured base URL instead of request.base_url for security
+    base_url = settings.base_url.rstrip("/")
     return f"{base_url}/api/v1/users/profile-picture/{filename}"
 
 
@@ -183,14 +198,18 @@ async def get_google_auth_url(
         return GoogleAuthUrlResponse(authorization_url=auth_url)
         
     except ValueError as e:
+        # Log internal error but return generic message
+        logger.error(f"OAuth configuration error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="Authentication service unavailable. Please try again later.",
         )
     except Exception as e:
+        # Log internal error but return generic message
+        logger.error(f"Failed to generate Google OAuth URL: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate Google OAuth URL",
+            detail="Unable to initialize authentication. Please try again.",
         )
 
 
@@ -217,9 +236,12 @@ async def google_auth_callback(
     try:
         # Create Google OAuth service
         google_service = GoogleOAuthService(user_repo, auth_service)
-        
-        # Handle Google login flow
-        auth_response = await google_service.handle_google_login(auth_data.code)
+
+        # Handle Google login flow with state validation
+        auth_response = await google_service.handle_google_login(
+            code=auth_data.code,
+            state=auth_data.state
+        )
         
         # Update profile picture URL for response
         user = auth_response.user
@@ -235,7 +257,9 @@ async def google_auth_callback(
     except HTTPException:
         raise
     except Exception as e:
+        # Log internal error but return generic message
+        logger.error(f"Failed to authenticate with Google: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to authenticate with Google",
+            detail="Authentication failed. Please try again.",
         )

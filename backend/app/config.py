@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     secret_key: str = Field(..., min_length=32, description="Secret key for encryption")
     api_v1_prefix: str = "/api/v1"
 
+    # Base URL for generating absolute URLs (e.g., profile pictures)
+    # Should be set to the actual domain in production
+    base_url: str = Field(
+        default="http://localhost:8000",
+        description="Base URL for the application (used for generating absolute URLs)"
+    )
+
     # Database Backend Selection
     db_backend: Literal["postgres", "dynamo"] = "postgres"
 

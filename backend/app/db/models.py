@@ -18,6 +18,7 @@ from sqlalchemy import (
     Boolean,
     Numeric,
     CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
@@ -307,6 +308,9 @@ class CardReportModel(Base):
         CheckConstraint("status IN ('pending', 'reviewed', 'resolved', 'dismissed')", name='check_report_status'),
         CheckConstraint('length(reason) >= 10', name='check_report_reason_min_length'),
         CheckConstraint('length(reason) <= 1000', name='check_report_reason_max_length'),
+        # Unique constraint: one report per user per card
+        # This prevents duplicate reports from the same user
+        UniqueConstraint('card_id', 'user_id', name='uq_card_user_report'),
     )
 
     # Relationships

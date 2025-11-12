@@ -21,6 +21,7 @@ from app.core.interfaces import UserRepository
 from app.schemas.oauth import GoogleUserInfo, GoogleAuthResponse
 from app.schemas.user import UserResponse
 from app.services.auth_service import AuthService
+from app.services.oauth_state_manager import get_oauth_state_manager
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -32,130 +33,143 @@ class GoogleOAuthService:
     def __init__(self, user_repo: UserRepository, auth_service: AuthService):
         self.user_repo = user_repo
         self.auth_service = auth_service
-        
+        self.state_manager = get_oauth_state_manager()
+
         # Google OAuth configuration
         self.client_id = os.getenv("GOOGLE_CLIENT_ID")
         self.client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
         self.redirect_uri = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:4200/auth/google/callback")
-        
+
         if not self.client_id or not self.client_secret:
             raise ValueError("Google OAuth credentials not configured")
+
+    def _create_oauth_flow(self) -> Flow:
+        """
+        Create Google OAuth flow with common configuration.
+
+        This method centralizes the OAuth flow configuration to avoid duplication
+        and ensure consistency across authorization and token exchange.
+
+        Returns:
+            Configured OAuth Flow instance
+        """
+        flow = Flow.from_client_config(
+            {
+                "web": {
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                    "redirect_uris": [self.redirect_uri],
+                }
+            },
+            scopes=[
+                "openid",
+                "https://www.googleapis.com/auth/userinfo.email",
+                "https://www.googleapis.com/auth/userinfo.profile",
+            ],
+        )
+        flow.redirect_uri = self.redirect_uri
+        return flow
     
     def get_authorization_url(self) -> str:
         """
-        Generate Google OAuth authorization URL.
-        
+        Generate Google OAuth authorization URL with CSRF protection.
+
+        Generates a cryptographically secure state token and stores it for validation
+        during the callback phase. This prevents CSRF attacks on the OAuth flow.
+
         Returns:
             Authorization URL for Google OAuth consent screen
+
+        Raises:
+            HTTPException: If URL generation fails
         """
         try:
+            # Generate and store CSRF protection state token
+            state = self.state_manager.generate_state()
+
             # Create OAuth flow
-            flow = Flow.from_client_config(
-                {
-                    "web": {
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.redirect_uri],
-                    }
-                },
-                scopes=[
-                    "openid",
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "https://www.googleapis.com/auth/userinfo.profile",
-                ],
-            )
-            
-            flow.redirect_uri = self.redirect_uri
-            
-            # Generate authorization URL
-            authorization_url, state = flow.authorization_url(
+            flow = self._create_oauth_flow()
+
+            # Generate authorization URL with our state token
+            authorization_url, _ = flow.authorization_url(
+                state=state,  # Use our managed state token
                 access_type="offline",
                 include_granted_scopes="true",
                 prompt="consent",
             )
-            
-            logger.info(f"Generated Google OAuth authorization URL with state: {state}")
+
+            logger.info(f"Generated Google OAuth authorization URL with state token")
             return authorization_url
-            
+
         except Exception as e:
             logger.error(f"Failed to generate Google OAuth authorization URL: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to generate OAuth authorization URL"
+                detail="Failed to initialize authentication. Please try again."
             )
     
     async def exchange_code_for_tokens(self, code: str) -> Tuple[str, str]:
         """
         Exchange authorization code for access and refresh tokens.
-        
+
         Args:
             code: Authorization code from Google
-            
+
         Returns:
             Tuple of (access_token, refresh_token)
+
+        Raises:
+            HTTPException: If token exchange fails
         """
         try:
-            flow = Flow.from_client_config(
-                {
-                    "web": {
-                        "client_id": self.client_id,
-                        "client_secret": self.client_secret,
-                        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                        "token_uri": "https://oauth2.googleapis.com/token",
-                        "redirect_uris": [self.redirect_uri],
-                    }
-                },
-                scopes=[
-                    "openid",
-                    "https://www.googleapis.com/auth/userinfo.email",
-                    "https://www.googleapis.com/auth/userinfo.profile",
-                ],
-            )
-            
-            flow.redirect_uri = self.redirect_uri
-            
+            # Create OAuth flow with centralized configuration
+            flow = self._create_oauth_flow()
+
             # Exchange code for tokens
             flow.fetch_token(code=code)
-            
+
             access_token = flow.credentials.token
             refresh_token = flow.credentials.refresh_token or ""
-            
+
             if not access_token:
                 raise ValueError("No access token received from Google")
-            
+
             logger.info("Successfully exchanged authorization code for tokens")
             return access_token, refresh_token
-            
+
         except Exception as e:
             logger.error(f"Failed to exchange authorization code for tokens: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to exchange authorization code"
+                detail="Invalid authorization code. Please try signing in again."
             )
     
     async def get_google_user_info(self, access_token: str) -> GoogleUserInfo:
         """
         Get user information from Google using access token.
-        
+
         Args:
             access_token: Google OAuth access token
-            
+
         Returns:
             Google user information
+
+        Raises:
+            HTTPException: If user info retrieval fails
         """
         try:
             # Get user info from Google API
             url = "https://www.googleapis.com/oauth2/v2/userinfo"
-            
+
             response_obj = AuthorizedSession(access_token).get(url)
-            
+
             if response_obj.status_code != 200:
                 raise ValueError(f"Google API returned status {response_obj.status_code}")
-            
+
             user_data = response_obj.json()
-            
+
             # Parse user info
             google_user = GoogleUserInfo(
                 id=user_data.get("id"),
@@ -164,33 +178,47 @@ class GoogleOAuthService:
                 picture=user_data.get("picture"),
                 verified_email=user_data.get("verified_email", False)
             )
-            
+
             if not google_user.email or not google_user.id:
                 raise ValueError("Invalid user data received from Google")
-            
+
             logger.info(f"Retrieved user info for Google user: {google_user.email}")
             return google_user
-            
+
+        except HTTPException:
+            raise
         except Exception as e:
             logger.error(f"Failed to get Google user info: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to retrieve user information from Google"
+                detail="Unable to retrieve user information. Please try again."
             )
     
-    async def handle_google_login(self, code: str) -> GoogleAuthResponse:
+    async def handle_google_login(self, code: str, state: str) -> GoogleAuthResponse:
         """
-        Handle complete Google OAuth login flow.
-        
+        Handle complete Google OAuth login flow with state validation.
+
         Args:
             code: Authorization code from Google
-            
+            state: CSRF protection state token
+
         Returns:
             Authentication response with JWT tokens and user info
+
+        Raises:
+            HTTPException: If state validation fails or authentication fails
         """
+        # Validate state token first (CSRF protection)
+        if not self.state_manager.validate_state(state):
+            logger.warning(f"Invalid or expired OAuth state token received")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired authentication request. Please try again."
+            )
+
         try:
             # Exchange code for tokens
-            access_token, refresh_token = await self.exchange_code_for_tokens(code)
+            access_token, _ = await self.exchange_code_for_tokens(code)
             
             # Get user info from Google
             google_user = await self.get_google_user_info(access_token)
@@ -260,7 +288,7 @@ class GoogleOAuthService:
             logger.error(f"Failed to handle Google login: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to authenticate with Google"
+                detail="Authentication failed. Please try again."
             )
 
 

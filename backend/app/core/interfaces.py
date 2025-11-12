@@ -1045,6 +1045,22 @@ class CardReportRepository(Protocol):
         """
         ...
 
+    def get_with_card_and_deck(self, report_id: str) -> Optional[tuple[CardReport, str]]:
+        """
+        Get report by ID with card and deck information using optimized JOIN query.
+
+        This method avoids the N+1 query problem by fetching report, card, and deck
+        data in a single query using JOINs.
+
+        Args:
+            report_id: Report identifier
+
+        Returns:
+            Tuple of (CardReport, deck_user_id) if found, None otherwise
+            The deck_user_id can be used to verify ownership without additional queries
+        """
+        ...
+
     def get_by_card_id(self, card_id: str) -> List[CardReport]:
         """
         Get all reports for a specific card.

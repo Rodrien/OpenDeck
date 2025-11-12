@@ -1579,6 +1579,34 @@ class PostgresCardReportRepo:
         model = self.session.query(CardReportModel).filter_by(id=report_id).first()
         return self._to_domain(model) if model else None
 
+    def get_with_card_and_deck(self, report_id: str) -> Optional[tuple[CardReport, str]]:
+        """
+        Get report by ID with card and deck information using a single JOIN query.
+
+        This method optimizes the common pattern of fetching report -> card -> deck
+        by using a single query with JOINs instead of 3 separate queries (N+1 problem).
+
+        Args:
+            report_id: ID of the report to fetch
+
+        Returns:
+            Tuple of (CardReport, deck_user_id) or None if report not found
+            The deck_user_id can be used to verify ownership without additional queries
+        """
+        result = (
+            self.session.query(CardReportModel, DeckModel.user_id)
+            .join(CardModel, CardReportModel.card_id == CardModel.id)
+            .join(DeckModel, CardModel.deck_id == DeckModel.id)
+            .filter(CardReportModel.id == report_id)
+            .first()
+        )
+
+        if not result:
+            return None
+
+        report_model, deck_user_id = result
+        return (self._to_domain(report_model), deck_user_id)
+
     def get_by_card_id(self, card_id: str) -> List[CardReport]:
         """Get all reports for a specific card."""
         models = (

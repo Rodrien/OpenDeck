@@ -11,8 +11,9 @@ from app.schemas.auth import UserResponse
 
 class GoogleAuthRequest(BaseModel):
     """Request model for Google OAuth authentication."""
-    
+
     code: str = Field(..., description="Authorization code from Google")
+    state: str = Field(..., description="CSRF protection state token")
     redirect_uri: str = Field(..., description="Redirect URI used in the OAuth flow")
 
 

@@ -4,6 +4,7 @@ Card Report API Endpoints
 API routes for reporting flashcards with incorrect, misleading, or unhelpful information.
 """
 
+import logging
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
@@ -20,6 +21,7 @@ from app.api.dependencies import (
     DeckRepoDepends,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/reports", tags=["Card Reports"])
 
 
@@ -81,11 +83,19 @@ async def report_card(
             reviewed_by=UUID(report.reviewed_by) if report.reviewed_by else None,
             reviewed_at=report.reviewed_at,
         )
-    except ValueError:
-        # Don't expose internal error details
+    except ValueError as e:
+        # Log internal error but return generic message
+        logger.error(f"Failed to create report for card {card_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid report data provided",
+            detail="Unable to submit report. Please try again.",
+        )
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(f"Unexpected error creating report: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to submit report. Please try again later.",
         )
 
 
@@ -209,13 +219,16 @@ async def update_report_status(
     Only deck owners can update the status of reports for cards in their decks.
     This ensures proper authorization for report management.
 
+    Uses an optimized JOIN query to fetch report, card, and deck information in a
+    single database query, avoiding the N+1 query problem.
+
     Args:
         report_id: ID of the report to update
         status_update: New status for the report
         current_user: Authenticated user (must be deck owner)
         report_repo: Report repository
-        card_repo: Card repository
-        deck_repo: Deck repository
+        card_repo: Card repository (unused, kept for dependency injection)
+        deck_repo: Deck repository (unused, kept for dependency injection)
 
     Returns:
         Updated report details
@@ -223,32 +236,18 @@ async def update_report_status(
     Raises:
         HTTPException: If report not found or user is not authorized
     """
-    # Get the report to find the card
-    report = report_repo.get(str(report_id))
-    if not report:
+    # Get report with card and deck information in a single query (avoids N+1 problem)
+    result = report_repo.get_with_card_and_deck(str(report_id))
+    if not result:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Report {report_id} not found",
         )
 
-    # Get the card to find the deck
-    card = card_repo.get(report.card_id)
-    if not card:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Card {report.card_id} not found",
-        )
-
-    # Get the deck to check ownership
-    deck = deck_repo.get(card.deck_id)
-    if not deck:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Deck {card.deck_id} not found",
-        )
+    report, deck_user_id = result
 
     # Verify user is the deck owner
-    if deck.user_id != current_user.id:
+    if deck_user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not authorized to update reports for this card. Only deck owners can manage reports.",
@@ -271,9 +270,17 @@ async def update_report_status(
             reviewed_by=UUID(updated_report.reviewed_by) if updated_report.reviewed_by else None,
             reviewed_at=updated_report.reviewed_at,
         )
-    except ValueError:
-        # Don't expose internal error details
+    except ValueError as e:
+        # Log internal error but return generic message
+        logger.error(f"Failed to update report {report_id} status: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to update report status",
+            detail="Unable to update report status. Please try again.",
+        )
+    except Exception as e:
+        # Log unexpected errors
+        logger.error(f"Unexpected error updating report status: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update report. Please try again later.",
         )

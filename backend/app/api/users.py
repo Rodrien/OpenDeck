@@ -10,6 +10,7 @@ from slowapi.util import get_remote_address
 from app.schemas.user import UserResponse
 from app.api.dependencies import CurrentUser, UserRepoDepends
 from app.services.file_storage import FileStorageService
+from app.config import settings
 
 
 router = APIRouter(prefix="/users", tags=["Users"])
@@ -28,10 +29,13 @@ PROFILE_PICTURE_FILENAME_PATTERN = re.compile(
 
 def _build_profile_picture_url(request: Request, filename: str | None) -> str | None:
     """
-    Build full URL for profile picture.
+    Build full URL for profile picture using configured base URL.
+
+    Uses settings.base_url instead of request.base_url to prevent
+    Host header manipulation attacks.
 
     Args:
-        request: FastAPI request object
+        request: FastAPI request object (unused, kept for compatibility)
         filename: Profile picture filename
 
     Returns:
@@ -40,8 +44,8 @@ def _build_profile_picture_url(request: Request, filename: str | None) -> str | 
     if not filename:
         return None
 
-    # Build URL using request base URL
-    base_url = str(request.base_url).rstrip("/")
+    # Use configured base URL instead of request.base_url for security
+    base_url = settings.base_url.rstrip("/")
     return f"{base_url}/api/v1/users/profile-picture/{filename}"
 
 
