@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { Card, CreateCardDto, UpdateCardDto, CardFilterParams } from '../models/card.model';
 import { PaginatedResponse } from '../models/api-response.model';
+import { CardReport, CardReportCreate } from '../models/card-report.model';
 
 /**
  * Card Service
@@ -133,12 +134,45 @@ export class CardService {
   }
 
   /**
+   * Report a card for review
+   * @param cardId - Card ID to report
+   * @param reportData - Report creation data
+   * @returns Observable of created CardReport
+   */
+  reportCard(cardId: string, reportData: CardReportCreate): Observable<CardReport> {
+    const url = `${environment.apiBaseUrl}/reports/cards/${cardId}/report`;
+    return this.http.post<CardReport>(url, reportData)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get all reports for a specific card
+   * @param cardId - Card ID
+   * @returns Observable of CardReport array
+   */
+  getCardReports(cardId: string): Observable<CardReport[]> {
+    const url = `${environment.apiBaseUrl}/reports/cards/${cardId}`;
+    return this.http.get<CardReport[]>(url)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Get all reports created by the current user
+   * @returns Observable of CardReport array
+   */
+  getMyReports(): Observable<CardReport[]> {
+    const url = `${environment.apiBaseUrl}/reports/my-reports`;
+    return this.http.get<CardReport[]>(url)
+      .pipe(catchError(this.handleError));
+  }
+
+  /**
    * Handle HTTP errors
    * @param error - HTTP error response
    * @returns Observable error
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
+    let errorMessage: string = 'An error occurred';
 
     if (error.error instanceof ErrorEvent) {
       // Client-side error

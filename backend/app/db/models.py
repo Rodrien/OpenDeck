@@ -18,11 +18,12 @@ from sqlalchemy import (
     Boolean,
     Numeric,
     CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.orm import relationship
 from app.db.base import Base
-from app.core.models import DifficultyLevel, DocumentStatus, VoteType
+from app.core.models import DifficultyLevel, DocumentStatus, VoteType, FeedbackType, FeedbackStatus
 
 
 # Junction table for deck-topic many-to-many relationship
@@ -52,9 +53,27 @@ class UserModel(Base):
     id = Column(String(36), primary_key=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(100), nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    password_hash = Column(String(255), nullable=True)  # Optional for OAuth users
+    oauth_provider = Column(String(20), nullable=True)  # 'google', 'local', or None
+    oauth_id = Column(String(255), nullable=True)  # OAuth user ID from provider
+    profile_picture = Column(String(255), nullable=True)  # Stores filename (e.g., "uuid.jpg")
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Constraints
+    __table_args__ = (
+        CheckConstraint(
+            "oauth_provider IN ('google', 'local') OR oauth_provider IS NULL",
+            name='check_oauth_provider'
+        ),
+        CheckConstraint(
+            "(oauth_provider IS NOT NULL AND oauth_id IS NOT NULL) OR (oauth_provider IS NULL AND oauth_id IS NULL)",
+            name='check_oauth_consistency'
+        ),
+        # Unique constraint: prevent duplicate OAuth accounts
+        # Ensures the same OAuth provider + ID combination can't be registered twice
+        UniqueConstraint('oauth_provider', 'oauth_id', name='uq_oauth_provider_id'),
+    )
 
     # Relationships
     decks = relationship("DeckModel", back_populates="user", cascade="all, delete-orphan")
@@ -108,6 +127,7 @@ class CardModel(Base):
     deck = relationship("DeckModel", back_populates="cards")
     topics = relationship("TopicModel", secondary=card_topics, back_populates="cards")
     reviews = relationship("CardReviewModel", back_populates="card", cascade="all, delete-orphan")
+    reports = relationship("CardReportModel", back_populates="card", cascade="all, delete-orphan")
 
 
 class TopicModel(Base):
@@ -269,4 +289,57 @@ class CommentVoteModel(Base):
 
     # Relationships
     comment = relationship("DeckCommentModel", back_populates="votes")
+    user = relationship("UserModel", foreign_keys=[user_id])
+
+
+class CardReportModel(Base):
+    """Card Report table model."""
+
+    __tablename__ = "card_reports"
+
+    id = Column(String(36), primary_key=True)
+    card_id = Column(String(36), ForeignKey("cards.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    reason = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="pending", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    reviewed_by = Column(String(36), ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint("status IN ('pending', 'reviewed', 'resolved', 'dismissed')", name='check_report_status'),
+        CheckConstraint('length(reason) >= 10', name='check_report_reason_min_length'),
+        CheckConstraint('length(reason) <= 1000', name='check_report_reason_max_length'),
+        # Unique constraint: one report per user per card
+        # This prevents duplicate reports from the same user
+        UniqueConstraint('card_id', 'user_id', name='uq_card_user_report'),
+    )
+
+    # Relationships
+    card = relationship("CardModel", back_populates="reports")
+    reporter = relationship("UserModel", foreign_keys=[user_id])
+    reviewer = relationship("UserModel", foreign_keys=[reviewed_by])
+
+
+class FeedbackModel(Base):
+    """Feedback table model."""
+
+    __tablename__ = "feedback"
+
+    id = Column(String(36), primary_key=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    feedback_type = Column(String(20), nullable=False, index=True)
+    message = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="new", index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+
+    __table_args__ = (
+        CheckConstraint("feedback_type IN ('bug', 'feature', 'general', 'other')", name='check_feedback_type'),
+        CheckConstraint("status IN ('new', 'reviewed', 'resolved')", name='check_feedback_status'),
+        CheckConstraint('length(message) >= 10', name='check_feedback_message_min_length'),
+        CheckConstraint('length(message) <= 5000', name='check_feedback_message_max_length'),
+    )
+
+    # Relationships
     user = relationship("UserModel", foreign_keys=[user_id])

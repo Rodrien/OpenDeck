@@ -15,7 +15,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
-from app.api import health, auth, decks, cards, topics, documents, fcm_tokens, notifications, study_sessions, comments
+from app.api import health, auth, decks, cards, topics, documents, fcm_tokens, notifications, study_sessions, comments, users, reports, feedback
 from app.db.base import engine
 from app.db.models import Base
 from app.core.firebase import initialize_firebase
@@ -96,6 +96,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router)
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
+app.include_router(users.router, prefix=settings.api_v1_prefix)
 app.include_router(decks.router, prefix=settings.api_v1_prefix)
 app.include_router(cards.router, prefix=settings.api_v1_prefix)
 app.include_router(topics.router, prefix=settings.api_v1_prefix)
@@ -104,6 +105,8 @@ app.include_router(fcm_tokens.router, prefix=settings.api_v1_prefix)
 app.include_router(notifications.router, prefix=settings.api_v1_prefix)
 app.include_router(study_sessions.router, prefix=settings.api_v1_prefix)
 app.include_router(comments.router, prefix=settings.api_v1_prefix)
+app.include_router(reports.router, prefix=settings.api_v1_prefix)
+app.include_router(feedback.router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/")

@@ -10,6 +10,23 @@
   background: var(--surface-ground);
 }
 
+// Report section styling
+.report-section {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--surface-border);
+  text-align: center;
+
+  ::ng-deep .p-button {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
 // Loading State
 .loading-container,
 .error-container {
@@ -280,7 +297,7 @@
   }
 }
 
-// Rating Buttons
+// Rating Buttons - Redesigned
 .rating-buttons {
   margin-top: 2rem;
 
@@ -294,43 +311,140 @@
 
   .rating-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
+  }
 
-    ::ng-deep .rating-button {
-      height: 80px;
+  .rating-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    min-height: 110px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    // Keyboard hint badge
+    .keyboard-hint {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .rating-icon {
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+
+    .rating-label {
       font-size: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
-      .button-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        position: relative;
-        width: 100%;
-
-        i {
-          font-size: 1.5rem;
-        }
-
-        .keyboard-shortcut {
-          position: absolute;
-          top: -0.25rem;
-          right: -0.25rem;
-          background: var(--surface-ground);
-          border: 1px solid var(--surface-border);
-          border-radius: 4px;
-          padding: 0.125rem 0.375rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          opacity: 0.7;
-        }
-      }
+    // Danger - Otra vez (Again)
+    &.rating-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
       }
+
+      &:active {
+        transform: translateY(-2px) scale(0.98);
+      }
+    }
+
+    // Warning - Difícil (Hard)
+    &.rating-warn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: white;
+
+      &:hover {
+        background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+      }
+
+      &:active {
+        transform: translateY(-2px) scale(0.98);
+      }
+    }
+
+    // Info - Bien (Good)
+    &.rating-info {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+
+      &:hover {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+      }
+
+      &:active {
+        transform: translateY(-2px) scale(0.98);
+      }
+    }
+
+    // Success - Fácil (Easy)
+    &.rating-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+
+      &:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+      }
+
+      &:active {
+        transform: translateY(-2px) scale(0.98);
+      }
+    }
+
+    // Ripple effect on click
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    &:active::after {
+      width: 300px;
+      height: 300px;
     }
   }
 }
@@ -375,14 +489,16 @@
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
 
-      ::ng-deep .rating-button {
-        height: 70px;
-        font-size: 0.875rem;
+      .rating-btn {
+        min-height: 90px;
+        padding: 1rem 0.75rem;
 
-        .button-content {
-          i {
-            font-size: 1.25rem;
-          }
+        .rating-icon {
+          font-size: 1.5rem;
+        }
+
+        .rating-label {
+          font-size: 0.875rem;
         }
       }
     }
@@ -426,6 +542,12 @@
   .rating-buttons {
     .rating-grid {
       grid-template-columns: 1fr;
+      gap: 0.5rem;
+
+      .rating-btn {
+        min-height: 80px;
+        gap: 0.5rem;
+      }
     }
   }
 }

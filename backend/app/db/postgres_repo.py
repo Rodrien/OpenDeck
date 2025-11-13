@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import func, case
 
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus, Feedback, FeedbackStatus
 from app.core.interfaces import (
     UserRepository,
     DeckRepository,
@@ -25,6 +25,8 @@ from app.core.interfaces import (
     StudySessionRepository,
     DeckCommentRepository,
     CommentVoteRepository,
+    CardReportRepository,
+    FeedbackRepository,
 )
 from app.db.models import (
     UserModel,
@@ -38,6 +40,8 @@ from app.db.models import (
     StudySessionModel,
     DeckCommentModel,
     CommentVoteModel,
+    CardReportModel,
+    FeedbackModel,
     deck_topics,
     card_topics,
 )
@@ -64,6 +68,15 @@ class PostgresUserRepo:
         model = self.session.query(UserModel).filter_by(email=email).first()
         return self._to_domain(model) if model else None
 
+    def get_by_oauth_id(self, provider: str, oauth_id: str) -> Optional[User]:
+        """Get user by OAuth provider and ID."""
+        model = (
+            self.session.query(UserModel)
+            .filter_by(oauth_provider=provider, oauth_id=oauth_id)
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
     def get_by_ids(self, user_ids: List[str]) -> List[User]:
         """
         Get multiple users by IDs in a single query.
@@ -86,6 +99,26 @@ class PostgresUserRepo:
         )
         return [self._to_domain(model) for model in models]
 
+    def get_by_profile_picture(self, filename: str) -> Optional[User]:
+        """
+        Get user by profile picture filename.
+
+        Used to verify that a profile picture file belongs to an actual user
+        before serving it, preventing enumeration attacks.
+
+        Args:
+            filename: Profile picture filename to search for
+
+        Returns:
+            User if found with matching profile picture, None otherwise
+        """
+        model = (
+            self.session.query(UserModel)
+            .filter_by(profile_picture=filename)
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
     def create(self, user: User) -> User:
         """Create a new user."""
         if not user.id:
@@ -96,6 +129,9 @@ class PostgresUserRepo:
             email=user.email,
             name=user.name,
             password_hash=user.password_hash,
+            oauth_provider=user.oauth_provider,
+            oauth_id=user.oauth_id,
+            profile_picture=user.profile_picture,
             created_at=user.created_at,
             updated_at=user.updated_at,
         )
@@ -114,6 +150,9 @@ class PostgresUserRepo:
         model.email = user.email
         model.name = user.name
         model.password_hash = user.password_hash
+        model.oauth_provider = user.oauth_provider
+        model.oauth_id = user.oauth_id
+        model.profile_picture = user.profile_picture
         model.updated_at = user.updated_at
 
         self.session.commit()
@@ -135,6 +174,9 @@ class PostgresUserRepo:
             email=model.email,
             name=model.name,
             password_hash=model.password_hash,
+            oauth_provider=model.oauth_provider,
+            oauth_id=model.oauth_id,
+            profile_picture=model.profile_picture,
             created_at=model.created_at,
             updated_at=model.updated_at,
         )
@@ -432,6 +474,92 @@ class PostgresCardRepo:
         self.session.commit()
         self.session.refresh(model)
         return self._to_domain(model)
+
+    def get_deck_stats(self, deck_id: str, user_id: str) -> dict:
+        """Get comprehensive statistics for a deck."""
+        # Verify user has access to the deck
+        deck = self.session.query(DeckModel).filter_by(id=deck_id, user_id=user_id).first()
+        if not deck:
+            return {
+                "deck_id": deck_id,
+                "total_cards": 0,
+                "new_cards": 0,
+                "learning_cards": 0,
+                "review_cards": 0,
+                "due_cards": 0,
+                "next_review_date": None,
+                "average_ease_factor": 2.5,
+                "completion_rate": 0.0,
+            }
+
+        # Get all cards for the deck
+        now = datetime.utcnow()
+        cards = self.session.query(CardModel).filter_by(deck_id=deck_id).all()
+
+        total_cards = len(cards)
+        if total_cards == 0:
+            return {
+                "deck_id": deck_id,
+                "total_cards": 0,
+                "new_cards": 0,
+                "learning_cards": 0,
+                "review_cards": 0,
+                "due_cards": 0,
+                "next_review_date": None,
+                "average_ease_factor": 2.5,
+                "completion_rate": 0.0,
+            }
+
+        # Calculate statistics
+        new_cards = 0
+        learning_cards = 0
+        review_cards = 0
+        due_cards = 0
+        reviewed_cards = 0
+        ease_factors = []
+        next_reviews = []
+
+        for card in cards:
+            # Track ease factors for average
+            if card.ease_factor:
+                ease_factors.append(float(card.ease_factor))
+
+            # Track next review dates
+            if card.next_review_date:
+                next_reviews.append(card.next_review_date)
+
+            # Categorize cards
+            if card.repetitions == 0 and card.next_review_date is None:
+                # Never reviewed
+                new_cards += 1
+            else:
+                reviewed_cards += 1
+
+                if card.is_learning:
+                    learning_cards += 1
+                else:
+                    review_cards += 1
+
+                # Check if due for review
+                if card.next_review_date is None or card.next_review_date <= now:
+                    due_cards += 1
+
+        # Calculate averages
+        average_ease_factor = sum(ease_factors) / len(ease_factors) if ease_factors else 2.5
+        completion_rate = (reviewed_cards / total_cards * 100) if total_cards > 0 else 0.0
+        next_review_date = min(next_reviews) if next_reviews else None
+
+        return {
+            "deck_id": deck_id,
+            "total_cards": total_cards,
+            "new_cards": new_cards,
+            "learning_cards": learning_cards,
+            "review_cards": review_cards,
+            "due_cards": due_cards,
+            "next_review_date": next_review_date,
+            "average_ease_factor": round(average_ease_factor, 2),
+            "completion_rate": round(completion_rate, 1),
+        }
 
     @staticmethod
     def _to_domain(model: CardModel) -> Card:
@@ -1457,4 +1585,213 @@ class PostgresCommentVoteRepo:
             vote_type=VoteType(model.vote_type),
             created_at=model.created_at,
             updated_at=model.updated_at,
+        )
+
+
+class PostgresCardReportRepo:
+    """PostgreSQL implementation of CardReportRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, report_id: str) -> Optional[CardReport]:
+        """Get report by ID."""
+        model = self.session.query(CardReportModel).filter_by(id=report_id).first()
+        return self._to_domain(model) if model else None
+
+    def get_with_card_and_deck(self, report_id: str) -> Optional[tuple[CardReport, str]]:
+        """
+        Get report by ID with card and deck information using a single JOIN query.
+
+        This method optimizes the common pattern of fetching report -> card -> deck
+        by using a single query with JOINs instead of 3 separate queries (N+1 problem).
+
+        Args:
+            report_id: ID of the report to fetch
+
+        Returns:
+            Tuple of (CardReport, deck_user_id) or None if report not found
+            The deck_user_id can be used to verify ownership without additional queries
+        """
+        result = (
+            self.session.query(CardReportModel, DeckModel.user_id)
+            .join(CardModel, CardReportModel.card_id == CardModel.id)
+            .join(DeckModel, CardModel.deck_id == DeckModel.id)
+            .filter(CardReportModel.id == report_id)
+            .first()
+        )
+
+        if not result:
+            return None
+
+        report_model, deck_user_id = result
+        return (self._to_domain(report_model), deck_user_id)
+
+    def get_by_card_id(self, card_id: str) -> List[CardReport]:
+        """Get all reports for a specific card."""
+        models = (
+            self.session.query(CardReportModel)
+            .filter_by(card_id=card_id)
+            .order_by(CardReportModel.created_at.desc())
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def get_by_user_id(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CardReport]:
+        """Get all reports created by a user."""
+        models = (
+            self.session.query(CardReportModel)
+            .filter_by(user_id=user_id)
+            .order_by(CardReportModel.created_at.desc())
+            .limit(limit)
+            .offset(skip)
+            .all()
+        )
+        return [self._to_domain(m) for m in models]
+
+    def create(
+        self,
+        card_id: str,
+        user_id: str,
+        reason: str,
+    ) -> CardReport:
+        """Create a new card report."""
+        report_id = _generate_id()
+
+        model = CardReportModel(
+            id=report_id,
+            card_id=card_id,
+            user_id=user_id,
+            reason=reason,
+            status=ReportStatus.PENDING.value,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+        )
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update_status(
+        self,
+        report_id: str,
+        status: ReportStatus,
+        reviewed_by: Optional[str] = None,
+    ) -> CardReport:
+        """Update report status and mark as reviewed."""
+        model = self.session.query(CardReportModel).filter_by(id=report_id).first()
+        if not model:
+            raise ValueError(f"Report {report_id} not found")
+
+        model.status = status.value
+        model.updated_at = datetime.utcnow()
+
+        if reviewed_by:
+            model.reviewed_by = reviewed_by
+            model.reviewed_at = datetime.utcnow()
+
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    @staticmethod
+    def _to_domain(model: CardReportModel) -> CardReport:
+        """Convert SQLAlchemy model to domain model."""
+        return CardReport(
+            id=model.id,
+            card_id=model.card_id,
+            user_id=model.user_id,
+            reason=model.reason,
+            status=ReportStatus(model.status),
+            created_at=model.created_at,
+            updated_at=model.updated_at,
+            reviewed_by=model.reviewed_by,
+            reviewed_at=model.reviewed_at,
+        )
+
+
+class PostgresFeedbackRepo:
+    """PostgreSQL implementation of FeedbackRepository."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def get(self, feedback_id: str) -> Optional[Feedback]:
+        """Get feedback by ID."""
+        model = self.session.query(FeedbackModel).filter_by(id=feedback_id).first()
+        return self._to_domain(model) if model else None
+
+    def list(
+        self,
+        status: Optional[FeedbackStatus] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Feedback]:
+        """List all feedback with optional status filter."""
+        query = self.session.query(FeedbackModel)
+
+        if status:
+            query = query.filter_by(status=status.value)
+
+        models = (
+            query
+            .order_by(FeedbackModel.created_at.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return [self._to_domain(model) for model in models]
+
+    def create(self, feedback: Feedback) -> Feedback:
+        """Create new feedback."""
+        if not feedback.id:
+            feedback.id = _generate_id()
+
+        model = FeedbackModel(
+            id=feedback.id,
+            user_id=feedback.user_id,
+            feedback_type=feedback.feedback_type.value,
+            message=feedback.message,
+            status=feedback.status.value,
+            created_at=feedback.created_at,
+        )
+
+        self.session.add(model)
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    def update_status(
+        self,
+        feedback_id: str,
+        status: FeedbackStatus,
+    ) -> Feedback:
+        """Update feedback status."""
+        model = self.session.query(FeedbackModel).filter_by(id=feedback_id).first()
+        if not model:
+            raise ValueError(f"Feedback {feedback_id} not found")
+
+        model.status = status.value
+        self.session.commit()
+        self.session.refresh(model)
+        return self._to_domain(model)
+
+    @staticmethod
+    def _to_domain(model: FeedbackModel) -> Feedback:
+        """Convert SQLAlchemy model to domain model."""
+        from app.core.models import FeedbackType
+
+        return Feedback(
+            id=model.id,
+            user_id=model.user_id,
+            feedback_type=FeedbackType(model.feedback_type),
+            message=model.message,
+            status=FeedbackStatus(model.status),
+            created_at=model.created_at,
         )

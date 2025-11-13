@@ -58,3 +58,11 @@ tenacity==8.2.3
 
 # Firebase Cloud Messaging
 firebase-admin==6.4.0
+
+# Image Processing
+Pillow==10.2.0
+
+# Google OAuth
+google-auth==2.27.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0

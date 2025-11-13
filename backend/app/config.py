@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     secret_key: str = Field(..., min_length=32, description="Secret key for encryption")
     api_v1_prefix: str = "/api/v1"
 
+    # Base URL for generating absolute URLs (e.g., profile pictures)
+    # Should be set to the actual domain in production
+    base_url: str = Field(
+        default="http://localhost:8000",
+        description="Base URL for the application (used for generating absolute URLs)"
+    )
+
     # Database Backend Selection
     db_backend: Literal["postgres", "dynamo"] = "postgres"
 
@@ -89,6 +96,13 @@ class Settings(BaseSettings):
     max_total_upload_size_mb: int = 50
     max_files_per_upload: int = 10
     allowed_file_types: str = "pdf,docx,pptx,txt"
+
+    # File Upload Configuration (Profile Pictures, etc.)
+    upload_dir: str = "/app/storage/uploads"
+    profile_pictures_dir: str = "/app/storage/uploads/profile_pictures"
+    profile_picture_max_size_mb: int = 5
+    profile_picture_width: int = 200
+    profile_picture_height: int = 200
 
     # S3 Configuration (when storage_backend=s3)
     s3_bucket: str | None = None

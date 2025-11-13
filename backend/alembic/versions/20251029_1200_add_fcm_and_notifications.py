@@ -1,7 +1,7 @@
 """Add FCM tokens and notifications tables
 
-Revision ID: 20251029_1200
-Revises: 20251025_1500
+Revision ID: 004
+Revises: 003
 Create Date: 2025-10-29 12:00:00.000000
 
 """
@@ -11,8 +11,8 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 
 # revision identifiers, used by Alembic.
-revision = '20251029_1200'
-down_revision = '20251025_1500'
+revision = '004'
+down_revision = '003'
 branch_labels = None
 depends_on = None
 

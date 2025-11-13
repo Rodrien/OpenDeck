@@ -34,12 +34,16 @@ class User:
     User domain model.
 
     Represents an authenticated user in the system.
+    Supports both local authentication (email/password) and OAuth authentication.
     """
 
     id: str
     email: str
     name: str
-    password_hash: str
+    password_hash: Optional[str] = None  # Optional for OAuth users
+    oauth_provider: Optional[str] = None  # 'google', 'local', or None
+    oauth_id: Optional[str] = None  # OAuth user ID from provider
+    profile_picture: Optional[str] = None  # Filename of profile picture (e.g., "uuid.jpg")
     created_at: datetime = field(default_factory=datetime.utcnow)
     updated_at: datetime = field(default_factory=datetime.utcnow)
 
@@ -49,6 +53,19 @@ class User:
             raise ValueError("Invalid email address")
         if not self.name:
             raise ValueError("Name cannot be empty")
+        
+        # Validate OAuth configuration
+        if self.oauth_provider:
+            if self.oauth_provider not in ('google', 'local'):
+                raise ValueError("OAuth provider must be 'google' or 'local'")
+            if not self.oauth_id:
+                raise ValueError("OAuth ID is required when OAuth provider is specified")
+        elif self.oauth_id:
+            raise ValueError("OAuth provider is required when OAuth ID is specified")
+        
+        # Validate authentication method
+        if not self.password_hash and not self.oauth_provider:
+            raise ValueError("Either password_hash or oauth_provider must be provided")
 
 
 @dataclass
@@ -442,3 +459,118 @@ class CommentVote:
         """Toggle the vote between upvote and downvote."""
         self.vote_type = VoteType.DOWNVOTE if self.vote_type == VoteType.UPVOTE else VoteType.UPVOTE
         self.updated_at = datetime.utcnow()
+
+
+class ReportStatus(str, Enum):
+    """Card report status types."""
+
+    PENDING = "pending"
+    REVIEWED = "reviewed"
+    RESOLVED = "resolved"
+    DISMISSED = "dismissed"
+
+
+@dataclass
+class CardReport:
+    """
+    Card Report domain model.
+
+    Represents a user report of a card that has incorrect, misleading,
+    or unhelpful information. Reports are reviewed by admins or deck owners.
+    """
+
+    id: str
+    card_id: str
+    user_id: str
+    reason: str
+    status: ReportStatus
+    created_at: datetime
+    updated_at: datetime
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        """Validate card report data after initialization."""
+        if not self.card_id:
+            raise ValueError("Report must be associated with a card")
+        if not self.user_id:
+            raise ValueError("Report must belong to a user")
+        if not self.reason or not self.reason.strip():
+            raise ValueError("Report reason cannot be empty")
+        if len(self.reason) < 10:
+            raise ValueError("Report reason must be at least 10 characters")
+        if len(self.reason) > 1000:
+            raise ValueError("Report reason cannot exceed 1000 characters")
+        if not isinstance(self.status, ReportStatus):
+            raise ValueError(f"Invalid report status: {self.status}")
+
+    def mark_reviewed(self, reviewed_by: str, status: ReportStatus) -> None:
+        """
+        Mark report as reviewed with resolution status.
+
+        Args:
+            reviewed_by: User ID of the reviewer
+            status: New status (reviewed, resolved, dismissed)
+        """
+        if status not in (ReportStatus.REVIEWED, ReportStatus.RESOLVED, ReportStatus.DISMISSED):
+            raise ValueError(f"Invalid review status: {status}")
+
+        self.status = status
+        self.reviewed_by = reviewed_by
+        self.reviewed_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+
+
+class FeedbackType(str, Enum):
+    """Feedback types."""
+
+    BUG = "bug"
+    FEATURE = "feature"
+    GENERAL = "general"
+    OTHER = "other"
+
+
+class FeedbackStatus(str, Enum):
+    """Feedback status types."""
+
+    NEW = "new"
+    REVIEWED = "reviewed"
+    RESOLVED = "resolved"
+
+
+@dataclass
+class Feedback:
+    """
+    Feedback domain model.
+
+    Represents user feedback or suggestions about the application.
+    Can be submitted anonymously (user_id is optional).
+    """
+
+    id: str
+    feedback_type: FeedbackType
+    message: str
+    status: FeedbackStatus
+    created_at: datetime
+    user_id: Optional[str] = None
+
+    def __post_init__(self) -> None:
+        """Validate feedback data after initialization."""
+        if not self.message or not self.message.strip():
+            raise ValueError("Feedback message cannot be empty")
+        if len(self.message) < 10:
+            raise ValueError("Feedback message must be at least 10 characters")
+        if len(self.message) > 5000:
+            raise ValueError("Feedback message cannot exceed 5000 characters")
+        if not isinstance(self.feedback_type, FeedbackType):
+            raise ValueError(f"Invalid feedback type: {self.feedback_type}")
+        if not isinstance(self.status, FeedbackStatus):
+            raise ValueError(f"Invalid feedback status: {self.status}")
+
+    def mark_reviewed(self) -> None:
+        """Mark feedback as reviewed."""
+        self.status = FeedbackStatus.REVIEWED
+
+    def mark_resolved(self) -> None:
+        """Mark feedback as resolved."""
+        self.status = FeedbackStatus.RESOLVED

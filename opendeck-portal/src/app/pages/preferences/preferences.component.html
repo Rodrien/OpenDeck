@@ -2,6 +2,9 @@
     <!-- ConfirmDialog for reset confirmation -->
     <p-confirmDialog />
 
+    <!-- Toast for messages -->
+    <p-toast position="top-right" />
+
     <div class="max-w-4xl mx-auto">
         <!-- Page Header -->
         <div class="mb-8">
@@ -19,6 +22,78 @@
                 <p-message severity="success" [text]="'preferences.saved' | translate" styleClass="w-full" />
             </div>
         }
+
+        <!-- Profile Picture Card -->
+        <p-card styleClass="mb-6">
+            <ng-template pTemplate="header">
+                <div class="p-4 border-bottom-1 surface-border">
+                    <h2 class="text-xl font-semibold text-surface-900 dark:text-surface-0 m-0">
+                        <i class="pi pi-user mr-2 text-primary"></i>
+                        {{ 'preferences.profilePicture.title' | translate }}
+                    </h2>
+                </div>
+            </ng-template>
+
+            <div class="flex flex-col gap-4">
+                <p class="text-surface-600 dark:text-surface-400 m-0">
+                    {{ 'preferences.profilePicture.description' | translate }}
+                </p>
+
+                <div class="flex items-center gap-6">
+                    <!-- Avatar Display -->
+                    <div class="profile-picture-preview">
+                        @if (imagePreview()) {
+                            <img [src]="imagePreview()!" alt="Preview" class="w-32 h-32 rounded-full object-cover border-3 surface-border" />
+                        } @else if (currentUser()?.profilePictureUrl) {
+                            <img [src]="currentUser()!.profilePictureUrl!" alt="Profile" class="w-32 h-32 rounded-full object-cover border-3 surface-border" />
+                        } @else {
+                            <p-avatar
+                                [label]="getUserInitials()"
+                                styleClass="w-32 h-32 text-4xl"
+                                shape="circle"
+                            />
+                        }
+                    </div>
+
+                    <!-- Upload Controls -->
+                    <div class="flex-1">
+                        <p-fileUpload
+                            mode="basic"
+                            [chooseLabel]="'preferences.profilePicture.changePicture' | translate"
+                            chooseIcon="pi pi-upload"
+                            accept="image/jpeg,image/png,image/webp"
+                            [maxFileSize]="5242880"
+                            [auto]="true"
+                            (onSelect)="onFileSelect($event)"
+                            [disabled]="uploadingPicture()"
+                            styleClass="mb-3"
+                        />
+
+                        @if (currentUser()?.profilePictureUrl) {
+                            <p-button
+                                [label]="'preferences.profilePicture.removePicture' | translate"
+                                icon="pi pi-trash"
+                                (onClick)="removeProfilePicture()"
+                                [disabled]="uploadingPicture()"
+                                severity="danger"
+                                [outlined]="true"
+                                size="small"
+                            />
+                        }
+
+                        <p class="text-sm text-surface-500 dark:text-surface-400 mt-3 mb-0">
+                            {{ 'preferences.profilePicture.requirements' | translate }}
+                        </p>
+                    </div>
+                </div>
+
+                @if (uploadingPicture()) {
+                    <div class="mt-2">
+                        <p-message severity="info" [text]="'preferences.profilePicture.uploading' | translate" styleClass="w-full" />
+                    </div>
+                }
+            </div>
+        </p-card>
 
         <!-- Language Settings Card -->
         <p-card styleClass="mb-6">

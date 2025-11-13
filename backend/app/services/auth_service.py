@@ -100,6 +100,21 @@ class AuthService:
         }
         return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
+    def create_tokens(self, user: User) -> dict:
+        """
+        Create both access and refresh tokens for a user.
+
+        Args:
+            user: User to create tokens for
+
+        Returns:
+            Dictionary with access_token and refresh_token
+        """
+        return {
+            "access_token": self.create_access_token(user.id),
+            "refresh_token": self.create_refresh_token(user.id),
+        }
+
     def verify_token(self, token: str, token_type: str = "access") -> Optional[str]:
         """
         Verify and decode a JWT token.

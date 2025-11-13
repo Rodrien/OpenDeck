@@ -558,6 +558,7 @@ npm start
 # Full reset (recommended)
 docker-compose down -v
 docker-compose up -d --build
+ocker-compose exec backend python scripts/load_test_data.py)
 
 # Or quick restart (if no dependency changes)
 docker-compose restart backend frontend

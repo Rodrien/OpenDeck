@@ -1,95 +1,95 @@
-# DO NOT USE THIS DOCKER COMPOSE FILE, USE THE DOCKER COMPOSE IN THE ROOT DIRECTORY INSTEAD.
-version: '3.8'
+# # DO NOT USE THIS DOCKER COMPOSE FILE, USE THE DOCKER COMPOSE IN THE ROOT DIRECTORY INSTEAD.
+# version: '3.8'
 
-services:
-  # PostgreSQL Database
-  db:
-    image: postgres:15-alpine
-    container_name: opendeck-db
-    environment:
-      POSTGRES_DB: opendeck
-      POSTGRES_USER: opendeck_user
-      POSTGRES_PASSWORD: opendeck_pass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opendeck_user -d opendeck"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+# services:
+#   # PostgreSQL Database
+#   db:
+#     image: postgres:15-alpine
+#     container_name: opendeck-db
+#     environment:
+#       POSTGRES_DB: opendeck
+#       POSTGRES_USER: opendeck_user
+#       POSTGRES_PASSWORD: opendeck_pass
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U opendeck_user -d opendeck"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
 
-  # Redis (for Phase 2 - Celery)
-  redis:
-    image: redis:7-alpine
-    container_name: opendeck-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+#   # Redis (for Phase 2 - Celery)
+#   redis:
+#     image: redis:7-alpine
+#     container_name: opendeck-redis
+#     ports:
+#       - "6379:6379"
+#     volumes:
+#       - redis_data:/data
+#     healthcheck:
+#       test: ["CMD", "redis-cli", "ping"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
 
-  # FastAPI Application
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: opendeck-api
-    environment:
-      - ENV=development
-      - LOG_LEVEL=INFO
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
-      - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
-      - DB_BACKEND=postgres
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./app:/app/app  # Mount for hot reload in development
-      - ./scripts:/app/scripts  # Mount scripts directory
-      - ../cards:/app/cards  # Mount cards data directory
-      - ./alembic/versions:/app/alembic/versions  # Mount migration files
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+#   # FastAPI Application
+#   app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: opendeck-api
+#     environment:
+#       - ENV=development
+#       - LOG_LEVEL=INFO
+#       - SECRET_KEY=dev-secret-key-change-in-production
+#       - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+#       - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
+#       - DB_BACKEND=postgres
+#       - REDIS_URL=redis://redis:6379/0
+#       - CELERY_BROKER_URL=redis://redis:6379/0
+#       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+#     ports:
+#       - "8000:8000"
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#     volumes:
+#       - ./app:/app/app  # Mount for hot reload in development
+#       - ./scripts:/app/scripts  # Mount scripts directory
+#       - ../cards:/app/cards  # Mount cards data directory
+#       - ./alembic/versions:/app/alembic/versions  # Mount migration files
+#     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  # Celery Worker (for Phase 2)
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: opendeck-celery
-    environment:
-      - ENV=development
-      - LOG_LEVEL=INFO
-      - SECRET_KEY=dev-secret-key-change-in-production
-      - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
-      - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
-      - REDIS_URL=redis://redis:6379/0
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - DB_BACKEND=postgres
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./app:/app/app  # Mount for hot reload
-      - ../cards:/app/cards  # Mount cards data directory
-    command: celery -A app.workers.celery_app worker --loglevel=info
+#   # Celery Worker (for Phase 2)
+#   celery_worker:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     container_name: opendeck-celery
+#     environment:
+#       - ENV=development
+#       - LOG_LEVEL=INFO
+#       - SECRET_KEY=dev-secret-key-change-in-production
+#       - JWT_SECRET_KEY=dev-jwt-secret-key-change-in-production
+#       - DATABASE_URL=postgresql://opendeck_user:opendeck_pass@db:5432/opendeck
+#       - REDIS_URL=redis://redis:6379/0
+#       - CELERY_BROKER_URL=redis://redis:6379/0
+#       - CELERY_RESULT_BACKEND=redis://redis:6379/0
+#       - DB_BACKEND=postgres
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#       redis:
+#         condition: service_healthy
+#     volumes:
+#       - ./app:/app/app  # Mount for hot reload
+#       - ../cards:/app/cards  # Mount cards data directory
+#     command: celery -A app.workers.celery_app worker --loglevel=info
 
-volumes:
-  postgres_data:
-  redis_data:
+# volumes:
+#   postgres_data:
+#   redis_data:

@@ -25,6 +25,11 @@
         border-color: var(--primary-color);
       }
     }
+
+    .button-container {
+      display: flex;
+      justify-content: flex-end;
+    }
   }
 
   .comments-list {

@@ -9,7 +9,7 @@ PostgreSQL and DynamoDB implementations without changing business logic.
 from __future__ import annotations
 from typing import Protocol, Optional, List, Tuple
 from datetime import datetime
-from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType
+from app.core.models import User, Deck, Card, Document, Topic, UserFCMToken, Notification, CardReview, StudySession, DeckComment, CommentVote, VoteType, CardReport, ReportStatus, Feedback, FeedbackStatus
 
 
 class UserRepository(Protocol):
@@ -23,6 +23,10 @@ class UserRepository(Protocol):
         """Get user by email address."""
         ...
 
+    def get_by_oauth_id(self, provider: str, oauth_id: str) -> Optional[User]:
+        """Get user by OAuth provider and ID."""
+        ...
+
     def get_by_ids(self, user_ids: List[str]) -> List[User]:
         """
         Get multiple users by IDs in a single query.
@@ -34,6 +38,21 @@ class UserRepository(Protocol):
 
         Returns:
             List of users that exist (may be shorter than input list)
+        """
+        ...
+
+    def get_by_profile_picture(self, filename: str) -> Optional[User]:
+        """
+        Get user by profile picture filename.
+
+        Used to verify that a profile picture file belongs to an actual user
+        before serving it, preventing enumeration attacks.
+
+        Args:
+            filename: Profile picture filename to search for
+
+        Returns:
+            User if found with matching profile picture, None otherwise
         """
         ...
 
@@ -1022,5 +1041,176 @@ class CommentVoteRepository(Protocol):
         Args:
             comment_id: Comment identifier
             user_id: User identifier
+        """
+        ...
+
+
+class CardReportRepository(Protocol):
+    """Abstract interface for card report data access."""
+
+    def get(self, report_id: str) -> Optional[CardReport]:
+        """
+        Get report by ID.
+
+        Args:
+            report_id: Report identifier
+
+        Returns:
+            CardReport if found, None otherwise
+        """
+        ...
+
+    def get_with_card_and_deck(self, report_id: str) -> Optional[tuple[CardReport, str]]:
+        """
+        Get report by ID with card and deck information using optimized JOIN query.
+
+        This method avoids the N+1 query problem by fetching report, card, and deck
+        data in a single query using JOINs.
+
+        Args:
+            report_id: Report identifier
+
+        Returns:
+            Tuple of (CardReport, deck_user_id) if found, None otherwise
+            The deck_user_id can be used to verify ownership without additional queries
+        """
+        ...
+
+    def get_by_card_id(self, card_id: str) -> List[CardReport]:
+        """
+        Get all reports for a specific card.
+
+        Args:
+            card_id: Card identifier
+
+        Returns:
+            List of reports for the card, ordered by created_at DESC
+        """
+        ...
+
+    def get_by_user_id(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> List[CardReport]:
+        """
+        Get all reports created by a user.
+
+        Args:
+            user_id: User identifier
+            skip: Number of results to skip
+            limit: Maximum number of results
+
+        Returns:
+            List of reports ordered by created_at DESC
+        """
+        ...
+
+    def create(
+        self,
+        card_id: str,
+        user_id: str,
+        reason: str,
+    ) -> CardReport:
+        """
+        Create a new card report.
+
+        Args:
+            card_id: Card identifier
+            user_id: User identifier
+            reason: Reason for reporting the card
+
+        Returns:
+            Created report with ID
+        """
+        ...
+
+    def update_status(
+        self,
+        report_id: str,
+        status: ReportStatus,
+        reviewed_by: Optional[str] = None,
+    ) -> CardReport:
+        """
+        Update report status and mark as reviewed.
+
+        Args:
+            report_id: Report identifier
+            status: New status
+            reviewed_by: User ID of reviewer (optional)
+
+        Returns:
+            Updated report
+
+        Raises:
+            ValueError: If report not found
+        """
+        ...
+
+
+class FeedbackRepository(Protocol):
+    """Abstract interface for feedback data access."""
+
+    def get(self, feedback_id: str) -> Optional[Feedback]:
+        """
+        Get feedback by ID.
+
+        Args:
+            feedback_id: Feedback identifier
+
+        Returns:
+            Feedback if found, None otherwise
+        """
+        ...
+
+    def list(
+        self,
+        status: Optional[FeedbackStatus] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> List[Feedback]:
+        """
+        List all feedback with optional status filter.
+
+        Args:
+            status: Optional status filter
+            limit: Maximum number of results
+            offset: Number of results to skip
+
+        Returns:
+            List of feedback ordered by created_at DESC
+        """
+        ...
+
+    def create(self, feedback: Feedback) -> Feedback:
+        """
+        Create new feedback.
+
+        Args:
+            feedback: Feedback to create
+
+        Returns:
+            Created feedback with ID
+        """
+        ...
+
+    def update_status(
+        self,
+        feedback_id: str,
+        status: FeedbackStatus,
+    ) -> Feedback:
+        """
+        Update feedback status.
+
+        Args:
+            feedback_id: Feedback identifier
+            status: New status
+
+        Returns:
+            Updated feedback
+
+        Raises:
+            ValueError: If feedback not found
         """
         ...

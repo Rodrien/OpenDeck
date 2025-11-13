@@ -23,7 +23,15 @@
     "noAccount": "Don't have an account?",
     "signUp": "Sign up",
     "newUser": "New user?",
-    "existingUser": "Already have an account?"
+    "existingUser": "Already have an account?",
+    "google": {
+      "signIn": "Sign in with Google",
+      "signUp": "Sign up with Google",
+      "loading": "Completing Google sign-in...",
+      "error": "Failed to sign in with Google",
+      "cancelled": "Google sign-in was cancelled",
+      "invalidResponse": "Invalid authentication response"
+    }
   },
   "flashcard": {
     "question": "Question",
@@ -152,7 +160,8 @@
     "switchToDarkMode": "Switch to dark mode",
     "userMenu": "User menu",
     "user": "User",
-    "notLoggedIn": "Not logged in"
+    "notLoggedIn": "Not logged in",
+    "feedback": "Send Feedback"
   },
   "common": {
     "save": "Save",
@@ -193,6 +202,22 @@
     "reset": "Reset to Defaults",
     "resetConfirm": "Are you sure you want to reset all preferences to their default values?",
     "confirmHeader": "Confirm Reset",
+    "profilePicture": {
+      "title": "Profile Picture",
+      "description": "Upload a profile picture to personalize your account",
+      "changePicture": "Change Picture",
+      "removePicture": "Remove Picture",
+      "requirements": "JPEG, PNG, or WebP format. Max 5MB. Image will be resized to 200x200px.",
+      "uploading": "Uploading your profile picture...",
+      "uploadSuccess": "Profile picture updated successfully",
+      "uploadFailed": "Failed to upload profile picture. Please try again.",
+      "removeConfirm": "Are you sure you want to remove your profile picture?",
+      "removeHeader": "Remove Profile Picture",
+      "removeSuccess": "Profile picture removed successfully",
+      "removeFailed": "Failed to remove profile picture. Please try again.",
+      "invalidType": "Invalid file type. Please upload a JPEG, PNG, or WebP image.",
+      "fileTooLarge": "File is too large. Maximum size is 5MB."
+    },
     "language": {
       "title": "Language Settings",
       "description": "Choose your preferred language for the interface",
@@ -273,6 +298,41 @@
       "minutesAgo": "{{count}}m ago",
       "hoursAgo": "{{count}}h ago",
       "daysAgo": "{{count}}d ago"
+    }
+  },
+  "report": {
+    "title": "Report Card",
+    "description": "Help us improve by reporting cards with incorrect, misleading, or unhelpful information.",
+    "reasonLabel": "Why are you reporting this card?",
+    "reasonPlaceholder": "Please describe the issue with this card (e.g., incorrect information, unclear question, typo)...",
+    "minimumChars": "Please provide at least {{count}} more characters",
+    "minimumLength": "Minimum {{min}} characters required",
+    "reasonValid": "Your reason looks good",
+    "validationMessage": "Please provide a detailed reason for reporting this card",
+    "submit": "Submit Report",
+    "reportCard": "Report Card",
+    "successMessage": "Card reported successfully. Thank you for your feedback!",
+    "errorMessage": "Failed to report card. Please try again."
+  },
+  "feedback": {
+    "title": "Send Feedback",
+    "description": "Share your thoughts, suggestions, or report issues to help us improve OpenDeck.",
+    "typeLabel": "Feedback Type",
+    "typePlaceholder": "Select feedback type",
+    "messageLabel": "Your Message",
+    "messagePlaceholder": "Tell us what's on your mind...",
+    "messageRequired": "Message is required (minimum 10 characters)",
+    "messageMinLength": "Please provide at least {{count}} more characters",
+    "characters": "characters",
+    "submit": "Send Feedback",
+    "cancel": "Cancel",
+    "successMessage": "Thank you for your feedback! We appreciate your input.",
+    "errorMessage": "Failed to submit feedback. Please try again.",
+    "types": {
+      "bugReport": "Bug Report",
+      "featureRequest": "Feature Request",
+      "generalFeedback": "General Feedback",
+      "other": "Other"
     }
   }
 }

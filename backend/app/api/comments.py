@@ -1,6 +1,6 @@
 """Deck Comment Management API Endpoints"""
 
-from fastapi import APIRouter, HTTPException, status, Query, Path
+from fastapi import APIRouter, HTTPException, status, Query, Path, Request
 from app.schemas.comment import (
     CommentCreate,
     CommentUpdate,
@@ -23,8 +23,28 @@ from app.core.models import DeckComment, CommentVote
 router = APIRouter(prefix="/decks/{deck_id}/comments", tags=["Comments"])
 
 
+def _build_profile_picture_url(request: Request, filename: str | None) -> str | None:
+    """Build full URL for profile picture."""
+    if not filename:
+        return None
+    base_url = str(request.base_url).rstrip("/")
+    return f"{base_url}/api/v1/users/profile-picture/{filename}"
+
+
+def _user_to_user_info(user, request: Request) -> UserInfo:
+    """Convert User domain model to UserInfo with profile picture URL."""
+    profile_picture_url = _build_profile_picture_url(request, user.profile_picture)
+    return UserInfo(
+        id=user.id,
+        name=user.name,
+        email=user.email,
+        profile_picture_url=profile_picture_url,
+    )
+
+
 @router.get("", response_model=CommentListResponse)
 async def list_comments(
+    request: Request,
     deck_id: str = Path(..., description="Deck identifier"),
     current_user: CurrentUserOptional = None,
     comment_repo: CommentRepoDepends = None,
@@ -92,7 +112,7 @@ async def list_comments(
         comment_dict['score'] = upvotes - downvotes
         comment_dict['user_vote'] = user_vote
         if user:
-            comment_dict['user'] = UserInfo(id=user.id, name=user.name, email=user.email)
+            comment_dict['user'] = _user_to_user_info(user, request)
 
         comment_responses.append(CommentResponse.model_validate(comment_dict))
 
@@ -106,6 +126,7 @@ async def list_comments(
 
 @router.get("/{comment_id}", response_model=CommentResponse)
 async def get_comment(
+    request: Request,
     deck_id: str = Path(..., description="Deck identifier"),
     comment_id: str = Path(..., description="Comment identifier"),
     current_user: CurrentUserOptional = None,
@@ -155,13 +176,14 @@ async def get_comment(
     comment_dict['score'] = upvotes - downvotes
     comment_dict['user_vote'] = user_vote
     if user:
-        comment_dict['user'] = UserInfo(id=user.id, name=user.name, email=user.email)
+        comment_dict['user'] = _user_to_user_info(user, request)
 
     return CommentResponse.model_validate(comment_dict)
 
 
 @router.post("", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 async def create_comment(
+    request: Request,
     deck_id: str = Path(..., description="Deck identifier"),
     comment_data: CommentCreate = None,
     current_user: CurrentUser = None,
@@ -225,13 +247,14 @@ async def create_comment(
     comment_dict['score'] = 0
     comment_dict['user_vote'] = None
     if user:
-        comment_dict['user'] = UserInfo(id=user.id, name=user.name, email=user.email)
+        comment_dict['user'] = _user_to_user_info(user, request)
 
     return CommentResponse.model_validate(comment_dict)
 
 
 @router.put("/{comment_id}", response_model=CommentResponse)
 async def update_comment(
+    request: Request,
     deck_id: str = Path(..., description="Deck identifier"),
     comment_id: str = Path(..., description="Comment identifier"),
     comment_data: CommentUpdate = None,
@@ -294,7 +317,7 @@ async def update_comment(
     comment_dict['score'] = upvotes - downvotes
     comment_dict['user_vote'] = user_vote
     if user:
-        comment_dict['user'] = UserInfo(id=user.id, name=user.name, email=user.email)
+        comment_dict['user'] = _user_to_user_info(user, request)
 
     return CommentResponse.model_validate(comment_dict)
 

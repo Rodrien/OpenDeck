@@ -183,7 +183,7 @@
         </div>
 
         <!-- Navigation Controls -->
-        <div class="navigation-controls flex items-center justify-between">
+        <div class="navigation-controls flex items-center justify-between mb-4">
             <!-- Previous Button -->
             <p-button
                 [label]="'flashcard.previous' | translate"
@@ -218,6 +218,20 @@
             />
         </div>
 
+        <!-- Report Card Button -->
+        <div class="report-section flex justify-center">
+            <p-button
+                [label]="'report.reportCard' | translate"
+                icon="pi pi-flag"
+                severity="secondary"
+                [outlined]="true"
+                [text]="true"
+                size="small"
+                (onClick)="openReportDialog()"
+                [attr.aria-label]="'Report this flashcard for incorrect information'"
+            />
+        </div>
+
         <!-- Keyboard Shortcuts Hint -->
         <div class="keyboard-hints text-center mt-8 text-surface-500 dark:text-surface-400 text-sm">
             <p>
@@ -242,6 +256,32 @@
                 </span>
             </p>
         </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section mt-12">
+            <!-- Section Divider -->
+            <div class="divider-container mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="flex-1 h-px bg-surface-300 dark:bg-surface-700"></div>
+                    <div class="flex items-center gap-2 text-surface-600 dark:text-surface-400">
+                        <i class="pi pi-comments text-xl"></i>
+                        <span class="text-lg font-medium">{{ 'comments.title' | translate }}</span>
+                    </div>
+                    <div class="flex-1 h-px bg-surface-300 dark:bg-surface-700"></div>
+                </div>
+            </div>
+
+            <!-- Comments Component -->
+            <app-deck-comments [deckId]="deckId()" />
+        </div>
+
         } <!-- End of !loading() && !error() && cards().length > 0 condition -->
     </div>
 </div>
+
+<!-- Report Card Dialog -->
+<app-report-card-dialog
+    [(visible)]="showReportDialog"
+    [cardId]="currentCard()?.id || ''"
+    (reportSubmitted)="onCardReported()"
+/>

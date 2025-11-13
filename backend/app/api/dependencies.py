@@ -22,6 +22,8 @@ from app.db.postgres_repo import (
     PostgresStudySessionRepo,
     PostgresDeckCommentRepo,
     PostgresCommentVoteRepo,
+    PostgresCardReportRepo,
+    PostgresFeedbackRepo,
 )
 from app.services.auth_service import AuthService
 from app.services.fcm_service import FCMService
@@ -110,6 +112,16 @@ def get_comment_vote_repo(db: Session = Depends(get_db)) -> PostgresCommentVoteR
     return PostgresCommentVoteRepo(db)
 
 
+def get_card_report_repo(db: Session = Depends(get_db)) -> PostgresCardReportRepo:
+    """Get card report repository instance."""
+    return PostgresCardReportRepo(db)
+
+
+def get_feedback_repo(db: Session = Depends(get_db)) -> PostgresFeedbackRepo:
+    """Get feedback repository instance."""
+    return PostgresFeedbackRepo(db)
+
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     auth_service: AuthService = Depends(get_auth_service),
@@ -180,6 +192,8 @@ CardReviewRepoDepends = Annotated[PostgresCardReviewRepo, Depends(get_card_revie
 StudySessionRepoDepends = Annotated[PostgresStudySessionRepo, Depends(get_study_session_repo)]
 CommentRepoDepends = Annotated[PostgresDeckCommentRepo, Depends(get_comment_repo)]
 CommentVoteRepoDepends = Annotated[PostgresCommentVoteRepo, Depends(get_comment_vote_repo)]
+CardReportRepoDepends = Annotated[PostgresCardReportRepo, Depends(get_card_report_repo)]
+FeedbackRepoDepends = Annotated[PostgresFeedbackRepo, Depends(get_feedback_repo)]
 AuthServiceDepends = Annotated[AuthService, Depends(get_auth_service)]
 FCMServiceDepends = Annotated[FCMService, Depends(get_fcm_service)]
 NotificationServiceDepends = Annotated[NotificationService, Depends(get_notification_service)]

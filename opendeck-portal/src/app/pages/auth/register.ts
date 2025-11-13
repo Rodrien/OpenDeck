@@ -6,6 +6,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { MessageModule } from 'primeng/message';
+import { DividerModule } from 'primeng/divider';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
@@ -22,7 +23,8 @@ import { CommonModule } from '@angular/common';
         RouterModule,
         RippleModule,
         AppFloatingConfigurator,
-        MessageModule
+        MessageModule,
+        DividerModule
     ],
     template: `
         <app-floating-configurator />
@@ -150,6 +152,20 @@ import { CommonModule } from '@angular/common';
                                 [disabled]="registerForm.invalid"
                             ></p-button>
 
+                            <p-divider align="center" class="my-6">
+                                <span class="text-muted-color text-sm">OR</span>
+                            </p-divider>
+
+                            <p-button
+                                label="Sign up with Google"
+                                icon="pi pi-google"
+                                styleClass="w-full"
+                                severity="secondary"
+                                outlined="true"
+                                [loading]="isLoading()"
+                                (click)="signInWithGoogle()"
+                            ></p-button>
+
                             <div class="text-center mt-6">
                                 <span class="text-muted-color">Already have an account? </span>
                                 <a routerLink="/auth/login" class="text-primary font-medium hover:underline">Sign in</a>
@@ -233,5 +249,15 @@ export class Register implements OnInit {
                 console.error('Registration error:', error);
             }
         });
+    }
+
+    /**
+     * Handle Google Sign-In for registration
+     */
+    signInWithGoogle(): void {
+        this.isLoading.set(true);
+        this.errorMessage.set('');
+
+        this.authService.loginWithGoogle();
     }
 }

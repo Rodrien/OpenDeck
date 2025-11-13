@@ -31,6 +31,7 @@ class UserInfo(BaseModel):
     id: str
     name: str
     email: str
+    profile_picture_url: Optional[str] = None
 
     class Config:
         from_attributes = True

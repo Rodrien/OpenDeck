@@ -23,6 +23,10 @@ import { DeckProgressService } from '../../services/deck-progress.service';
 import { Card as ApiCard } from '../../models/card.model';
 import { CardDirection } from './models/flashcard-data.interface';
 
+// Components
+import { DeckCommentsComponent } from '../../components/deck-comments/deck-comments.component';
+import { ReportCardDialog } from '../../components/report-card-dialog/report-card-dialog';
+
 @Component({
     selector: 'app-flashcard-viewer',
     imports: [
@@ -33,7 +37,9 @@ import { CardDirection } from './models/flashcard-data.interface';
         ProgressBar,
         Tag,
         ProgressSpinner,
-        Message
+        Message,
+        DeckCommentsComponent,
+        ReportCardDialog
     ],
     templateUrl: './flashcard-viewer.component.html',
     styleUrls: ['./flashcard-viewer.component.scss'],
@@ -67,6 +73,7 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
     loadingInitial = signal<boolean>(false);
     error = signal<string | null>(null);
     resumedFromProgress = signal<boolean>(false);
+    showReportDialog = signal<boolean>(false);
 
     // Pagination state
     pageSize = signal<number>(10);
@@ -508,6 +515,24 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
      */
     @HostListener('document:keydown', ['$event'])
     handleKeyboardEvent(event: KeyboardEvent): void {
+        // Check if user is typing in an input field
+        const target = event.target as HTMLElement;
+        const activeElement = document.activeElement as HTMLElement;
+
+        const isInputElement = (element: HTMLElement | null): boolean => {
+            if (!element) return false;
+            const tagName = element.tagName;
+            return tagName === 'INPUT' ||
+                   tagName === 'TEXTAREA' ||
+                   tagName === 'SELECT' ||
+                   element.isContentEditable;
+        };
+
+        // Don't handle keyboard shortcuts when typing in input fields
+        if (isInputElement(target) || isInputElement(activeElement)) {
+            return;
+        }
+
         switch (event.key) {
             case 'ArrowLeft':
                 event.preventDefault();
@@ -536,5 +561,20 @@ export class FlashcardViewerComponent implements OnInit, OnDestroy {
         if (url && url !== '#') {
             window.open(url, '_blank', 'noopener,noreferrer');
         }
+    }
+
+    /**
+     * Open the report card dialog
+     */
+    openReportDialog(): void {
+        this.showReportDialog.set(true);
+    }
+
+    /**
+     * Handle card report submission
+     */
+    onCardReported(): void {
+        // Optional: Refresh card data or show additional feedback
+        console.log('Card reported successfully');
     }
 }

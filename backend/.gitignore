@@ -78,3 +78,8 @@ alembic/versions/*.pyc
 # OS
 .DS_Store
 Thumbs.db
+
+# Uploads (keep directory structure but ignore files)
+uploads/*
+!uploads/.gitkeep
+!uploads/profile_pictures/.gitkeep

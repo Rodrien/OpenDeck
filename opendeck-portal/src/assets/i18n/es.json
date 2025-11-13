@@ -23,7 +23,15 @@
     "noAccount": "¿No tienes una cuenta?",
     "signUp": "Regístrate",
     "newUser": "¿Nuevo usuario?",
-    "existingUser": "¿Ya tienes una cuenta?"
+    "existingUser": "¿Ya tienes una cuenta?",
+    "google": {
+      "signIn": "Iniciar sesión con Google",
+      "signUp": "Registrarse con Google",
+      "loading": "Completando inicio de sesión con Google...",
+      "error": "Error al iniciar sesión con Google",
+      "cancelled": "Inicio de sesión con Google cancelado",
+      "invalidResponse": "Respuesta de autenticación inválida"
+    }
   },
   "flashcard": {
     "question": "Pregunta",
@@ -152,7 +160,8 @@
     "switchToDarkMode": "Cambiar a modo oscuro",
     "userMenu": "Menú de usuario",
     "user": "Usuario",
-    "notLoggedIn": "No has iniciado sesión"
+    "notLoggedIn": "No has iniciado sesión",
+    "feedback": "Enviar Comentarios"
   },
   "common": {
     "save": "Guardar",
@@ -193,6 +202,22 @@
     "reset": "Restablecer valores predeterminados",
     "resetConfirm": "¿Estás seguro de que quieres restablecer todas las preferencias a los valores predeterminados?",
     "confirmHeader": "Confirmar restablecimiento",
+    "profilePicture": {
+      "title": "Foto de perfil",
+      "description": "Sube una foto de perfil para personalizar tu cuenta",
+      "changePicture": "Cambiar foto",
+      "removePicture": "Eliminar foto",
+      "requirements": "Formato JPEG, PNG o WebP. Máx. 5MB. La imagen se redimensionará a 200x200px.",
+      "uploading": "Subiendo tu foto de perfil...",
+      "uploadSuccess": "Foto de perfil actualizada exitosamente",
+      "uploadFailed": "Error al subir la foto de perfil. Por favor, intenta de nuevo.",
+      "removeConfirm": "¿Estás seguro de que quieres eliminar tu foto de perfil?",
+      "removeHeader": "Eliminar Foto de Perfil",
+      "removeSuccess": "Foto de perfil eliminada exitosamente",
+      "removeFailed": "Error al eliminar la foto de perfil. Por favor, intenta de nuevo.",
+      "invalidType": "Tipo de archivo inválido. Por favor, sube una imagen JPEG, PNG o WebP.",
+      "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 5MB."
+    },
     "language": {
       "title": "Configuración de idioma",
       "description": "Elige tu idioma preferido para la interfaz",
@@ -273,6 +298,41 @@
       "minutesAgo": "hace {{count}}m",
       "hoursAgo": "hace {{count}}h",
       "daysAgo": "hace {{count}}d"
+    }
+  },
+  "report": {
+    "title": "Reportar Tarjeta",
+    "description": "Ayúdanos a mejorar reportando tarjetas con información incorrecta, engañosa o poco útil.",
+    "reasonLabel": "¿Por qué estás reportando esta tarjeta?",
+    "reasonPlaceholder": "Por favor describe el problema con esta tarjeta (ej: información incorrecta, pregunta poco clara, error tipográfico)...",
+    "minimumChars": "Por favor proporciona al menos {{count}} caracteres más",
+    "minimumLength": "Se requieren mínimo {{min}} caracteres",
+    "reasonValid": "Tu razón se ve bien",
+    "validationMessage": "Por favor proporciona una razón detallada para reportar esta tarjeta",
+    "submit": "Enviar Reporte",
+    "reportCard": "Reportar Tarjeta",
+    "successMessage": "Tarjeta reportada exitosamente. ¡Gracias por tu retroalimentación!",
+    "errorMessage": "Error al reportar la tarjeta. Por favor intenta de nuevo."
+  },
+  "feedback": {
+    "title": "Enviar Comentarios",
+    "description": "Comparte tus ideas, sugerencias o reporta problemas para ayudarnos a mejorar OpenDeck.",
+    "typeLabel": "Tipo de comentario",
+    "typePlaceholder": "Selecciona el tipo de comentario",
+    "messageLabel": "Tu mensaje",
+    "messagePlaceholder": "Cuéntanos qué tienes en mente...",
+    "messageRequired": "El mensaje es requerido (mínimo 10 caracteres)",
+    "messageMinLength": "Por favor proporciona al menos {{count}} caracteres más",
+    "characters": "caracteres",
+    "submit": "Enviar Comentarios",
+    "cancel": "Cancelar",
+    "successMessage": "¡Gracias por tus comentarios! Apreciamos tu aporte.",
+    "errorMessage": "Error al enviar comentarios. Por favor intenta de nuevo.",
+    "types": {
+      "bugReport": "Reporte de Error",
+      "featureRequest": "Solicitud de Característica",
+      "generalFeedback": "Comentarios Generales",
+      "other": "Otro"
     }
   }
 }
