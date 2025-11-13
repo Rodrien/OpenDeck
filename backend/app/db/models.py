@@ -70,6 +70,9 @@ class UserModel(Base):
             "(oauth_provider IS NOT NULL AND oauth_id IS NOT NULL) OR (oauth_provider IS NULL AND oauth_id IS NULL)",
             name='check_oauth_consistency'
         ),
+        # Unique constraint: prevent duplicate OAuth accounts
+        # Ensures the same OAuth provider + ID combination can't be registered twice
+        UniqueConstraint('oauth_provider', 'oauth_id', name='uq_oauth_provider_id'),
     )
 
     # Relationships

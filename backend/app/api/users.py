@@ -214,24 +214,42 @@ async def delete_profile_picture(
 
 
 @router.get("/profile-picture/{filename}")
-async def get_profile_picture(filename: str) -> FileResponse:
+async def get_profile_picture(
+    filename: str,
+    user_repo: UserRepoDepends,
+) -> FileResponse:
     """
-    Serve profile picture image.
+    Serve profile picture image with access verification.
+
+    Verifies that the requested filename belongs to an actual user in the database
+    before serving it. This prevents enumeration attacks where attackers could
+    try to guess profile picture filenames.
 
     Args:
         filename: Name of the profile picture file
+        user_repo: User repository for database lookup
 
     Returns:
         Image file with appropriate cache headers
 
     Raises:
-        HTTPException: If file not found or invalid filename format
+        HTTPException: If file not found, invalid format, or doesn't belong to a user
     """
     # Validate filename format (UUID + extension)
     if not PROFILE_PICTURE_FILENAME_PATTERN.match(filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid profile picture filename format",
+        )
+
+    # Verify filename belongs to an actual user (prevents enumeration)
+    user_exists = user_repo.get_by_profile_picture(filename)
+    if not user_exists:
+        # Return 404 for both non-existent files and unauthorized access
+        # to prevent attackers from distinguishing between them
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Profile picture not found",
         )
 
     # Sanitize filename to prevent path traversal

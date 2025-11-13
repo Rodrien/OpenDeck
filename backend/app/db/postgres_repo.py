@@ -99,6 +99,26 @@ class PostgresUserRepo:
         )
         return [self._to_domain(model) for model in models]
 
+    def get_by_profile_picture(self, filename: str) -> Optional[User]:
+        """
+        Get user by profile picture filename.
+
+        Used to verify that a profile picture file belongs to an actual user
+        before serving it, preventing enumeration attacks.
+
+        Args:
+            filename: Profile picture filename to search for
+
+        Returns:
+            User if found with matching profile picture, None otherwise
+        """
+        model = (
+            self.session.query(UserModel)
+            .filter_by(profile_picture=filename)
+            .first()
+        )
+        return self._to_domain(model) if model else None
+
     def create(self, user: User) -> User:
         """Create a new user."""
         if not user.id:

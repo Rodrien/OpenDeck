@@ -41,6 +41,21 @@ class UserRepository(Protocol):
         """
         ...
 
+    def get_by_profile_picture(self, filename: str) -> Optional[User]:
+        """
+        Get user by profile picture filename.
+
+        Used to verify that a profile picture file belongs to an actual user
+        before serving it, preventing enumeration attacks.
+
+        Args:
+            filename: Profile picture filename to search for
+
+        Returns:
+            User if found with matching profile picture, None otherwise
+        """
+        ...
+
     def create(self, user: User) -> User:
         """Create a new user."""
         ...
